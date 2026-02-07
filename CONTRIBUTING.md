@@ -25,9 +25,19 @@
 ## Development Workflow
 
 1. Clone the repository
-2. Run `flutter pub get` to install dependencies
+2. Run `just deps` to install dependencies
 3. Connect an Android device or start an emulator
 4. Run `flutter run` to build and launch the app
+
+### `just`
+
+This project uses the [`just`](https://just.systems/man/en) command runner to provide easy access to common development commands.
+
+```bash
+just build-apk    # Build an APK release
+just build-web    # Build a web release
+just test         # Run unit tests
+```
 
 ## Testing
 
