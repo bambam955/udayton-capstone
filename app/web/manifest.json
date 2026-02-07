@@ -1,11 +1,11 @@
 {
-    "name": "bizrush",
-    "short_name": "bizrush",
+    "name": "BizRush",
+    "short_name": "BizRush",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "BizRush - A platform for small businesses to rush-deliver supplies quickly and accurately.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

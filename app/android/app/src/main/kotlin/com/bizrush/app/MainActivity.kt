@@ -1,4 +1,4 @@
-package com.example.bizrush
+package com.bizrush.app
 
 import io.flutter.embedding.android.FlutterActivity
 
