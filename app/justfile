@@ -1,0 +1,53 @@
+# Cross-platform Flutter development
+# Prefers Docker Compose, falls back to local tools with warning
+
+set shell := ["bash", "-cu"]
+
+# ---------- Main commands ---------- #
+
+# List available recipes
+default:
+    @just --list
+
+# ---------- Build/Test commands ---------- #
+
+# Run tests
+test: (_flutter-cmd "flutter test")
+
+# Analyze code
+check: (_flutter-cmd "flutter analyze")
+
+# Format code
+format: (_flutter-cmd "dart format .")
+
+# Install dependencies
+deps: (_flutter-cmd "flutter pub get")
+
+# Clean build artifacts
+clean: (_flutter-cmd "flutter clean")
+
+# Run flutter doctor
+doctor: (_flutter-cmd "flutter doctor -v")
+
+# Interactive shell
+shell:
+    docker compose run --rm base bash
+
+# ---------- Internal ---------- #
+
+# Run a flutter command, preferring compose (uses android image for full SDK)
+[private]
+_flutter-cmd *args:
+    #!/usr/bin/env bash
+    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        docker compose run --rm base bash -c "flutter pub get && {{ args }}"
+    elif command -v flutter >/dev/null 2>&1; then
+        echo "⚠️  Warning: Docker not available, using local Flutter" >&2
+        cd app && flutter pub get --offline 2>/dev/null || flutter pub get
+        cd app && {{ args }}
+    else
+        echo "❌ Error: Neither Docker Compose nor Flutter found" >&2
+        echo "   Install Docker: https://docs.docker.com/get-docker/" >&2
+        echo "   Or Flutter: https://flutter.dev/docs/get-started/install" >&2
+        exit 1
+    fi

@@ -1,0 +1,42 @@
+services:
+  # Lightweight container for running checks and tests only
+  base:
+    build:
+      context: .
+      target: base
+    volumes:
+      - .:/app
+      - pub-cache:/opt/mise/installs/flutter
+    tty: true
+
+  # Lightweight web development server
+  app-web:
+    build:
+      context: ./app
+      target: web
+    volumes:
+      - ./app:/app
+      - pub-cache:/opt/mise/installs/flutter
+    ports:
+      - "8080:8080"
+    stdin_open: true
+    tty: true
+
+  # Full Android development environment
+  app-android:
+    build:
+      context: ./app
+      target: android
+    volumes:
+      - ./app:/app
+      - gradle-cache:/root/.gradle
+      - pub-cache:/opt/mise/installs/flutter
+    stdin_open: true
+    tty: true
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+
+volumes:
+  gradle-cache:
+  pub-cache:
