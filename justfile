@@ -64,7 +64,7 @@ run-android:
                 echo "❌ Error: Flutter not found. Install from https://flutter.dev" >&2
                 exit 1
             fi
-            echo "ℹ️  Windows: Using local Flutter for emulator access" >&2
+            echo "Windows: Using local Flutter for emulator access" >&2
             cd app && flutter run
             ;;
         *)
@@ -79,6 +79,7 @@ run-android:
 setup:
     #!/usr/bin/env bash
     set -euo pipefail
+    command -v pre-commit >/dev/null && pre-commit install || { echo "❌ pre-commit not installed"; }
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
     docker compose build
     docker compose run --rm app-base just deps
