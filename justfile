@@ -1,5 +1,5 @@
-# Cross-platform Flutter development
-# Prefers Docker Compose, falls back to local tools with warning
+# BizRush - project orchestration
+# Wraps app commands in Docker; falls back to local tools
 
 set shell := ["bash", "-cu"]
 
@@ -7,10 +7,11 @@ set shell := ["bash", "-cu"]
 
 # List available recipes
 default:
-    @echo "Top-level recipes:"
+    @echo "Project recipes:"
     @JUST_LIST_HEADING="" just --list
-    @echo "App recipes:"
-    @cd app/ && JUST_LIST_HEADING="" just --list --list-prefix "    app/"
+    @echo ""
+    @echo "App recipes (run via Docker):"
+    @JUST_LIST_HEADING="" just --justfile app/justfile --list
 
 # Start web development server (http://localhost:8080)
 up:
@@ -20,12 +21,32 @@ up:
 down:
     docker compose down
 
-# ---------- Build/Test commands ---------- #
+# ---------- App commands (delegated to app/justfile inside container) ---------- #
+
+# Run tests
+test: (_docker-just-app "test")
+
+# Analyze code
+check: (_docker-just-app "check")
+
+# Format code
+format: (_docker-just-app "format")
+
+# Install dependencies (re-runs locally to fix package_config.json paths for VS Code)
+deps:
+    docker compose run --rm app-base just deps
+    cd app && flutter pub get
+
+# Clean build artifacts
+clean: (_docker-just-app "clean")
+
+# Run flutter doctor
+doctor: (_docker-just-app "doctor")
+
+# ---------- Build/Run commands ---------- #
 
 # Build APK (debug or release)
-build target='debug': (_flutter-cmd "flutter build apk --" + target)
-
-# ---------- Run commands ---------- #
+build target='debug': (_docker-just-app-android "build " + target)
 
 # Run on web (http://localhost:8080)
 run-web:
@@ -34,14 +55,13 @@ run-web:
 # Run on Android emulator
 run-android:
     #!/usr/bin/env bash
+    set -euxo pipefail
     case "$(uname -s)" in
         Linux|Darwin)
-            # Linux/Mac: use Docker, connect to host emulator
             docker compose run --rm app-android bash -c \
                 "adb connect host.docker.internal:5555 2>/dev/null || true; flutter run"
             ;;
         MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            # Windows: use local Flutter (Docker can't reach Windows emulator easily)
             if ! command -v flutter >/dev/null 2>&1; then
                 echo "❌ Error: Flutter not found. Install from https://flutter.dev" >&2
                 exit 1
@@ -57,19 +77,28 @@ run-android:
 
 # ---------- Setup ---------- #
 
-# Build Docker images
-docker-build:
+# Verify and set up the development environment
+setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
     docker compose build
+    docker compose run --rm app-base just deps
+    docker compose run --rm app-android just doctor
 
 # Start emulator on host (for connecting from Docker)
 emulator:
     #!/usr/bin/env bash
+    set -euo pipefail
     case "$(uname -s)" in
-        Darwin)
-            emulator -avd dev 2>/dev/null || echo "Create AVD: avdmanager create avd -n dev -k 'system-images;android-36;google_apis;arm64-v8a'"
-            ;;
-        Linux)
-            emulator -avd default_avd 2>/dev/null || flutter emulators --launch Medium_Phone_API_36.1 2>/dev/null || echo "No emulator found"
+        Linux|Darwin)
+            avd=$(flutter emulators 2>/dev/null | grep '•' | grep -v '^Id' | head -1 | awk '{print $1}')
+            if [ -z "$avd" ]; then
+                echo "❌ No emulators found. Create one with: flutter emulators --create"
+                exit 1
+            fi
+            echo "Launching $avd..."
+            flutter emulators --launch "$avd"
             ;;
         MINGW*|MSYS*|CYGWIN*|Windows_NT)
             echo "Start emulator from Android Studio Device Manager"
@@ -82,20 +111,12 @@ adb-tcp:
 
 # ---------- Internal ---------- #
 
-# Run a flutter command, preferring compose (uses android image for full SDK)
+# Run an app justfile recipe inside the base container
 [private]
-_flutter-cmd *args:
-    #!/usr/bin/env bash
-    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-        # docker compose run --rm app-web bash -c "flutter pub get --offline 2>/dev/null || flutter pub get && {{ args }}"
-        docker compose run --rm app-web bash -c "flutter pub get && {{ args }}"
-    elif command -v flutter >/dev/null 2>&1; then
-        echo "⚠️  Warning: Docker not available, using local Flutter" >&2
-        cd app && flutter pub get --offline 2>/dev/null || flutter pub get
-        cd app && {{ args }}
-    else
-        echo "❌ Error: Neither Docker Compose nor Flutter found" >&2
-        echo "   Install Docker: https://docs.docker.com/get-docker/" >&2
-        echo "   Or Flutter: https://flutter.dev/docs/get-started/install" >&2
-        exit 1
-    fi
+_docker-just-app *args:
+    docker compose run --rm app-base just {{args}}
+
+# Run an app justfile recipe inside the android container
+[private]
+_docker-just-app-android *args:
+    docker compose run --rm app-android just {{args}}

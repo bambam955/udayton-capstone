@@ -1,2 +1,57 @@
-include:
-  - app/docker-compose.yml
+# Services won't normally be run directly — the root justfile wraps them.
+# Common commands: just up, just test, just check, just shell
+
+services:
+  # Quick commands (test, check, format) — smallest image
+  app-base:
+    build:
+      context: app
+      target: base
+    volumes:
+      - ./app:/app
+      # Shares package cache with host so VS Code can resolve packages
+      - ${HOME}/.pub-cache:${HOME}/.pub-cache
+    environment:
+      - PUB_CACHE=${HOME}/.pub-cache
+    tty: true
+
+  # Web dev server at http://localhost:8080
+  app-web:
+    build:
+      context: app
+      target: web
+    volumes:
+      - ./app:/app
+      # Shares package cache with host so VS Code can resolve packages
+      - ${HOME}/.pub-cache:${HOME}/.pub-cache
+    environment:
+      - PUB_CACHE=${HOME}/.pub-cache
+    # Expose port for web server
+    ports:
+      - "8080:8080"
+    # Needed for Flutter hot-reload ("r" key)
+    stdin_open: true  
+    tty: true
+
+  # APK builds and emulator connection — heavy image, only used when needed
+  app-android:
+    build:
+      context: app
+      target: android
+    volumes:
+      - ./app:/app
+      # Persists Gradle downloads between runs
+      - gradle-cache:/root/.gradle  
+      # Shares package cache with host so VS Code can resolve packages
+      - ${HOME}/.pub-cache:${HOME}/.pub-cache
+    # Needed for Flutter hot-reload ("r" key)
+    stdin_open: true
+    tty: true
+    environment:
+      - PUB_CACHE=${HOME}/.pub-cache
+      # Android SDK configs
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+
+volumes:
+  gradle-cache:

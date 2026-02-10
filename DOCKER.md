@@ -1,56 +1,58 @@
 # Docker Development Setup
 
-Develop the Flutter app without installing Flutter, Android SDK, Java, or Gradle locally.
+Develop the Flutter app without installing Flutter, Android SDK, Java, or Gradle locally. All you need is Docker and [just](https://github.com/casey/just).
 
-**Image sizes:** ~5.6GB (flutter), ~7GB (flutter-emulator)
+## Architecture
+
+The Dockerfile (`app/Dockerfile`) uses multi-stage builds to create three images:
+
+| Image | Target | What it adds | Used for |
+|-------|--------|--------------|----------|
+| **app-base** | `base` | Flutter + just via mise | test, check, format, deps |
+| **app-web** | `web` | Web build toolchain | `just up`, `just run-web` |
+| **app-android** | `android` | JDK + Android SDK | `just build`, `just run-android` |
+
+The root `justfile` wraps all commands in `docker compose run`, delegating to `app/justfile` inside the container. You never need to think about Docker when running day-to-day commands.
 
 First build takes ~10-15 minutes to download SDKs. Subsequent builds use cache.
 
 ## Quick Start
 
 ```bash
-# Build the image
-docker compose build flutter
+# One-time setup: build images, install deps, verify environment
+just setup
 
-# Interactive shell
-docker compose run --rm flutter
+# Start web dev server (http://localhost:8080)
+just up
 
-# Run tests
-docker compose run --rm flutter flutter test
+# Run tests / analyze / format
+just test
+just check
+just format
 
-# Build APK
-docker compose run --rm flutter flutter build apk
+# Interactive shell inside the container
+just shell
 
-# Run web (http://localhost:8080)
-docker compose run --rm --service-ports flutter \
-  flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0
+# See all available commands
+just
 ```
-
----
 
 ## Emulator Setup by Platform
 
-### Linux (Full Docker Experience)
+### Linux
 
-Linux can run the emulator inside Docker with KVM passthrough:
+Run emulator on the host, connect from Docker:
 
 ```bash
-# Ensure KVM access
-sudo usermod -aG kvm $USER && newgrp kvm
+# Start emulator
+just emulator
 
-# Build and run with emulator
-docker compose build flutter-emulator
-docker compose run --rm --service-ports flutter-emulator
-
-# Inside container - start headless emulator:
-emulator -avd default_avd -no-window -no-audio -gpu swiftshader_indirect &
-adb wait-for-device
-flutter run
+# Enable ADB over TCP, then run
+just adb-tcp
+just run-android
 ```
 
 ### macOS
-
-Run emulator on Mac, connect from Docker:
 
 ```bash
 # One-time: Install emulator
@@ -59,16 +61,14 @@ sdkmanager "emulator" "platform-tools" "system-images;android-36;google_apis;arm
 avdmanager create avd -n dev -k "system-images;android-36;google_apis;arm64-v8a"
 
 # Terminal 1: Start emulator
-emulator -avd dev
+just emulator
 
-# Terminal 2: Enable TCP and run Flutter
-adb tcpip 5555
-docker compose run --rm flutter bash -c "adb connect host.docker.internal:5555 && flutter run"
+# Terminal 2: Enable TCP and run
+just adb-tcp
+just run-android
 ```
 
 ### Windows
-
-Run emulator on Windows, connect from Docker:
 
 1. Install Android Studio → Device Manager → Create Pixel 6 (API 36)
 2. Start emulator from Device Manager
@@ -79,27 +79,31 @@ adb tcpip 5555
 ```
 
 ```bash
-# WSL2/Git Bash: Run Flutter in Docker
-docker compose run --rm flutter bash -c "adb connect host.docker.internal:5555 && flutter run"
+# WSL2/Git Bash:
+just run-android
 ```
-
----
 
 ## Commands Reference
 
 | Command | Description |
 |---------|-------------|
-| `flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0` | Run on web |
-| `flutter run` | Run on connected device |
-| `flutter test` | Run tests |
-| `flutter build apk` | Build release APK |
-| `flutter analyze` | Static analysis |
-| `adb connect <host>:5555` | Connect to remote emulator |
+| `just setup` | Build images, install deps, verify environment |
+| `just up` | Start web dev server (http://localhost:8080) |
+| `just down` | Stop all services |
+| `just test` | Run tests |
+| `just check` | Static analysis |
+| `just format` | Format code |
+| `just deps` | Install dependencies |
+| `just build` | Build debug APK |
+| `just build release` | Build release APK |
+| `just run-android` | Run on Android emulator |
+| `just shell` | Interactive shell in container |
+| `just doctor` | Run flutter doctor |
 
 ## Troubleshooting
 
 **No devices:** Run `adb devices` to verify. Try `adb kill-server && adb connect <host>:5555`
 
-**KVM denied:** `sudo usermod -aG kvm $USER` then log out/in
+**KVM denied (Linux):** `sudo usermod -aG kvm $USER` then log out/in
 
 **Windows firewall:** Allow port 5555 for ADB
