@@ -1,0 +1,9 @@
+# Dev container override — mounts the full project instead of just app/
+services:
+  devcontainer:
+    build:
+      context: ../app
+      target: base
+    volumes:
+      - ..:/workspace
+    tty: true
