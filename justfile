@@ -73,6 +73,10 @@ run-android:
             ;;
     esac
 
+# Open a shell in the dev container
+shell:
+    cd .devcontainer && docker compose run --rm devcontainer bash
+
 # ---------- Setup ---------- #
 
 # Verify and set up the development environment

@@ -7,6 +7,7 @@ services:
     volumes:
       - ..:/workspace
       - pub-cache:/root/.pub-cache
+    working_dir: /workspace
     tty: true
 
 volumes:
