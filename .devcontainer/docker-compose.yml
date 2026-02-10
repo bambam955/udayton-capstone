@@ -6,4 +6,8 @@ services:
       target: base
     volumes:
       - ..:/workspace
+      - pub-cache:/root/.pub-cache
     tty: true
+
+volumes:
+  pub-cache:
