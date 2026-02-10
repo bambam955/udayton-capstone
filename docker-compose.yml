@@ -9,10 +9,8 @@ services:
       target: base
     volumes:
       - ./app:/app
-      # Shares package cache with host so VS Code can resolve packages
-      - ${HOME}/.pub-cache:${HOME}/.pub-cache
-    environment:
-      - PUB_CACHE=${HOME}/.pub-cache
+      # Persists Flutter package downloads
+      - pub-cache:/root/.pub-cache
     tty: true
 
   # Web dev server at http://localhost:8080
@@ -22,10 +20,8 @@ services:
       target: web
     volumes:
       - ./app:/app
-      # Shares package cache with host so VS Code can resolve packages
-      - ${HOME}/.pub-cache:${HOME}/.pub-cache
-    environment:
-      - PUB_CACHE=${HOME}/.pub-cache
+      # Persists Flutter package downloads
+      - pub-cache:/root/.pub-cache
     # Expose port for web server
     ports:
       - "8080:8080"
@@ -40,18 +36,18 @@ services:
       target: android
     volumes:
       - ./app:/app
-      # Persists Gradle downloads between runs
-      - gradle-cache:/root/.gradle  
-      # Shares package cache with host so VS Code can resolve packages
-      - ${HOME}/.pub-cache:${HOME}/.pub-cache
+      # Persists Flutter package downloads
+      - pub-cache:/root/.pub-cache
+      # Persists Gradle downloads and build cache
+      - gradle-cache:/root/.gradle
     # Needed for Flutter hot-reload ("r" key)
     stdin_open: true
     tty: true
     environment:
-      - PUB_CACHE=${HOME}/.pub-cache
       # Android SDK configs
       - ANDROID_HOME=/opt/android-sdk
       - ANDROID_SDK_ROOT=/opt/android-sdk
 
 volumes:
+  pub-cache:
   gradle-cache:

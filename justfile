@@ -32,10 +32,8 @@ check: (_docker-just-app "check")
 # Format code
 format: (_docker-just-app "format")
 
-# Install dependencies (re-runs locally to fix package_config.json paths for VS Code)
-deps:
-    docker compose run --rm app-base just deps
-    cd app && flutter pub get
+# Install dependencies
+deps: (_docker-just-app "deps")
 
 # Clean build artifacts
 clean: (_docker-just-app "clean")

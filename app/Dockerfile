@@ -11,9 +11,9 @@
 # container via `docker compose run --rm app-base just <recipe>`, so the
 # app/justfile can be simple Flutter calls with no Docker awareness.
 #
-# Packages are stored in ~/.pub-cache on the host via a bind mount
-# (see docker-compose.yml), so VS Code's Dart extension can resolve them
-# for syntax highlighting without needing Flutter installed locally.
+# VS Code connects to this container via Dev Containers (.devcontainer/),
+# so the Dart extension gets full language support using the container's
+# Flutter SDK — no local Flutter installation needed.
 # =============================================================================
 FROM ubuntu:24.04 AS base
 
