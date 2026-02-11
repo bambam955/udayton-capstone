@@ -36,7 +36,7 @@ The platform acts as a logistics and orchestration layer between customers, reta
 - **Customer App:** Flutter (iOS + Android)
 - **Driver App:** Flutter (iOS + Android)
 - **Admin Dashboard:** Web application
-- **Backend Services:** REST
+- **Backend Services:** REST APIs
 - **Retailer Integration Layer:** Backend-only service
 
 ---
@@ -209,7 +209,7 @@ The platform acts as a logistics and orchestration layer between customers, reta
 
 ## 9. Assumptions and Dependencies
 
-- Retailer APIs are accessible directly or through approved partners.
+- Retailer APIs are simulated using Mockoon for proof of concept; real integrations are deferred to post-MVP.
 - Flutter plugins support required background and native features.
 - Initial launch is geographically limited.
 - Drivers operate as independent contractors or employees (TBD).
@@ -229,7 +229,7 @@ The platform acts as a logistics and orchestration layer between customers, reta
 ## 11. Acceptance Criteria (MVP)
 
 - Customers can place and track pickup-based grocery orders end-to-end.
-- Retailer systems receive and process pickup orders successfully.
+- Mock retailer endpoints receive and process pickup orders successfully.
 - Drivers can accept, pick up, and deliver orders with proof of delivery.
 - Payments and payouts function correctly.
 - Admins can monitor and intervene in active orders.
@@ -239,4 +239,4 @@ The platform acts as a logistics and orchestration layer between customers, reta
 
 ## 12. Definition of MVP
 
-The MVP (Minimum Viable Product) is defined as the smallest functional version of the platform that enables real customers, real orders, and real deliveries without manual intervention.
+The MVP (Minimum Viable Product) is defined as the smallest functional version of the platform that enables real customers, simulated retailer orders via Mockoon, and real deliveries without manual intervention.
