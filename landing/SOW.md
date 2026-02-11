@@ -36,7 +36,7 @@ The platform acts as a logistics and orchestration layer between customers, reta
 - **Customer App:** Flutter (iOS + Android)
 - **Driver App:** Flutter (iOS + Android)
 - **Admin Dashboard:** Web application
-- **Backend Services:** REST/GraphQL APIs
+- **Backend Services:** REST
 - **Retailer Integration Layer:** Backend-only service
 
 ---
@@ -61,7 +61,7 @@ The platform acts as a logistics and orchestration layer between customers, reta
 - Order history
 
 #### Retailer Account Linking
-- Connect Walmart and Target accounts via APIs
+- Connect Mockoon API for proof of concept(mock data)
 - Secure token storage and refresh handling
 - Disconnect and re-authentication flows
 
@@ -165,7 +165,7 @@ The platform acts as a logistics and orchestration layer between customers, reta
 - Secure storage for credentials
 
 ### Backend Architecture
-- REST or GraphQL APIs
+- REST 
 - PostgreSQL database
 - Background job queues
 - Webhooks and polling for retailer updates
