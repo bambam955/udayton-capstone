@@ -34,7 +34,7 @@ ENV CI=true
 ENV FLUTTER_SUPPRESS_ANALYTICS=true
 
 # Install mise
-RUN curl https://mise.run | MISE_VERSION=v2026.2.10 sh
+RUN curl https://mise.run | MISE_VERSION=v2026.2.0 sh
 
 # Install flutter (separate layer for independent caching because it's slow)
 RUN /root/.local/bin/mise use -g flutter@3.38.10
