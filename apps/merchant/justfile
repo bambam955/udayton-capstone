@@ -1,0 +1,36 @@
+# Flutter app development commands
+# Assumes Flutter is available (runs inside container or with local Flutter)
+
+set shell := ["bash", "-cu"]
+
+# List available recipes
+default:
+    @just --list
+
+# Run tests
+test:
+    flutter test
+
+# Analyze code
+check:
+    flutter analyze
+
+# Format code
+format:
+    dart format .
+
+# Install dependencies
+deps:
+    flutter pub get
+
+# Clean build artifacts
+clean:
+    flutter clean
+
+# Build APK (debug or release)
+build target='debug':
+    flutter build apk --{{target}}
+
+# Run flutter doctor
+doctor:
+    flutter doctor -v
