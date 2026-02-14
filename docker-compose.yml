@@ -58,8 +58,10 @@ services:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache
     working_dir: /workspace/driver
+    environment:
+      - WEB_PORT=${DRIVER_WEB_PORT:-8081}
     ports:
-      - "${DRIVER_WEB_PORT:-8081}:8080"
+      - "${DRIVER_WEB_PORT:-8081}:${DRIVER_WEB_PORT:-8081}"
     stdin_open: true
     tty: true
 

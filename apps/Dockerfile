@@ -57,8 +57,9 @@ FROM base AS web
 
 RUN flutter precache --web
 
-EXPOSE 8080
-CMD ["flutter", "run", "-d", "web-server", "--web-port=8080", "--web-hostname=0.0.0.0"]
+ENV WEB_PORT=8080
+EXPOSE ${WEB_PORT}
+CMD flutter run -d web-server --web-port=${WEB_PORT} --web-hostname=0.0.0.0
 
 # =============================================================================
 # Android: base + JDK + Android SDK (heavy — only used for APK builds)
