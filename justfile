@@ -7,15 +7,19 @@ set shell := ["bash", "-cu"]
 
 DC := "docker compose"
 ALL_COMPONENTS := "main driver"
+ALL_DC_SERVICES := "main-web driver-web main-android driver-android" # admin
 
 # ---------- Main commands ---------- #
 
 # List available recipes
 default:
-    @echo "Available recipes:"
-    @JUST_LIST_HEADING="" just --list
-    @echo ""
     @echo "Components: {{ALL_COMPONENTS}}"
+    @echo "Docker Compose services: {{ ALL_DC_SERVICES }}"
+    @echo ""
+    @just --list --unsorted
+    @echo ""
+    @echo "Apps recipes:"
+    @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
 
 # Start backend + selected frontend services
 up *services:
@@ -23,7 +27,7 @@ up *services:
     set -euo pipefail
     if [ -z "{{services}}" ]; then
         echo "Usage: just up <service>..."
-        echo "Services: main-web, driver-web, main-android, driver-android, admin"
+        echo "Services: {{ ALL_DC_SERVICES }}"
         exit 2
     fi
     flags=""
@@ -66,7 +70,7 @@ clean *components:
 
 # Run flutter doctor
 doctor:
-    {{ DC }} run --rm dev-tools just doctor
+    {{ DC }} run --rm android just doctor
 
 # ---------- Build commands ---------- #
 
@@ -106,27 +110,6 @@ setup:
     COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android \
         {{ DC }} build
     just deps
-
-# ---------- Emulator helpers (run on host) ---------- #
-
-# Start emulator on host (for connecting from Docker)
-emulator:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    case "$(uname -s)" in
-        Linux|Darwin)
-            avd=$(flutter emulators 2>/dev/null | grep '•' | grep -v '^Id' | head -1 | awk '{print $1}')
-            if [ -z "$avd" ]; then
-                echo "❌ No emulators found. Create one with: flutter emulators --create"
-                exit 1
-            fi
-            echo "Launching $avd..."
-            flutter emulators --launch "$avd"
-            ;;
-        MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            echo "Start emulator from Android Studio Device Manager"
-            ;;
-    esac
 
 # ---------- Internal ---------- #
 
