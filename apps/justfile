@@ -22,8 +22,8 @@ deps app: (_in-app app "flutter pub get")
 # Clean build artifacts
 clean app: (_in-app app "flutter clean")
 
-# Build APK (debug or release)
-build app target='debug': (_in-app app "flutter build apk --" + target)
+# Build APK (e.g. just build main --release)
+build app *args: (_in-app app "flutter build apk " + args)
 
 # Run flutter doctor
 doctor: (_in-app "main" "flutter doctor -v")

@@ -6,16 +6,16 @@
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
+ALL_COMPONENTS := "main driver"
 
 # ---------- Main commands ---------- #
 
 # List available recipes
 default:
-    @echo "Project recipes:"
+    @echo "Available recipes:"
     @JUST_LIST_HEADING="" just --list
     @echo ""
-    @echo "App recipes (run via Docker):"
-    @JUST_LIST_HEADING="" just --justfile apps/justfile --list
+    @echo "Components: {{ALL_COMPONENTS}}"
 
 # Start backend + selected frontend services
 up *services:
@@ -27,40 +27,69 @@ up *services:
         exit 2
     fi
     flags=""
+    needs_adb=false
     for svc in {{services}}; do
         flags+=" --profile $svc"
+        [[ "$svc" == *-android ]] && needs_adb=true
     done
+    if $needs_adb; then
+        echo "Enabling ADB over TCP..."
+        adb tcpip 5555 || echo "⚠ adb tcpip failed — is an emulator running?"
+    fi
     {{ DC }} $flags up
 
 # Stop all services
 down:
     {{ DC }} down
 
-# ---------- App commands (delegated to apps/justfile inside container) ---------- #
+# ---------- Dev commands (default to all components) ---------- #
 
 # Run tests
-test app: (_docker-dev "test" app)
+test *components:
+    just _foreach test {{components}}
 
 # Analyze code
-check app: (_docker-dev "check" app)
+check *components:
+    just _foreach check {{components}}
 
 # Format code
-format app: (_docker-dev "format" app)
+format *components:
+    just _foreach format {{components}}
 
 # Install dependencies
-deps app: (_docker-dev "deps" app)
+deps *components:
+    just _foreach deps {{components}}
 
 # Clean build artifacts
-clean app: (_docker-dev "clean" app)
+clean *components:
+    just _foreach clean {{components}}
 
 # Run flutter doctor
-doctor: (_docker-dev-raw "doctor")
+doctor:
+    {{ DC }} run --rm dev-tools just doctor
 
 # ---------- Build commands ---------- #
 
-# Build APK (debug or release)
-build app target='debug':
-    {{ DC }} run --rm android just build {{ app }} {{ target }}
+# Build a component (pass extra args after name, e.g. just build main --release)
+build component *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{component}}" in
+        main|driver)
+            {{ DC }} run --rm android just build "{{component}}" {{args}}
+            ;;
+        # admin)
+        #     {{ DC }} run --rm admin-dev just build {{args}}
+        #     ;;
+        # api)
+        #     {{ DC }} run --rm api-dev just build {{args}}
+        #     ;;
+        *)
+            echo "❌ Unknown component: {{component}}"
+            echo "Known components: {{ALL_COMPONENTS}}"
+            exit 1
+            ;;
+    esac
 
 # ---------- Dev environment ---------- #
 
@@ -76,8 +105,7 @@ setup:
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
     COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android \
         {{ DC }} build
-    {{ DC }} run --rm dev-tools just deps main
-    {{ DC }} run --rm dev-tools just deps driver
+    just deps
 
 # ---------- Emulator helpers (run on host) ---------- #
 
@@ -100,18 +128,39 @@ emulator:
             ;;
     esac
 
-# Enable ADB over TCP (run on host before using android profiles)
-adb-tcp:
-    adb tcpip 5555
-
 # ---------- Internal ---------- #
 
-# Run an apps/justfile recipe inside the dev-tools container
+# Loop over components (or all if none given) and run a recipe for each
 [private]
-_docker-dev recipe app:
-    {{ DC }} run --rm dev-tools just {{ recipe }} {{ app }}
+_foreach recipe *components:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    targets="{{components}}"
+    if [ -z "$targets" ]; then
+        targets="{{ALL_COMPONENTS}}"
+    fi
+    for c in $targets; do
+        just _run-for "{{recipe}}" "$c"
+    done
 
-# Run an apps/justfile recipe (no app arg) inside the dev-tools container
+# Map a component to its Docker service and run the recipe
 [private]
-_docker-dev-raw recipe:
-    {{ DC }} run --rm dev-tools just {{ recipe }}
+_run-for recipe component:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{component}}" in
+        main|driver)
+            {{ DC }} run --rm dev-tools just "{{recipe}}" "{{component}}"
+            ;;
+        # admin)
+        #     {{ DC }} run --rm admin-dev just "{{recipe}}"
+        #     ;;
+        # api)
+        #     {{ DC }} run --rm api-dev just "{{recipe}}"
+        #     ;;
+        *)
+            echo "❌ Unknown component: {{component}}"
+            echo "Known components: {{ALL_COMPONENTS}}"
+            exit 1
+            ;;
+    esac

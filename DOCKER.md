@@ -35,14 +35,15 @@ just up main-web driver-web
 # Start backend + driver on emulator + admin dashboard
 just up driver-android admin
 
-# Run tests / analyze / format
+# Run tests / analyze / format (all components, or specify)
+just test
 just test main
 just check driver
-just format main
+just format main driver
 
 # Build APKs
 just build main
-just build driver release
+just build driver --release
 
 # Interactive shell inside the container
 just shell
@@ -68,11 +69,8 @@ just
 Run emulator on the host, connect from Docker:
 
 ```bash
-# Start emulator
+# Start emulator, then run (ADB TCP is enabled automatically)
 just emulator
-
-# Enable ADB over TCP, then run
-just adb-tcp
 just up main-android
 ```
 
@@ -87,8 +85,7 @@ avdmanager create avd -n dev -k "system-images;android-36;google_apis;arm64-v8a"
 # Terminal 1: Start emulator
 just emulator
 
-# Terminal 2: Enable TCP and run
-just adb-tcp
+# Terminal 2: Run (ADB TCP is enabled automatically)
 just up main-android
 ```
 
@@ -97,13 +94,8 @@ just up main-android
 1. Install Android Studio → Device Manager → Create Pixel 6 (API 36)
 2. Start emulator from Device Manager
 
-```powershell
-# PowerShell: Enable ADB over TCP
-adb tcpip 5555
-```
-
 ```bash
-# WSL2/Git Bash:
+# WSL2/Git Bash (ADB TCP is enabled automatically):
 just up main-android
 ```
 
@@ -114,11 +106,11 @@ just up main-android
 | `just setup` | Build all images, install deps |
 | `just up <service>...` | Start backend + selected frontend services |
 | `just down` | Stop all services |
-| `just test <app>` | Run tests (main or driver) |
-| `just check <app>` | Static analysis |
-| `just format <app>` | Format code |
-| `just deps <app>` | Install dependencies |
-| `just build <app> [release]` | Build APK |
+| `just test [components...]` | Run tests (defaults to all) |
+| `just check [components...]` | Static analysis (defaults to all) |
+| `just format [components...]` | Format code (defaults to all) |
+| `just deps [components...]` | Install dependencies (defaults to all) |
+| `just build <component> [args...]` | Build a component |
 | `just shell` | Interactive shell in container |
 | `just doctor` | Run flutter doctor |
 
