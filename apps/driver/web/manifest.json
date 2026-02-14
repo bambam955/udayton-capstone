@@ -1,6 +1,6 @@
 {
-    "name": "BizRush",
-    "short_name": "BizRush",
+    "name": "BizRush Driver",
+    "short_name": "BizRush Driver",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
