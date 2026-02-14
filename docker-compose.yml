@@ -1,53 +1,137 @@
-# Services won't normally be run directly — the root justfile wraps them.
-# Common commands: just up, just test, just check, just shell
+# BizRush services
+# Backend services (no profile) always start with any "just up" command.
+# Frontend services are opt-in via profiles: main-web, driver-web,
+# main-android, driver-android, admin.
+# Utility services (tools profile) are only used via "docker compose run".
 
 services:
-  # Quick commands (test, check, format) — smallest image
-  app-base:
-    build:
-      context: app
-      target: base
-    volumes:
-      - ./app:/app
-      # Persists Flutter package downloads
-      - pub-cache:/root/.pub-cache
-    tty: true
+  # ---------- Backend (always start) ---------- #
 
-  # Web dev server at http://localhost:8080
-  app-web:
+  # api:
+  #   build: ./api
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - db
+
+  # db:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_DB: bizrush
+  #     POSTGRES_USER: bizrush
+  #     POSTGRES_PASSWORD: bizrush
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+  # mockoon-orders:
+  #   image: mockoon/cli:latest
+  #   ...
+
+  # mockoon-payments:
+  #   image: mockoon/cli:latest
+  #   ...
+
+  # ---------- Frontend (opt-in via profiles) ---------- #
+
+  main-web:
+    profiles: [main-web]
     build:
-      context: app
+      context: ./apps
       target: web
     volumes:
-      - ./app:/app
-      # Persists Flutter package downloads
+      - ./apps:/workspace
       - pub-cache:/root/.pub-cache
-    # Expose port for web server
+    working_dir: /workspace/main
     ports:
-      - "8080:8080"
-    # Needed for Flutter hot-reload ("r" key)
-    stdin_open: true  
-    tty: true
-
-  # APK builds and emulator connection — heavy image, only used when needed
-  app-android:
-    build:
-      context: app
-      target: android
-    volumes:
-      - ./app:/app
-      # Persists Flutter package downloads
-      - pub-cache:/root/.pub-cache
-      # Persists Gradle downloads and build cache
-      - gradle-cache:/root/.gradle
-    # Needed for Flutter hot-reload ("r" key)
+      - "${MAIN_WEB_PORT:-8080}:8080"
     stdin_open: true
     tty: true
+
+  driver-web:
+    profiles: [driver-web]
+    build:
+      context: ./apps
+      target: web
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+    working_dir: /workspace/driver
+    ports:
+      - "${DRIVER_WEB_PORT:-8081}:8080"
+    stdin_open: true
+    tty: true
+
+  main-android:
+    profiles: [main-android]
+    build:
+      context: ./apps
+      target: android
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+      - gradle-cache:/root/.gradle
+    working_dir: /workspace/main
     environment:
-      # Android SDK configs
       - ANDROID_HOME=/opt/android-sdk
       - ANDROID_SDK_ROOT=/opt/android-sdk
+    command: bash -c "adb connect host.docker.internal:5555 2>/dev/null || true; flutter run"
+    stdin_open: true
+    tty: true
+
+  driver-android:
+    profiles: [driver-android]
+    build:
+      context: ./apps
+      target: android
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+      - gradle-cache:/root/.gradle
+    working_dir: /workspace/driver
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+    command: bash -c "adb connect host.docker.internal:5555 2>/dev/null || true; flutter run"
+    stdin_open: true
+    tty: true
+
+  # admin:
+  #   profiles: [admin]
+  #   build: ./admin
+  #   ports:
+  #     - "3001:3001"
+
+  # ---------- Utility (docker compose run only) ---------- #
+
+  dev-tools:
+    profiles: [tools]
+    build:
+      context: ./apps
+      target: base
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+    working_dir: /workspace
+    tty: true
+
+  android:
+    profiles: [tools]
+    build:
+      context: ./apps
+      target: android
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+      - gradle-cache:/root/.gradle
+    working_dir: /workspace
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+    tty: true
 
 volumes:
   pub-cache:
   gradle-cache:
+  # pgdata:

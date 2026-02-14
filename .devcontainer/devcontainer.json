@@ -5,7 +5,7 @@
   "workspaceFolder": "/workspace",
   "postCreateCommand": {
     "main-deps": "cd apps/main && flutter pub get",
-    "driver-deps": "cd apps/main && flutter pub get"
+    "driver-deps": "cd apps/driver && flutter pub get"
   },
   "customizations": {
     "vscode": {

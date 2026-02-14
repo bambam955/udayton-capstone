@@ -1,7 +1,11 @@
-# BizRush - project orchestration
-# Wraps app commands in Docker; falls back to local tools
+# BizRush — project orchestration
+# Backend services always start; frontend services are opt-in.
+# Usage: just up <service>...   where service is main-web, driver-web,
+#        main-android, driver-android, or admin
 
 set shell := ["bash", "-cu"]
+
+DC := "docker compose"
 
 # ---------- Main commands ---------- #
 
@@ -11,83 +15,71 @@ default:
     @JUST_LIST_HEADING="" just --list
     @echo ""
     @echo "App recipes (run via Docker):"
-    @JUST_LIST_HEADING="" just --justfile app/justfile --list
+    @JUST_LIST_HEADING="" just --justfile apps/justfile --list
 
-# Start web development server (http://localhost:8080)
-up:
-    docker compose up app-web
+# Start backend + selected frontend services
+up *services:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "{{services}}" ]; then
+        echo "Usage: just up <service>..."
+        echo "Services: main-web, driver-web, main-android, driver-android, admin"
+        exit 2
+    fi
+    flags=""
+    for svc in {{services}}; do
+        flags+=" --profile $svc"
+    done
+    {{ DC }} $flags up
 
 # Stop all services
 down:
-    docker compose down
+    {{ DC }} down
 
-# ---------- App commands (delegated to app/justfile inside container) ---------- #
+# ---------- App commands (delegated to apps/justfile inside container) ---------- #
 
 # Run tests
-test: (_docker-just-app "test")
+test app: (_docker-dev "test" app)
 
 # Analyze code
-check: (_docker-just-app "check")
+check app: (_docker-dev "check" app)
 
 # Format code
-format: (_docker-just-app "format")
+format app: (_docker-dev "format" app)
 
 # Install dependencies
-deps: (_docker-just-app "deps")
+deps app: (_docker-dev "deps" app)
 
 # Clean build artifacts
-clean: (_docker-just-app "clean")
+clean app: (_docker-dev "clean" app)
 
 # Run flutter doctor
-doctor: (_docker-just-app "doctor")
+doctor: (_docker-dev-raw "doctor")
 
-# ---------- Build/Run commands ---------- #
+# ---------- Build commands ---------- #
 
 # Build APK (debug or release)
-build target='debug': (_docker-just-app-android "build " + target)
+build app target='debug':
+    {{ DC }} run --rm android just build {{ app }} {{ target }}
 
-# Run on web (http://localhost:8080)
-run-web:
-    docker compose run --rm --service-ports app-web
-
-# Run on Android emulator
-run-android:
-    #!/usr/bin/env bash
-    set -euxo pipefail
-    case "$(uname -s)" in
-        Linux|Darwin)
-            docker compose run --rm app-android bash -c \
-                "adb connect host.docker.internal:5555 2>/dev/null || true; flutter run"
-            ;;
-        MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            if ! command -v flutter >/dev/null 2>&1; then
-                echo "❌ Error: Flutter not found. Install from https://flutter.dev" >&2
-                exit 1
-            fi
-            echo "Windows: Using local Flutter for emulator access" >&2
-            cd app && flutter run
-            ;;
-        *)
-            echo "❌ Unknown OS: $(uname -s)" >&2
-            exit 1
-            ;;
-    esac
+# ---------- Dev environment ---------- #
 
 # Open a shell in the dev container
 shell:
-    cd .devcontainer && docker compose run --rm devcontainer bash
-
-# ---------- Setup ---------- #
+    {{ DC }} run --rm dev-tools bash
 
 # Verify and set up the development environment
 setup:
     #!/usr/bin/env bash
     set -euo pipefail
-    command -v pre-commit >/dev/null && pre-commit install || { echo "❌ pre-commit not installed"; }
+    command -v pre-commit >/dev/null && pre-commit install || echo "⚠ pre-commit not installed (optional)"
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
-    docker compose build
-    docker compose run --rm app-base just deps
-    docker compose run --rm app-android just doctor
+    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android \
+        {{ DC }} build
+    {{ DC }} run --rm dev-tools just deps main
+    {{ DC }} run --rm dev-tools just deps driver
+
+# ---------- Emulator helpers (run on host) ---------- #
 
 # Start emulator on host (for connecting from Docker)
 emulator:
@@ -108,18 +100,18 @@ emulator:
             ;;
     esac
 
-# Enable ADB over TCP (run on host before run-android)
+# Enable ADB over TCP (run on host before using android profiles)
 adb-tcp:
     adb tcpip 5555
 
 # ---------- Internal ---------- #
 
-# Run an app justfile recipe inside the base container
+# Run an apps/justfile recipe inside the dev-tools container
 [private]
-_docker-just-app *args:
-    docker compose run --rm app-base just {{args}}
+_docker-dev recipe app:
+    {{ DC }} run --rm dev-tools just {{ recipe }} {{ app }}
 
-# Run an app justfile recipe inside the android container
+# Run an apps/justfile recipe (no app arg) inside the dev-tools container
 [private]
-_docker-just-app-android *args:
-    docker compose run --rm app-android just {{args}}
+_docker-dev-raw recipe:
+    {{ DC }} run --rm dev-tools just {{ recipe }}

@@ -8,8 +8,8 @@
 #
 # mise manages Flutter and just versions inside the container, matching how
 # we manage tools on the host. The root justfile delegates commands into the
-# container via `docker compose run --rm app-base just <recipe>`, so the
-# app/justfile can be simple Flutter calls with no Docker awareness.
+# container via `docker compose run --rm dev-tools just <recipe>`, so
+# apps/justfile can be simple Flutter calls with no Docker awareness.
 #
 # VS Code connects to this container via Dev Containers (.devcontainer/),
 # so the Dart extension gets full language support using the container's
@@ -44,7 +44,7 @@ RUN flutter config --no-analytics \
     --no-enable-macos-desktop \
     --no-enable-windows-desktop
 
-WORKDIR /app
+WORKDIR /workspace
 
 # =============================================================================
 # Web: base + pre-cached web build toolchain

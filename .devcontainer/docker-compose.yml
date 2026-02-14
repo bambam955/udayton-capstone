@@ -1,4 +1,4 @@
-# Dev container override — mounts the full project instead of just app/
+# Dev container — reuses the apps base image, mounts the full project.
 services:
   devcontainer:
     build:
