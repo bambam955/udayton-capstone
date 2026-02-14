@@ -44,33 +44,33 @@ up *services:
 
 # Stop all services
 down:
-    {{ DC }} down
+    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android {{ DC }} down
 
 # ---------- Dev commands (default to all components) ---------- #
 
 # Run tests
 test *components:
-    just _foreach test {{components}}
+    just _foreach-component test {{components}}
 
 # Analyze code
 check *components:
-    just _foreach check {{components}}
+    just _foreach-component check {{components}}
 
 # Format code
 format *components:
-    just _foreach format {{components}}
+    just _foreach-component format {{components}}
 
 # Install dependencies
 deps *components:
-    just _foreach deps {{components}}
+    just _foreach-component deps {{components}}
 
 # Clean build artifacts
 clean *components:
-    just _foreach clean {{components}}
+    just _foreach-component clean {{components}}
 
 # Run flutter doctor
 doctor:
-    {{ DC }} run --rm android just doctor
+    {{ DC }} run --rm apps-android just doctor
 
 # ---------- Build commands ---------- #
 
@@ -80,7 +80,7 @@ build component *args:
     set -euo pipefail
     case "{{component}}" in
         main|driver)
-            {{ DC }} run --rm android just build "{{component}}" {{args}}
+            {{ DC }} run --rm apps-android just build "{{component}}" {{args}}
             ;;
         # admin)
         #     {{ DC }} run --rm admin-dev just build {{args}}
@@ -99,7 +99,7 @@ build component *args:
 
 # Open a shell in the dev container
 shell:
-    {{ DC }} run --rm dev-tools bash
+    {{ DC }} run --rm apps-dev-tools bash
 
 # Verify and set up the development environment
 setup:
@@ -115,7 +115,7 @@ setup:
 
 # Loop over components (or all if none given) and run a recipe for each
 [private]
-_foreach recipe *components:
+_foreach-component recipe *components:
     #!/usr/bin/env bash
     set -euo pipefail
     targets="{{components}}"
@@ -133,7 +133,7 @@ _run-for recipe component:
     set -euo pipefail
     case "{{component}}" in
         main|driver)
-            {{ DC }} run --rm dev-tools just "{{recipe}}" "{{component}}"
+            {{ DC }} run --rm apps-dev-tools just "{{recipe}}" "{{component}}"
             ;;
         # admin)
         #     {{ DC }} run --rm admin-dev just "{{recipe}}"

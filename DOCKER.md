@@ -8,15 +8,15 @@ The project uses Docker Compose **profiles** to manage services:
 
 - **Backend services** (API, DB, Mockoon mocks) have no profile — they always start with any `just up` command.
 - **Frontend services** are opt-in via profiles: `main-web`, `driver-web`, `main-android`, `driver-android`, `admin`.
-- **Utility services** (`dev-tools`, `android`) are used only via `docker compose run` for one-off commands like test/build.
+- **Utility services** (`apps-dev-tools`, `apps-android`) are used only via `docker compose run` for one-off commands like test/build.
 
 Both Flutter apps share a single multi-stage Dockerfile (`apps/Dockerfile`):
 
 | Dockerfile Target | What it adds | Used by |
 |-------------------|--------------|---------|
-| `base` | Flutter + just via mise | dev-tools, devcontainer |
+| `base` | Flutter + just via mise | apps-dev-tools, devcontainer |
 | `web` | Web build toolchain | main-web, driver-web |
-| `android` | JDK + Android SDK | android, main-android, driver-android |
+| `android` | JDK + Android SDK | apps-android, main-android, driver-android |
 
 First build takes ~10-15 minutes to download SDKs. Subsequent builds use cache.
 

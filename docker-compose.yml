@@ -105,7 +105,7 @@ services:
 
   # ---------- Utility (docker compose run only) ---------- #
 
-  dev-tools:
+  apps-dev-tools:
     profiles: [tools]
     build:
       context: ./apps
@@ -116,7 +116,7 @@ services:
     working_dir: /workspace
     tty: true
 
-  android:
+  apps-android:
     profiles: [tools]
     build:
       context: ./apps
