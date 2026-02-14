@@ -33,10 +33,14 @@ ENV PATH="/opt/mise/shims:${PATH}"
 ENV CI=true
 ENV FLUTTER_SUPPRESS_ANALYTICS=true
 
-# Install flutter and just via mise
-RUN curl https://mise.run | sh && \
-    /root/.local/bin/mise use -g flutter@3.38 && \
-    /root/.local/bin/mise use -g just && \
+# Install mise
+RUN curl https://mise.run | MISE_VERSION=v2026.2.10 sh
+
+# Install flutter (separate layer for independent caching because it's slow)
+RUN /root/.local/bin/mise use -g flutter@3.38.10
+
+# Install just and regenerate shims
+RUN /root/.local/bin/mise use -g just@1.46 && \
     /root/.local/bin/mise reshim
 
 RUN flutter config --no-analytics \
