@@ -23,6 +23,7 @@ This structure ensures the application supports:
 - Payment authorization and refund processing  
 - Customer support workflows and engagement features  
 
-The following diagram illustrates all entities and their relationships in detail.
+The following diagrams illustrates all entities and their relationships in detail.
+
 
 ![E-R Diagram](<BizRush-Customer E-R.drawio.png>)
