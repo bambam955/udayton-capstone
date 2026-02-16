@@ -1,6 +1,32 @@
 # Use Case Descriptions (Mockoon POC)
 All use cases below follow the same fields and are aligned to a proof-of-concept using Mockoon mock APIs.
 
+# Table of Contents
+
+1. [Introduction](#introduction)
+
+2. Customer Use Cases  
+   2.1 [C1 – Browse Mock Products and Build Cart](#c1--browse-mock-products-and-build-cart)  
+   2.2 [C2 – Simulate Retailer Account Linking](#c2--simulate-retailer-account-linking)  
+   2.3 [C3 – Place Mock Pickup Order](#c3--place-mock-pickup-order)  
+   2.4 [C4 – Track Simulated Order Status](#c4--track-simulated-order-status)  
+   2.5 [C5 – Submit Mock Support Requests](#c5--submit-mock-support-requests)  
+
+3. Driver Use Cases  
+   3.1 [D1 – Driver Login](#d1--driver-login)  
+   3.2 [D2 – Fetch Available Mock Deliveries](#d2--fetch-available-mock-deliveries)  
+   3.3 [D3 – Accept Mock Delivery](#d3--accept-mock-delivery)  
+   3.4 [D4 – Confirm Pickup](#d4--confirm-pickup)  
+   3.5 [D5 – Complete Delivery with Proof (Photo)](#d5--complete-delivery-with-proof-photo)  
+
+4. Admin Use Cases  
+   4.1 [A1 – View All Orders](#a1--view-all-orders)  
+   4.2 [A2 – Manually Update Order Status](#a2--manually-update-order-status)  
+   4.3 [A3 – Issue Mock Refund](#a3--issue-mock-refund)  
+   4.4 [A4 – View Drivers](#a4--view-drivers)  
+   4.5 [A5 – Simulate API Failure](#a5--simulate-api-failure)  
+
+
 ---
 
 ## C1 — Browse Mock Products and Build Cart
