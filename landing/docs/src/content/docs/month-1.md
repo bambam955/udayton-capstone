@@ -1,0 +1,24 @@
+---
+title: Month 1
+description: Month 1 progress updates for the BizRush project.
+---
+
+## Goals for the Month
+
+List the goals planned for Month 1.
+
+## Work Completed
+
+Summarize what was completed during Month 1.
+
+## Challenges / Blockers
+
+Document issues that slowed or blocked progress.
+
+## Key Learnings
+
+Capture important lessons from Month 1.
+
+## Next Steps
+
+List actions to move into Month 2.

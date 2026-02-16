@@ -6,19 +6,18 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'My Docs',
+			title: 'BizRush',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
 			sidebar: [
 				{
-					label: 'Guides',
+					label: 'Project',
 					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
+						{ label: 'Home', slug: 'index' },
+						{ label: 'Project Overview', slug: 'project-overview' },
+						{ label: 'Month 1', slug: 'month-1' },
+						{ label: 'Month 2', slug: 'month-2' },
+						{ label: 'Month 3', slug: 'month-3' },
 					],
-				},
-				{
-					label: 'Reference',
-					autogenerate: { directory: 'reference' },
 				},
 			],
 		}),
