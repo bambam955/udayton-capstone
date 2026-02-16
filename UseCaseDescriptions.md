@@ -1,394 +1,797 @@
-# Use Case Descriptions (Mockoon POC)
-All use cases below follow the same fields and are aligned to a proof-of-concept using Mockoon mock APIs.
+# Grocery Pickup-to-Delivery Marketplace App  
+## Use Case Descriptions (Mockoon Proof of Concept)
+
+---
 
 # Table of Contents
 
-1. [Introduction](#introduction)
+1. Customer Use Cases  
+   1.1 [C1 – Browse Mock Products and Build Cart](#c1--browse-mock-products-and-build-cart)  
+   1.2 [C2 – Simulate Retailer Account Linking](#c2--simulate-retailer-account-linking)  
+   1.3 [C3 – Place Mock Pickup Order](#c3--place-mock-pickup-order)  
+   1.4 [C4 – Track Simulated Order Status](#c4--track-simulated-order-status)  
+   1.5 [C5 – Submit Mock Support Requests](#c5--submit-mock-support-requests)  
 
-2. Customer Use Cases  
-   2.1 [C1 – Browse Mock Products and Build Cart](#c1--browse-mock-products-and-build-cart)  
-   2.2 [C2 – Simulate Retailer Account Linking](#c2--simulate-retailer-account-linking)  
-   2.3 [C3 – Place Mock Pickup Order](#c3--place-mock-pickup-order)  
-   2.4 [C4 – Track Simulated Order Status](#c4--track-simulated-order-status)  
-   2.5 [C5 – Submit Mock Support Requests](#c5--submit-mock-support-requests)  
+2. Driver Use Cases  
+   2.1 [D1 – Driver Login](#d1--driver-login)  
+   2.2 [D2 – Fetch Available Mock Deliveries](#d2--fetch-available-mock-deliveries)  
+   2.3 [D3 – Accept Mock Delivery](#d3--accept-mock-delivery)  
+   2.4 [D4 – Confirm Pickup](#d4--confirm-pickup)  
+   2.5 [D5 – Complete Delivery with Proof (Photo)](#d5--complete-delivery-with-proof-photo)  
 
-3. Driver Use Cases  
-   3.1 [D1 – Driver Login](#d1--driver-login)  
-   3.2 [D2 – Fetch Available Mock Deliveries](#d2--fetch-available-mock-deliveries)  
-   3.3 [D3 – Accept Mock Delivery](#d3--accept-mock-delivery)  
-   3.4 [D4 – Confirm Pickup](#d4--confirm-pickup)  
-   3.5 [D5 – Complete Delivery with Proof (Photo)](#d5--complete-delivery-with-proof-photo)  
-
-4. Admin Use Cases  
-   4.1 [A1 – View All Orders](#a1--view-all-orders)  
-   4.2 [A2 – Manually Update Order Status](#a2--manually-update-order-status)  
-   4.3 [A3 – Issue Mock Refund](#a3--issue-mock-refund)  
-   4.4 [A4 – View Drivers](#a4--view-drivers)  
-   4.5 [A5 – Simulate API Failure](#a5--simulate-api-failure)  
-
+3. Admin Use Cases  
+   3.1 [A1 – View All Orders](#a1--view-all-orders)  
+   3.2 [A2 – Manually Update Order Status](#a2--manually-update-order-status)  
+   3.3 [A3 – Issue Mock Refund](#a3--issue-mock-refund)  
+   3.4 [A4 – View Drivers](#a4--view-drivers)  
+   3.5 [A5 – Simulate API Failure](#a5--simulate-api-failure)  
 
 ---
 
-## C1 — Browse Mock Products and Build Cart
+# Customer Use Cases
+
+---
+
+## C1 – Browse Mock Products and Build Cart
+
+### Use Case Description
 - **Use Case ID:** C1  
-- **Use Case Name:** Browse Mock Products and Build Cart  
 - **Primary Actor:** Customer  
 - **Goal:** Browse mock retailer products and add/remove items to a cart.  
 - **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Mockoon is running; customer app is open; network access available.  
-- **Trigger:** Customer selects a retailer and opens the product browsing screen.  
-- **Main Success Scenario:**
-  1. Customer selects a retailer (Mock Walmart/Target).
-  2. System requests product list from Mockoon.
-  3. System displays product list.
-  4. Customer adds one or more items to cart.
-  5. System updates cart totals locally and displays updated cart state.
-- **Alternate / Exception Flows:**
-  - **A1:** Product list is empty → System displays “No products available.”
-  - **E1:** Mockoon endpoint fails/timeouts → System displays error and provides retry.
-- **Postconditions (Success):** Cart contains selected items with correct quantities and totals.  
-- **Postconditions (Failure):** Cart is unchanged; error state displayed if applicable.  
-- **Mockoon Endpoints / Data:** `GET /products?retailer={retailerId}`  
-- **Notes / Special Requirements:** Cart is local-only for POC (in-memory or local storage).
+- **Level:** User Goal  
+
+### Preconditions
+- Mockoon server is running.
+- Customer application is launched.
+- Network connectivity is available.
+
+### Trigger
+Customer selects a retailer and navigates to the product browsing screen.
+
+### Main Success Scenario
+1. Customer selects a mock retailer (Walmart or Target).
+2. System sends a request to Mockoon to retrieve product data.
+3. Mockoon returns a list of mock products.
+4. System displays products in the UI.
+5. Customer selects one or more products and adds them to the cart.
+6. System updates cart contents and recalculates totals locally.
+7. Updated cart state is displayed to the customer.
+
+### Alternate Flows
+- **A1: No Products Returned**
+  - Mockoon returns an empty array.
+  - System displays “No products available.”
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Mockoon returns an error or fails to respond.
+  - System displays an error message.
+  - Customer may retry the request.
+
+### Postconditions (Success)
+- Cart contains selected items.
+- Cart totals are updated correctly.
+- Product list is visible.
+
+### Postconditions (Failure)
+- Cart remains unchanged.
+- Error state is displayed to the customer.
+
+### Mockoon Endpoint
+`GET /products?retailer={retailerId}`
+
+### Special Requirements
+- Cart data is stored locally for POC (no backend persistence).
+- Pricing and availability are mock values only.
 
 ---
 
-## C2 — Simulate Retailer Account Linking
+## C2 – Simulate Retailer Account Linking
+
+### Use Case Description
 - **Use Case ID:** C2  
-- **Use Case Name:** Simulate Retailer Account Linking  
 - **Primary Actor:** Customer  
-- **Goal:** Simulate connecting a retailer account (no real OAuth).  
+- **Goal:** Simulate connecting a retailer account using Mockoon (no real OAuth).  
 - **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Mockoon is running; customer app is open.  
-- **Trigger:** Customer taps “Connect Walmart” or “Connect Target.”  
-- **Main Success Scenario:**
-  1. Customer taps connect for a retailer.
-  2. System sends a link request to Mockoon.
-  3. Mockoon returns a mock token and connection status.
-  4. System stores token locally.
-  5. System updates UI to show retailer as connected.
-- **Alternate / Exception Flows:**
-  - **E1:** Mockoon returns error (401/500) → System shows failure and keeps retailer disconnected.
-- **Postconditions (Success):** Retailer connection marked as connected; token stored locally.  
-- **Postconditions (Failure):** Retailer remains disconnected; token not stored.  
-- **Mockoon Endpoints / Data:** `POST /connect-retailer`  
-- **Notes / Special Requirements:** Token expiry can be mocked to test reconnect UI.
+- **Level:** User Goal  
+
+### Preconditions
+- Mockoon server is running.
+- Customer is logged in or at least has an active app session.
+- Customer is on the retailer connection/settings screen.
+
+### Trigger
+Customer taps “Connect Walmart” or “Connect Target.”
+
+### Main Success Scenario
+1. Customer chooses a retailer to connect.
+2. System sends a connection request to Mockoon.
+3. Mockoon returns a mock access token and a connected status.
+4. System stores the token locally (secure storage or local storage for POC).
+5. System updates UI to show the retailer as connected.
+
+### Alternate Flows
+- **A1: Retailer Already Connected**
+  - System detects existing stored token for that retailer.
+  - System displays “Connected” without calling Mockoon.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Mockoon returns an error or fails to respond.
+  - System displays error and keeps retailer disconnected.
+  - Customer may retry.
+
+### Postconditions (Success)
+- Retailer connection state is set to connected.
+- Mock token is stored locally.
+
+### Postconditions (Failure)
+- Retailer remains disconnected.
+- No token stored/updated.
+
+### Mockoon Endpoint
+`POST /connect-retailer`
+
+### Special Requirements
+- Token expiry can be simulated to test reconnect flows.
+- Connection is for demonstration only, not real retailer authentication.
 
 ---
 
-## C3 — Place Mock Pickup Order
+## C3 – Place Mock Pickup Order
+
+### Use Case Description
 - **Use Case ID:** C3  
-- **Use Case Name:** Place Mock Pickup Order  
 - **Primary Actor:** Customer  
-- **Goal:** Create a mock pickup order and receive an order ID for tracking.  
+- **Goal:** Submit an order payload to Mockoon and receive an orderId and initial status.  
 - **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Cart has items; retailer is connected (mock); Mockoon running.  
-- **Trigger:** Customer taps “Place Order” at checkout.  
-- **Main Success Scenario:**
-  1. Customer reviews cart and checkout details.
-  2. System submits order payload to Mockoon.
-  3. Mockoon returns `orderId` and status `SUBMITTED`.
-  4. System stores order locally and displays confirmation.
-  5. Customer can open tracking for the new order.
-- **Alternate / Exception Flows:**
-  - **A1:** Retailer not connected → System prompts customer to connect retailer before ordering.
-  - **E1:** Mockoon returns error/timeout → System shows error and does not create order.
-- **Postconditions (Success):** Order created with orderId; visible in order history; status initialized.  
-- **Postconditions (Failure):** No order created; customer remains on checkout with error shown.  
-- **Mockoon Endpoints / Data:** `POST /orders`  
-- **Notes / Special Requirements:** Payment is simulated for POC (no real charge/capture).
+- **Level:** User Goal  
+
+### Preconditions
+- Customer has items in cart.
+- Retailer is connected (mock connection state true).
+- Mockoon server is running.
+
+### Trigger
+Customer taps “Place Order” on the checkout screen.
+
+### Main Success Scenario
+1. Customer reviews checkout (address, delivery notes, items).
+2. System validates cart and checkout fields locally.
+3. System sends an order creation request to Mockoon containing cart and checkout details.
+4. Mockoon returns an `orderId` and status `SUBMITTED`.
+5. System stores the order locally and adds it to order history.
+6. System displays confirmation screen with the orderId.
+7. Customer can navigate to tracking for the new order.
+
+### Alternate Flows
+- **A1: Retailer Not Connected**
+  - System detects no token/connection for selected retailer.
+  - System blocks checkout and prompts customer to connect retailer.
+
+- **A2: Cart Empty**
+  - System detects cart has no items.
+  - System blocks checkout and prompts customer to add items.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Mockoon returns an error or fails to respond.
+  - System displays an error message and does not create an order.
+  - Customer remains on checkout and may retry.
+
+### Postconditions (Success)
+- Order exists locally with assigned `orderId`.
+- Order status set to `SUBMITTED`.
+- Confirmation displayed.
+
+### Postconditions (Failure)
+- No new order created.
+- Customer sees error and remains in checkout flow.
+
+### Mockoon Endpoint
+`POST /orders`
+
+### Special Requirements
+- Payment is simulated only (no real payment provider).
+- Order creation should work deterministically for demo.
 
 ---
 
-## C4 — Track Simulated Order Status
+## C4 – Track Simulated Order Status
+
+### Use Case Description
 - **Use Case ID:** C4  
-- **Use Case Name:** Track Simulated Order Status  
 - **Primary Actor:** Customer  
-- **Goal:** View order status changes over time using simulated responses.  
+- **Goal:** Display changing order statuses by polling Mockoon status endpoint.  
 - **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** An order exists; Mockoon running; app can poll status endpoint.  
-- **Trigger:** Customer opens “Track Order” for a selected order.  
-- **Main Success Scenario:**
-  1. Customer opens tracking screen for an order.
-  2. System requests current status from Mockoon.
-  3. System displays status timeline.
-  4. System polls status endpoint at intervals.
-  5. Timeline updates as Mockoon returns new statuses.
-- **Alternate / Exception Flows:**
-  - **E1:** Mockoon returns error/timeout → System displays warning and keeps last known status.
-  - **A1:** Status skips forward (scripted) → System updates to newest status without breaking UI.
-- **Postconditions (Success):** Latest simulated status displayed with history/timeline.  
-- **Postconditions (Failure):** Last known status displayed with error indicator.  
-- **Mockoon Endpoints / Data:** `GET /orders/{orderId}/status`  
-- **Notes / Special Requirements:** Mockoon can rotate statuses per request or scenario state.
+- **Level:** User Goal  
+
+### Preconditions
+- Customer has an existing orderId.
+- Mockoon server is running.
+- Tracking screen can poll an endpoint on a timer.
+
+### Trigger
+Customer opens the tracking screen for a specific order.
+
+### Main Success Scenario
+1. Customer opens “Track Order” for an existing orderId.
+2. System requests current status from Mockoon.
+3. Mockoon returns a status value (e.g., SUBMITTED, PICKING, READY_FOR_PICKUP, OUT_FOR_DELIVERY, DELIVERED).
+4. System updates timeline UI to reflect returned status.
+5. System continues polling the status endpoint at a set interval.
+6. System updates timeline each time a new status is returned.
+
+### Alternate Flows
+- **A1: Status Skips Forward**
+  - Mockoon returns a newer status than previously displayed (e.g., SUBMITTED → READY_FOR_PICKUP).
+  - System updates directly to newest status without error.
+
+- **A2: Status Unchanged**
+  - Mockoon returns same status as last poll.
+  - System keeps UI unchanged.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Mockoon returns an error or fails to respond.
+  - System displays warning (“Reconnecting…”) and retains last known status.
+  - System continues polling and updates if API recovers.
+
+### Postconditions (Success)
+- Latest simulated status is displayed in tracking timeline.
+
+### Postconditions (Failure)
+- UI displays last known status plus error state.
+- No crash or broken tracking screen.
+
+### Mockoon Endpoint
+`GET /orders/{orderId}/status`
+
+### Special Requirements
+- Do not use `{}` braces in Mermaid node labels (parser issue).
+- Mockoon should be configured to rotate or scenario-drive statuses for demo.
 
 ---
 
-## C5 — Submit Mock Support Requests
+## C5 – Submit Mock Support Requests
+
+### Use Case Description
 - **Use Case ID:** C5  
-- **Use Case Name:** Submit Mock Support Requests  
 - **Primary Actor:** Customer  
-- **Goal:** Create a mock support ticket and receive confirmation.  
+- **Goal:** Submit a support ticket to Mockoon and receive a ticket confirmation.  
 - **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Customer app open; Mockoon running; orderId optional.  
-- **Trigger:** Customer selects “Support” and submits an issue form.  
-- **Main Success Scenario:**
-  1. Customer selects issue type and enters details.
-  2. System submits ticket request to Mockoon.
-  3. Mockoon returns `ticketId` and status `OPEN`.
-  4. System displays ticket confirmation to customer.
-- **Alternate / Exception Flows:**
-  - **E1:** Mockoon returns error/timeout → System shows error and provides retry.
-- **Postconditions (Success):** Ticket confirmation displayed; ticketId available for reference.  
-- **Postconditions (Failure):** Ticket not created; error displayed.  
-- **Mockoon Endpoints / Data:** `POST /support/tickets`  
-- **Notes / Special Requirements:** Store tickets locally only if needed for demo.
+- **Level:** User Goal  
+
+### Preconditions
+- Customer app is running.
+- Mockoon server is running.
+- Customer can access support form.
+- OrderId optional (can attach to ticket if available).
+
+### Trigger
+Customer submits a support form.
+
+### Main Success Scenario
+1. Customer selects issue type (missing item, late delivery, damaged item, etc.).
+2. Customer enters details and optionally attaches an orderId.
+3. System sends ticket creation request to Mockoon.
+4. Mockoon returns `ticketId` and status `OPEN`.
+5. System displays confirmation and ticketId to customer.
+
+### Alternate Flows
+- **A1: No OrderId Provided**
+  - System submits ticket without orderId.
+  - Ticket still created for demo.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Mockoon returns error or fails to respond.
+  - System displays error and allows retry.
+  - No ticket confirmation shown.
+
+### Postconditions (Success)
+- Customer sees ticketId confirmation.
+
+### Postconditions (Failure)
+- Ticket not created.
+- Error displayed.
+
+### Mockoon Endpoint
+`POST /support/tickets`
+
+### Special Requirements
+- Support ticket storage can be mock-only.
+- Keep request schema simple for demo (type, message, orderId optional).
 
 ---
 
-## D1 — Driver Login
+# Driver Use Cases
+
+---
+
+## D1 – Driver Login
+
+### Use Case Description
 - **Use Case ID:** D1  
-- **Use Case Name:** Driver Login  
 - **Primary Actor:** Driver  
-- **Goal:** Log in as a driver and load a driver dashboard using mock auth.  
+- **Goal:** Authenticate driver and load the driver dashboard using mock auth.  
 - **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Mockoon running; driver app open; network access.  
-- **Trigger:** Driver submits login credentials.  
-- **Main Success Scenario:**
-  1. Driver enters credentials and taps Login.
-  2. System submits login request to Mockoon.
-  3. Mockoon returns mock token and driver profile.
-  4. System stores token locally.
-  5. System loads driver dashboard.
-- **Alternate / Exception Flows:**
-  - **E1:** Invalid credentials (401) → System shows login failure.
-  - **E2:** API error/timeout → System shows error and retry option.
-- **Postconditions (Success):** Driver session active; dashboard visible.  
-- **Postconditions (Failure):** No session created; login error displayed.  
-- **Mockoon Endpoints / Data:** `POST /auth/driver/login`  
-- **Notes / Special Requirements:** Token persistence local-only for POC.
+- **Level:** User Goal  
+
+### Preconditions
+- Mockoon server is running.
+- Driver app is launched.
+- Network connectivity available.
+
+### Trigger
+Driver submits login credentials.
+
+### Main Success Scenario
+1. Driver enters username/password (mock).
+2. System sends login request to Mockoon.
+3. Mockoon returns mock driver token and driver profile.
+4. System stores token locally.
+5. System loads the driver dashboard.
+
+### Alternate Flows
+- **A1: Already Logged In**
+  - Token exists locally.
+  - System loads dashboard without login call.
+
+### Exception Flows
+- **E1: Invalid Credentials (401)**
+  - Mockoon returns 401.
+  - System shows login failure message.
+
+- **E2: API Error or Timeout**
+  - System shows error and retry option.
+
+### Postconditions (Success)
+- Driver session active.
+- Dashboard displayed.
+
+### Postconditions (Failure)
+- No session created.
+- Driver remains on login screen.
+
+### Mockoon Endpoint
+`POST /auth/driver/login`
+
+### Special Requirements
+- POC can use hardcoded driver credentials.
+- Token persistence is local-only.
 
 ---
 
-## D2 — Fetch Available Mock Deliveries
+## D2 – Fetch Available Mock Deliveries
+
+### Use Case Description
 - **Use Case ID:** D2  
-- **Use Case Name:** Fetch Available Mock Deliveries  
 - **Primary Actor:** Driver  
-- **Goal:** View a list of available deliveries from mock dispatch feed.  
+- **Goal:** View a list of available deliveries from Mockoon.  
 - **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Driver logged in (mock token present); Mockoon running.  
-- **Trigger:** Driver opens “Available Deliveries.”  
-- **Main Success Scenario:**
-  1. Driver opens available deliveries screen.
-  2. System requests delivery list from Mockoon.
-  3. System displays available delivery cards with key info.
-- **Alternate / Exception Flows:**
-  - **E1:** API error/timeout → System displays error and retry option.
-  - **A1:** Empty list → System displays “No deliveries available.”
-- **Postconditions (Success):** Delivery list displayed.  
-- **Postconditions (Failure):** No list displayed; error shown.  
-- **Mockoon Endpoints / Data:** `GET /deliveries/available`  
-- **Notes / Special Requirements:** Jobs can be static or scenario-based in Mockoon.
+- **Level:** User Goal  
+
+### Preconditions
+- Driver is logged in (token exists).
+- Mockoon server is running.
+
+### Trigger
+Driver opens “Available Deliveries.”
+
+### Main Success Scenario
+1. Driver navigates to Available Deliveries screen.
+2. System sends request to Mockoon for job list.
+3. Mockoon returns a list of available delivery jobs.
+4. System displays job cards (pickup location, dropoff, pay estimate, status).
+
+### Alternate Flows
+- **A1: No Jobs Available**
+  - Mockoon returns empty list.
+  - System displays “No deliveries available.”
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Error message displayed.
+  - Retry allowed.
+
+### Postconditions (Success)
+- Driver sees list of jobs.
+
+### Postconditions (Failure)
+- No list shown; error displayed.
+
+### Mockoon Endpoint
+`GET /deliveries/available`
+
+### Special Requirements
+- Jobs can be static JSON or scenario-driven.
 
 ---
 
-## D3 — Accept Mock Delivery
+## D3 – Accept Mock Delivery
+
+### Use Case Description
 - **Use Case ID:** D3  
-- **Use Case Name:** Accept Mock Delivery  
 - **Primary Actor:** Driver  
-- **Goal:** Accept a mock delivery and move it into “assigned/active” state.  
+- **Goal:** Accept a delivery job and move it into an assigned/active state.  
 - **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Driver logged in; at least one delivery available.  
-- **Trigger:** Driver taps “Accept” on a delivery job.  
-- **Main Success Scenario:**
-  1. Driver selects a delivery job.
-  2. System sends accept request to Mockoon.
-  3. Mockoon returns confirmation with updated status `ASSIGNED`.
-  4. System displays active delivery screen for that job.
-- **Alternate / Exception Flows:**
-  - **E1:** Delivery no longer available (409/404) → System shows “Job no longer available.”
-  - **E2:** API error/timeout → System shows error and retry.
-- **Postconditions (Success):** Delivery assigned to driver; active job shown.  
-- **Postconditions (Failure):** Delivery remains unassigned; error displayed.  
-- **Mockoon Endpoints / Data:** `POST /deliveries/{deliveryId}/accept`  
-- **Notes / Special Requirements:** For POC, driverId can be fixed or read from mock profile.
+- **Level:** User Goal  
+
+### Preconditions
+- Driver logged in.
+- At least one available delivery exists.
+- Mockoon server running.
+
+### Trigger
+Driver taps “Accept” on a delivery.
+
+### Main Success Scenario
+1. Driver selects a job and taps Accept.
+2. System sends accept request to Mockoon with driverId and deliveryId.
+3. Mockoon returns confirmation with status `ASSIGNED`.
+4. System updates UI to show the active delivery screen.
+
+### Alternate Flows
+- **A1: Driver Cancels Accept**
+  - Driver backs out before confirming.
+  - No request sent; job remains available.
+
+### Exception Flows
+- **E1: Job No Longer Available (404/409)**
+  - System shows “Job no longer available.”
+  - Returns to job list.
+
+- **E2: API Error or Timeout**
+  - Error shown and retry allowed.
+
+### Postconditions (Success)
+- Delivery marked assigned in UI.
+- Active job displayed.
+
+### Postconditions (Failure)
+- Delivery remains unassigned.
+- Driver stays on job list.
+
+### Mockoon Endpoint
+`POST /deliveries/{deliveryId}/accept`
+
+### Special Requirements
+- For POC, driverId can be pulled from mock profile.
 
 ---
 
-## D4 — Confirm Pickup
+## D4 – Confirm Pickup
+
+### Use Case Description
 - **Use Case ID:** D4  
-- **Use Case Name:** Confirm Pickup  
 - **Primary Actor:** Driver  
-- **Goal:** Mark a delivery as picked up and begin delivery phase.  
+- **Goal:** Confirm pickup to move delivery into “out for delivery.”  
 - **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Driver has an assigned job; order is ready for pickup (simulated).  
-- **Trigger:** Driver taps “Confirm Pickup.”  
-- **Main Success Scenario:**
-  1. Driver opens active delivery.
-  2. Driver taps confirm pickup.
-  3. System sends pickup confirmation to Mockoon.
-  4. Mockoon returns updated status `OUT_FOR_DELIVERY`.
-  5. System updates UI to show delivery phase.
-- **Alternate / Exception Flows:**
-  - **A1:** Order not ready (status mismatch) → System shows “Not ready yet.”
-  - **E1:** API error/timeout → System shows error and retry.
-- **Postconditions (Success):** Delivery state changes to out-for-delivery in UI.  
-- **Postconditions (Failure):** Delivery state unchanged; error displayed.  
-- **Mockoon Endpoints / Data:** `POST /deliveries/{deliveryId}/pickup`  
-- **Notes / Special Requirements:** Readiness can be simulated by admin updates or Mockoon scenario.
+- **Level:** User Goal  
+
+### Preconditions
+- Driver has an assigned delivery.
+- Delivery is marked READY_FOR_PICKUP (simulated).
+- Mockoon running.
+
+### Trigger
+Driver taps “Confirm Pickup.”
+
+### Main Success Scenario
+1. Driver opens active delivery details.
+2. Driver taps Confirm Pickup.
+3. System sends pickup confirmation request to Mockoon.
+4. Mockoon returns updated status `OUT_FOR_DELIVERY`.
+5. System updates UI to show delivery phase and navigation.
+
+### Alternate Flows
+- **A1: Confirm Pickup Requires Code**
+  - Driver enters mock pickup code.
+  - System includes code in request.
+
+### Exception Flows
+- **E1: Not Ready Yet**
+  - Mockoon returns status mismatch error.
+  - UI shows “Order not ready.”
+
+- **E2: API Error or Timeout**
+  - Error shown; retry allowed.
+
+### Postconditions (Success)
+- Delivery status moves to OUT_FOR_DELIVERY.
+
+### Postconditions (Failure)
+- Delivery status unchanged.
+- Error shown.
+
+### Mockoon Endpoint
+`POST /deliveries/{deliveryId}/pickup`
+
+### Special Requirements
+- Pickup readiness can be driven by Admin status update in POC.
 
 ---
 
-## D5 — Complete Delivery with Proof (Photo)
+## D5 – Complete Delivery with Proof (Photo)
+
+### Use Case Description
 - **Use Case ID:** D5  
-- **Use Case Name:** Complete Delivery with Proof (Photo)  
 - **Primary Actor:** Driver  
-- **Goal:** Complete delivery and submit proof for demo purposes.  
+- **Goal:** Complete delivery and submit proof of delivery (mock).  
 - **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Delivery is active; driver has access to camera (or mock photo).  
-- **Trigger:** Driver taps “Complete Delivery.”  
-- **Main Success Scenario:**
-  1. Driver taps complete delivery.
-  2. System captures photo (or selects mock proof).
-  3. System submits completion request to Mockoon.
-  4. Mockoon returns status `DELIVERED` and mock earnings.
-  5. System displays completion confirmation and earnings update.
-- **Alternate / Exception Flows:**
-  - **E1:** Camera not available → System allows placeholder proof or blocks completion (POC decision).
-  - **E2:** API error/timeout → System shows error and retry.
-- **Postconditions (Success):** Delivery marked delivered; earnings updated in UI.  
-- **Postconditions (Failure):** Delivery not completed; error displayed.  
-- **Mockoon Endpoints / Data:** `POST /deliveries/{deliveryId}/complete`  
-- **Notes / Special Requirements:** Photo upload can be simulated with metadata or base64 stub.
+- **Level:** User Goal  
+
+### Preconditions
+- Delivery is active and out for delivery.
+- Driver has camera access or mock proof available.
+- Mockoon running.
+
+### Trigger
+Driver taps “Complete Delivery.”
+
+### Main Success Scenario
+1. Driver taps Complete Delivery.
+2. System captures photo or selects mock proof.
+3. System sends completion request to Mockoon.
+4. Mockoon returns status `DELIVERED` and mock earnings amount.
+5. System displays success confirmation and earnings update.
+
+### Alternate Flows
+- **A1: No Camera Available**
+  - System allows a placeholder proof for POC.
+  - Completion request still sent.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Completion not confirmed.
+  - UI shows error and allows retry.
+
+### Postconditions (Success)
+- Delivery marked as DELIVERED.
+- Earnings shown.
+
+### Postconditions (Failure)
+- Delivery remains active.
+- Error shown.
+
+### Mockoon Endpoint
+`POST /deliveries/{deliveryId}/complete`
+
+### Special Requirements
+- Proof can be metadata only for demo (filename, timestamp, GPS stub).
 
 ---
 
-## A1 — View All Orders
+# Admin Use Cases
+
+---
+
+## A1 – View All Orders
+
+### Use Case Description
 - **Use Case ID:** A1  
-- **Use Case Name:** View All Orders  
 - **Primary Actor:** Admin  
-- **Goal:** View all orders and their statuses for monitoring.  
+- **Goal:** View all orders and their statuses in a dashboard for monitoring.  
 - **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Admin dashboard accessible; Mockoon running.  
-- **Trigger:** Admin opens orders page.  
-- **Main Success Scenario:**
-  1. Admin navigates to orders list.
-  2. System requests all orders from Mockoon.
-  3. System displays orders table with status and key fields.
-- **Alternate / Exception Flows:**
-  - **E1:** API error/timeout → System shows error banner and retry.
-  - **A1:** No orders → System shows empty state.
-- **Postconditions (Success):** Orders displayed to admin.  
-- **Postconditions (Failure):** Orders not displayed; error shown.  
-- **Mockoon Endpoints / Data:** `GET /admin/orders`  
-- **Notes / Special Requirements:** Include order filtering/sorting if needed for demo.
+- **Level:** User Goal  
+
+### Preconditions
+- Mockoon server is running.
+- Admin dashboard is accessible.
+
+### Trigger
+Admin opens the Orders page.
+
+### Main Success Scenario
+1. Admin navigates to Orders list.
+2. System requests orders from Mockoon.
+3. Mockoon returns order list.
+4. System displays orders with key fields (orderId, customer, status, timestamps).
+
+### Alternate Flows
+- **A1: No Orders**
+  - Mockoon returns empty list.
+  - UI shows empty state.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - UI shows error banner and retry option.
+
+### Postconditions (Success)
+- Orders visible to admin.
+
+### Postconditions (Failure)
+- Orders not displayed; error shown.
+
+### Mockoon Endpoint
+`GET /admin/orders`
+
+### Special Requirements
+- Order list should include statuses that match customer/driver flows.
 
 ---
 
-## A2 — Manually Update Order Status
+## A2 – Manually Update Order Status
+
+### Use Case Description
 - **Use Case ID:** A2  
-- **Use Case Name:** Manually Update Order Status  
 - **Primary Actor:** Admin  
-- **Goal:** Simulate operational control by manually changing an order’s status.  
+- **Goal:** Manually change an order status to drive the POC workflow.  
 - **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Orders exist; admin can select an order; Mockoon running.  
-- **Trigger:** Admin selects an order and chooses a new status.  
-- **Main Success Scenario:**
-  1. Admin opens order details.
-  2. Admin selects a new status from dropdown.
-  3. System submits update to Mockoon.
-  4. Mockoon returns updated order object.
-  5. System refreshes UI with new status.
-- **Alternate / Exception Flows:**
-  - **E1:** API error/timeout → System shows error and keeps old status.
-- **Postconditions (Success):** Order status updated and visible in UI.  
-- **Postconditions (Failure):** Order status unchanged; error shown.  
-- **Mockoon Endpoints / Data:** `POST /admin/orders/{orderId}/status`  
-- **Notes / Special Requirements:** This drives customer tracking and driver pickup readiness in POC.
+- **Level:** User Goal  
+
+### Preconditions
+- Order exists.
+- Mockoon running.
+
+### Trigger
+Admin selects an order and changes status.
+
+### Main Success Scenario
+1. Admin opens order details.
+2. Admin selects a new status from allowed list.
+3. System sends status update request to Mockoon.
+4. Mockoon returns updated order object.
+5. UI refreshes and shows updated status.
+
+### Alternate Flows
+- **A1: Same Status Selected**
+  - System detects no change.
+  - No request sent.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - UI shows error.
+  - Status remains unchanged.
+
+### Postconditions (Success)
+- Order status updated in dashboard.
+
+### Postconditions (Failure)
+- Status unchanged; error shown.
+
+### Mockoon Endpoint
+`POST /admin/orders/{orderId}/status`
+
+### Special Requirements
+- Status update should influence C4 and driver readiness logic.
 
 ---
 
-## A3 — Issue Mock Refund
+## A3 – Issue Mock Refund
+
+### Use Case Description
 - **Use Case ID:** A3  
-- **Use Case Name:** Issue Mock Refund  
 - **Primary Actor:** Admin  
-- **Goal:** Simulate refund/adjustment workflow for POC demonstration.  
+- **Goal:** Simulate a refund flow for demo (no real payment).  
 - **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Order exists; refund UI available; Mockoon running.  
-- **Trigger:** Admin clicks refund action and submits an amount/reason.  
-- **Main Success Scenario:**
-  1. Admin opens an order.
-  2. Admin enters refund amount and reason.
-  3. System submits refund request to Mockoon.
-  4. Mockoon returns refund confirmation (refundId, status).
-  5. System updates order view to reflect refund event.
-- **Alternate / Exception Flows:**
-  - **A1:** Invalid amount → System blocks submission and prompts correction.
-  - **E1:** API error/timeout → System shows error and does not confirm refund.
-- **Postconditions (Success):** Refund confirmation shown; order reflects refund status.  
-- **Postconditions (Failure):** No refund confirmation; error shown.  
-- **Mockoon Endpoints / Data:** `POST /admin/orders/{orderId}/refund`  
-- **Notes / Special Requirements:** No real payment provider integration in POC.
+- **Level:** User Goal  
+
+### Preconditions
+- Order exists.
+- Mockoon running.
+
+### Trigger
+Admin submits a refund action.
+
+### Main Success Scenario
+1. Admin opens an order.
+2. Admin enters refund amount and reason.
+3. System sends refund request to Mockoon.
+4. Mockoon returns refund confirmation (refundId, status).
+5. UI displays refund success and logs event.
+
+### Alternate Flows
+- **A1: Invalid Amount**
+  - UI blocks submission and prompts correction.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Refund not confirmed.
+  - UI shows error.
+
+### Postconditions (Success)
+- Refund confirmation visible.
+
+### Postconditions (Failure)
+- Refund not confirmed; error shown.
+
+### Mockoon Endpoint
+`POST /admin/orders/{orderId}/refund`
+
+### Special Requirements
+- No real payment provider logic is included in POC.
 
 ---
 
-## A4 — View Drivers
+## A4 – View Drivers
+
+### Use Case Description
 - **Use Case ID:** A4  
-- **Use Case Name:** View Drivers  
 - **Primary Actor:** Admin  
-- **Goal:** View driver list and statuses for POC monitoring.  
+- **Goal:** View driver list and statuses for monitoring.  
 - **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Mockoon running.  
-- **Trigger:** Admin opens drivers page.  
-- **Main Success Scenario:**
-  1. Admin navigates to drivers list.
-  2. System requests driver list from Mockoon.
-  3. System displays driver table with status and basic metrics.
-- **Alternate / Exception Flows:**
-  - **E1:** API error/timeout → System shows error banner and retry.
-  - **A1:** No drivers → System shows empty state.
-- **Postconditions (Success):** Drivers displayed to admin.  
-- **Postconditions (Failure):** Drivers not displayed; error shown.  
-- **Mockoon Endpoints / Data:** `GET /admin/drivers`  
-- **Notes / Special Requirements:** Driver status can be static (active/inactive) for POC.
+- **Level:** User Goal  
+
+### Preconditions
+- Mockoon running.
+
+### Trigger
+Admin opens Drivers page.
+
+### Main Success Scenario
+1. Admin navigates to Drivers list.
+2. System requests drivers from Mockoon.
+3. Mockoon returns driver list.
+4. UI displays driver data (driverId, name, status, last seen).
+
+### Alternate Flows
+- **A1: No Drivers**
+  - Empty state displayed.
+
+### Exception Flows
+- **E1: API Error or Timeout**
+  - Error banner shown with retry.
+
+### Postconditions (Success)
+- Drivers visible.
+
+### Postconditions (Failure)
+- Drivers not displayed; error shown.
+
+### Mockoon Endpoint
+`GET /admin/drivers`
+
+### Special Requirements
+- Driver statuses can be static for demo.
 
 ---
 
-## A5 — Simulate API Failure
+## A5 – Simulate API Failure
+
+### Use Case Description
 - **Use Case ID:** A5  
-- **Use Case Name:** Simulate API Failure  
 - **Primary Actor:** Admin  
-- **Goal:** Demonstrate error handling and recovery in the UI.  
+- **Goal:** Demonstrate that the apps handle API failures gracefully.  
 - **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User goal  
-- **Preconditions:** Mockoon has a configured failing route or delayed response scenario.  
-- **Trigger:** Admin clicks “Simulate Failure” or selects a failure mode.  
-- **Main Success Scenario:**
-  1. Admin triggers failure simulation.
-  2. System calls an endpoint configured to fail.
-  3. Mockoon returns 500 or times out.
-  4. System shows error state and retains last valid data (if available).
-  5. Admin can retry and recover when endpoint returns to normal.
-- **Alternate / Exception Flows:**
-  - **A1:** Failure persists → System continues to show error and allows retry/backoff.
-  - **A2:** Partial failure (slow response) → System shows loading state then error.
-- **Postconditions (Success):** Error displayed gracefully; app remains usable; retry path available.  
-- **Postconditions (Failure):** If not handled, UI may freeze/crash (this is what you’re proving does NOT happen).  
-- **Mockoon Endpoints / Data:** Any endpoint configured as `500`, `timeout`, or delayed response (e.g., `GET /admin/orders?mode=fail`)  
-- **Notes / Special Requirements:** Include visible logging/diagnostics banner for demo credibility.
+- **Level:** User Goal  
 
----
+### Preconditions
+- Mockoon has a failing route or scenario configured (500/timeout).
+- Admin can trigger a request that hits the failing route.
+
+### Trigger
+Admin triggers “Simulate Failure” or visits a page that calls a failing endpoint.
+
+### Main Success Scenario
+1. Admin triggers failure mode.
+2. System calls endpoint configured to fail.
+3. Mockoon returns 500 or times out.
+4. UI displays error state and retains last valid data if available.
+5. Admin can retry and recover if endpoint is restored.
+
+### Alternate Flows
+- **A1: Slow Response**
+  - Mockoon delays response.
+  - UI shows loading then error.
+
+### Exception Flows
+- **E1: Failure Persists**
+  - UI remains in error state.
+  - Retry continues to be offered.
+
+### Postconditions (Success)
+- Error handled gracefully.
+- No crash.
+- Retry path exists.
+
+### Postconditions (Failure)
+- If not handled, UI could freeze/crash (this is what the use case is proving should not happen).
+
+### Mockoon Endpoint
+Any endpoint configured to fail (e.g., `GET /admin/orders?mode=fail`).
+
+### Special Requirements
+- Include visible error messaging for demo credibility.
