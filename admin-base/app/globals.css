@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #070b14;
+  --bg-surface: #0f1628;
+  --bg-elevated: #17203a;
+  --glass: rgba(15, 22, 40, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --accent: #0175c2;
+  --accent-soft: rgba(1, 117, 194, 0.2);
+  --text-muted: #a3adc2;
+  --text-subtle: #76809a;
+  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-body: "Manrope", "Segoe UI", sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: #f7f9ff;
+  --font-sans: var(--font-body);
+}
+
+body {
+  background: var(--bg);
+  color: #f7f9ff;
+  font-family: var(--font-body), "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.font-display {
+  font-family: var(--font-display), var(--font-body), "Segoe UI", sans-serif;
+}
+
+.glass-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 20px 50px rgba(5, 12, 26, 0.45);
+  backdrop-filter: blur(18px);
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.7s ease-out both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in {
+    animation: none;
+  }
+}
