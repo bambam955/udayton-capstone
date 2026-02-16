@@ -1,7 +1,7 @@
 # Grocery Pickup-to-Delivery Marketplace App  
 ## Activity Diagrams (Mockoon Proof of Concept)
 
----
+--- 
 
 # Table of Contents
 
