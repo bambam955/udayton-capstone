@@ -8,8 +8,8 @@
 #
 # mise manages Flutter and just versions inside the container, matching how
 # we manage tools on the host. The root justfile delegates commands into the
-# container via `docker compose run --rm app-base just <recipe>`, so the
-# app/justfile can be simple Flutter calls with no Docker awareness.
+# container via `docker compose run --rm apps-dev-tools just <recipe>`, so
+# apps/justfile can be simple Flutter calls with no Docker awareness.
 #
 # VS Code connects to this container via Dev Containers (.devcontainer/),
 # so the Dart extension gets full language support using the container's
@@ -33,10 +33,14 @@ ENV PATH="/opt/mise/shims:${PATH}"
 ENV CI=true
 ENV FLUTTER_SUPPRESS_ANALYTICS=true
 
-# Install flutter and just via mise
-RUN curl https://mise.run | sh && \
-    /root/.local/bin/mise use -g flutter@3.38 && \
-    /root/.local/bin/mise use -g just && \
+# Install mise
+RUN curl https://mise.run | MISE_VERSION=v2026.2.0 sh
+
+# Install flutter (separate layer for independent caching because it's slow)
+RUN /root/.local/bin/mise use -g flutter@3.38.10
+
+# Install just and regenerate shims
+RUN /root/.local/bin/mise use -g just@1.46 && \
     /root/.local/bin/mise reshim
 
 RUN flutter config --no-analytics \
@@ -44,7 +48,7 @@ RUN flutter config --no-analytics \
     --no-enable-macos-desktop \
     --no-enable-windows-desktop
 
-WORKDIR /app
+WORKDIR /workspace
 
 # =============================================================================
 # Web: base + pre-cached web build toolchain
@@ -53,8 +57,9 @@ FROM base AS web
 
 RUN flutter precache --web
 
-EXPOSE 8080
-CMD ["flutter", "run", "-d", "web-server", "--web-port=8080", "--web-hostname=0.0.0.0"]
+ENV WEB_PORT=8080
+EXPOSE ${WEB_PORT}
+CMD flutter run -d web-server --web-port=${WEB_PORT} --web-hostname=0.0.0.0
 
 # =============================================================================
 # Android: base + JDK + Android SDK (heavy — only used for APK builds)

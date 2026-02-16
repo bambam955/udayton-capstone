@@ -1,15 +1,12 @@
-# Git
-.git/
-
 # Build outputs
-build/
-.dart_tool/
-android/.gradle/
-android/build/
+*/build/
+*/.dart_tool/
+*/android/.gradle/
+*/android/build/
 
 # IDE
-.idea/
-.vscode/
+*/.idea/
+*/.vscode/
 *.iml
 
 # Generated
@@ -17,7 +14,7 @@ android/build/
 *.freezed.dart
 
 # Local config
-android/local.properties
+*/android/local.properties
 
 # Misc
 *.log

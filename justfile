@@ -1,125 +1,149 @@
-# BizRush - project orchestration
-# Wraps app commands in Docker; falls back to local tools
+# BizRush — project orchestration
+# Backend services always start; frontend services are opt-in.
+# Usage: just up <service>...   where service is main-web, driver-web,
+#        main-android, driver-android, or admin
 
 set shell := ["bash", "-cu"]
+
+DC := "docker compose"
+ALL_COMPONENTS := "main driver"
+ALL_DC_SERVICES := "main-web driver-web main-android driver-android" # admin
 
 # ---------- Main commands ---------- #
 
 # List available recipes
 default:
-    @echo "Project recipes:"
-    @JUST_LIST_HEADING="" just --list
+    @echo "Components: {{ALL_COMPONENTS}}"
+    @echo "Docker Compose services: {{ ALL_DC_SERVICES }}"
     @echo ""
-    @echo "App recipes (run via Docker):"
-    @JUST_LIST_HEADING="" just --justfile app/justfile --list
+    @just --list --unsorted
+    @echo ""
+    @echo "Apps recipes:"
+    @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
 
-# Start web development server (http://localhost:8080)
-up:
-    docker compose up app-web
+# Start backend + selected frontend services
+up *services:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "{{services}}" ]; then
+        echo "Usage: just up <service>..."
+        echo "Services: {{ ALL_DC_SERVICES }}"
+        exit 2
+    fi
+    flags=""
+    needs_adb=false
+    for svc in {{services}}; do
+        flags+=" --profile $svc"
+        [[ "$svc" == *-android ]] && needs_adb=true
+    done
+    if $needs_adb; then
+        echo "Enabling ADB over TCP..."
+        adb tcpip 5555 || echo "⚠ adb tcpip failed — is an emulator running?"
+    fi
+    {{ DC }} $flags up
 
 # Stop all services
 down:
-    docker compose down
+    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android {{ DC }} down
 
-# ---------- App commands (delegated to app/justfile inside container) ---------- #
+# ---------- Dev commands (default to all components) ---------- #
 
 # Run tests
-test: (_docker-just-app "test")
+test *components:
+    just _foreach-component test {{components}}
 
 # Analyze code
-check: (_docker-just-app "check")
+check *components:
+    just _foreach-component check {{components}}
 
 # Format code
-format: (_docker-just-app "format")
+format *components:
+    just _foreach-component format {{components}}
 
 # Install dependencies
-deps: (_docker-just-app "deps")
+deps *components:
+    just _foreach-component deps {{components}}
 
 # Clean build artifacts
-clean: (_docker-just-app "clean")
+clean *components:
+    just _foreach-component clean {{components}}
 
 # Run flutter doctor
-doctor: (_docker-just-app "doctor")
+doctor:
+    {{ DC }} run --rm apps-android just doctor
 
-# ---------- Build/Run commands ---------- #
+# ---------- Build commands ---------- #
 
-# Build APK (debug or release)
-build target='debug': (_docker-just-app-android "build " + target)
-
-# Run on web (http://localhost:8080)
-run-web:
-    docker compose run --rm --service-ports app-web
-
-# Run on Android emulator
-run-android:
+# Build a component (pass extra args after name, e.g. just build main --release)
+build component *args:
     #!/usr/bin/env bash
-    set -euxo pipefail
-    case "$(uname -s)" in
-        Linux|Darwin)
-            docker compose run --rm app-android bash -c \
-                "adb connect host.docker.internal:5555 2>/dev/null || true; flutter run"
+    set -euo pipefail
+    case "{{component}}" in
+        main|driver)
+            {{ DC }} run --rm apps-android just build "{{component}}" {{args}}
             ;;
-        MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            if ! command -v flutter >/dev/null 2>&1; then
-                echo "❌ Error: Flutter not found. Install from https://flutter.dev" >&2
-                exit 1
-            fi
-            echo "Windows: Using local Flutter for emulator access" >&2
-            cd app && flutter run
-            ;;
+        # admin)
+        #     {{ DC }} run --rm admin-dev just build {{args}}
+        #     ;;
+        # api)
+        #     {{ DC }} run --rm api-dev just build {{args}}
+        #     ;;
         *)
-            echo "❌ Unknown OS: $(uname -s)" >&2
+            echo "❌ Unknown component: {{component}}"
+            echo "Known components: {{ALL_COMPONENTS}}"
             exit 1
             ;;
     esac
 
+# ---------- Dev environment ---------- #
+
 # Open a shell in the dev container
 shell:
-    cd .devcontainer && docker compose run --rm devcontainer bash
-
-# ---------- Setup ---------- #
+    {{ DC }} run --rm apps-dev-tools bash
 
 # Verify and set up the development environment
 setup:
     #!/usr/bin/env bash
     set -euo pipefail
-    command -v pre-commit >/dev/null && pre-commit install || { echo "❌ pre-commit not installed"; }
+    command -v pre-commit >/dev/null && pre-commit install || echo "⚠ pre-commit not installed (optional)"
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
-    docker compose build
-    docker compose run --rm app-base just deps
-    docker compose run --rm app-android just doctor
-
-# Start emulator on host (for connecting from Docker)
-emulator:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    case "$(uname -s)" in
-        Linux|Darwin)
-            avd=$(flutter emulators 2>/dev/null | grep '•' | grep -v '^Id' | head -1 | awk '{print $1}')
-            if [ -z "$avd" ]; then
-                echo "❌ No emulators found. Create one with: flutter emulators --create"
-                exit 1
-            fi
-            echo "Launching $avd..."
-            flutter emulators --launch "$avd"
-            ;;
-        MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            echo "Start emulator from Android Studio Device Manager"
-            ;;
-    esac
-
-# Enable ADB over TCP (run on host before run-android)
-adb-tcp:
-    adb tcpip 5555
+    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android \
+        {{ DC }} build
+    just deps
 
 # ---------- Internal ---------- #
 
-# Run an app justfile recipe inside the base container
+# Loop over components (or all if none given) and run a recipe for each
 [private]
-_docker-just-app *args:
-    docker compose run --rm app-base just {{args}}
+_foreach-component recipe *components:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    targets="{{components}}"
+    if [ -z "$targets" ]; then
+        targets="{{ALL_COMPONENTS}}"
+    fi
+    for c in $targets; do
+        just _run-for "{{recipe}}" "$c"
+    done
 
-# Run an app justfile recipe inside the android container
+# Map a component to its Docker service and run the recipe
 [private]
-_docker-just-app-android *args:
-    docker compose run --rm app-android just {{args}}
+_run-for recipe component:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{component}}" in
+        main|driver)
+            {{ DC }} run --rm apps-dev-tools just "{{recipe}}" "{{component}}"
+            ;;
+        # admin)
+        #     {{ DC }} run --rm admin-dev just "{{recipe}}"
+        #     ;;
+        # api)
+        #     {{ DC }} run --rm api-dev just "{{recipe}}"
+        #     ;;
+        *)
+            echo "❌ Unknown component: {{component}}"
+            echo "Known components: {{ALL_COMPONENTS}}"
+            exit 1
+            ;;
+    esac

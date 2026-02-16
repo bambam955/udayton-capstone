@@ -3,7 +3,10 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "devcontainer",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "cd app && flutter pub get",
+  "postCreateCommand": {
+    "main-deps": "cd apps/main && flutter pub get",
+    "driver-deps": "cd apps/driver && flutter pub get"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
