@@ -41,25 +41,26 @@
 
 ## C2 – Simulate Retailer Account Linking
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="755" height="613" alt="image" src="https://github.com/user-attachments/assets/70c22e3f-0e91-4136-b109-2f63e89e7c62" />
+
 
 ---
 
 ## C3 – Place Mock Pickup Order
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="761" height="819" alt="image" src="https://github.com/user-attachments/assets/692f8932-ec5e-4f89-b26c-45010da007e7" />
 
 ---
 
 ## C4 – Track Simulated Order Status
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="706" height="775" alt="image" src="https://github.com/user-attachments/assets/73c9ac23-3575-4517-ba1e-f59c66441586" />
 
 ---
 
 ## C5 – Submit Mock Support Requests
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="811" height="687" alt="image" src="https://github.com/user-attachments/assets/3b92bdde-b04d-46d5-8f00-f4b035dd397d" />
 
 ---
 
@@ -69,31 +70,31 @@
 
 ## D1 – Driver Login
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="651" height="505" alt="image" src="https://github.com/user-attachments/assets/bc795322-7636-45e9-a05f-e5b7a906cc83" />
 
 ---
 
 ## D2 – Fetch Available Mock Deliveries
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="746" height="525" alt="image" src="https://github.com/user-attachments/assets/21fcc333-5302-49f0-8adc-1487ebde05d9" />
 
 ---
 
 ## D3 – Accept Mock Delivery
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="602" height="420" alt="image" src="https://github.com/user-attachments/assets/36b5e055-d5ae-4344-a013-db9618cbba45" />
 
 ---
 
 ## D4 – Confirm Pickup
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="657" height="438" alt="image" src="https://github.com/user-attachments/assets/04ffc084-f2db-41df-9c6a-f0e320bbb5e4" />
 
 ---
 
 ## D5 – Complete Delivery with Proof (Photo)
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="699" height="458" alt="image" src="https://github.com/user-attachments/assets/bd9a29e7-c5f6-4910-bb07-df11989c3bb1" />
 
 ---
 
@@ -103,30 +104,30 @@
 
 ## A1 – View All Orders
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="583" height="395" alt="image" src="https://github.com/user-attachments/assets/0c5fca60-94d0-4a46-87f1-12a260c5f3c7" />
 
 ---
 
 ## A2 – Manually Update Order Status
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="648" height="593" alt="image" src="https://github.com/user-attachments/assets/17eb2ab2-703e-4a26-8fc0-2ded1593aa88" />
 
 ---
 
 ## A3 – Issue Mock Refund
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="760" height="636" alt="image" src="https://github.com/user-attachments/assets/b875b611-d8a2-4399-8266-bffabd59b72e" />
 
 ---
 
 ## A4 – View Drivers
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="514" height="364" alt="image" src="https://github.com/user-attachments/assets/60500155-0bc0-4daf-b22a-5f0fba27196f" />
 
 ---
 
 ## A5 – Simulate API Failure
 
-*(Insert Activity Diagram Screenshot Here)*
+<img width="473" height="808" alt="image" src="https://github.com/user-attachments/assets/883c1abb-3a1d-4dc1-84dd-e60835411f85" />
 
 ---
