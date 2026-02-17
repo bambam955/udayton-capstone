@@ -149,4 +149,4 @@ Key design goals include:
 This E-R diagram represents the **control plane** of the platform — the layer that governs, audits, and maintains the operational ecosystem formed by the Customer and Driver applications.
 
 
-![Admin E-R Diagram](<assets/E-Rimages/BizRush-Admin E-R Diagram.drawio.png>)
+![Admin E-R Diagram](<../../assets/E-Rimages/BizRush-Admin E-R Diagram.drawio.png>)

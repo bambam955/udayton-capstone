@@ -26,4 +26,4 @@ This structure ensures the application supports:
 The following diagrams illustrates all entities and their relationships in detail.
 
 
-![E-R Diagram](<assets/E-Rimages/BizRush-Customer E-R.drawio.png>)
+![Customer E-R Diagram](<../../assets/E-Rimages/BizRush-Customer E-R.drawio.png>)
