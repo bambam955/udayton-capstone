@@ -36,6 +36,7 @@ services:
   # ---------- Frontend (opt-in via profiles) ---------- #
 
   main-web:
+    platform: linux/amd64
     profiles: [main-web]
     build:
       context: ./apps
@@ -50,6 +51,7 @@ services:
     tty: true
 
   driver-web:
+    platform: linux/amd64
     profiles: [driver-web]
     build:
       context: ./apps
@@ -66,6 +68,7 @@ services:
     tty: true
 
   main-android:
+    platform: linux/amd64
     profiles: [main-android]
     build:
       context: ./apps
@@ -83,6 +86,7 @@ services:
     tty: true
 
   driver-android:
+    platform: linux/amd64
     profiles: [driver-android]
     build:
       context: ./apps
@@ -108,6 +112,7 @@ services:
   # ---------- Utility (docker compose run only) ---------- #
 
   apps-dev-tools:
+    platform: linux/amd64
     profiles: [tools]
     build:
       context: ./apps
@@ -119,6 +124,7 @@ services:
     tty: true
 
   apps-android:
+    platform: linux/amd64
     profiles: [tools]
     build:
       context: ./apps
