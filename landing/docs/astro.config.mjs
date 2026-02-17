@@ -4,8 +4,13 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	integrations: [
-		starlight({
+  // This project is deployed with GitHub Pages on multiple remotes,
+  // so these fields are configured from the deployment workflow.
+  // These defaults are provided for development purposes only.
+  site: process.env.ASTRO_SITE || "https://bizrush-capstone.github.io",
+  base: process.env.ASTRO_BASE || "",
+  integrations: [
+    starlight({
 			title: 'BizRush',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
 			sidebar: [
@@ -21,5 +26,5 @@ export default defineConfig({
 				},
 			],
 		}),
-	],
+  ],
 });

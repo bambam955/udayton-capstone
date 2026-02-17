@@ -32,6 +32,9 @@ jobs:
 
       - name: Build
         working-directory: docs
+        env:
+          ASTRO_SITE: https://${{ github.repository_owner }}.github.io
+          ASTRO_BASE: ${{ github.event.repository.name }}
         run: npm run build
 
       - name: Upload artifact
