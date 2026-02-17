@@ -83,4 +83,4 @@ The schema is designed using normalized relational principles to:
 This E-R diagram represents the **operational backbone of the driver ecosystem**, ensuring deliveries are executed reliably, traceably, and securely.
 
 
-![Driver E-R Diagram](<BizRush-Driver E-R Diagram.drawio.png>)
+![Driver E-R Diagram](<assets/E-Rimages/BizRush-Driver E-R Diagram.drawio.png>)
