@@ -30,6 +30,7 @@ up *services:
         echo "Services: {{ ALL_DC_SERVICES }}"
         exit 2
     fi
+    echo "Running services {{ services }}..."
     flags=""
     needs_adb=false
     for svc in {{services}}; do
@@ -41,7 +42,11 @@ up *services:
         adb kill-server 2>/dev/null || true
         adb -a -P 5037 start-server || echo "⚠ adb start-server failed — is adb installed?"
     fi
-    {{ DC }} $flags up
+    {{ DC }} $flags up -d
+    # Attach to the first service for interactive stdin (hot reload keys)
+    attach_svc="$(echo {{services}} | awk '{print $1}')"
+    echo "Attaching to service $attach_svc..."
+    {{ DC }} attach "$attach_svc"
 
 # Stop all services
 down:
