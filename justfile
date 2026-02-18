@@ -37,8 +37,9 @@ up *services:
         [[ "$svc" == *-android ]] && needs_adb=true
     done
     if $needs_adb; then
-        echo "Enabling ADB over TCP..."
-        adb tcpip 5555 || echo "⚠ adb tcpip failed — is an emulator running?"
+        echo "Ensuring ADB server accepts remote connections..."
+        adb kill-server 2>/dev/null || true
+        adb -a -P 5037 start-server || echo "⚠ adb start-server failed — is adb installed?"
     fi
     {{ DC }} $flags up
 

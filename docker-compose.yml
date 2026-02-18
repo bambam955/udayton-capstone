@@ -19,7 +19,7 @@ services:
   #   environment:
   #     POSTGRES_DB: bizrush
   #     POSTGRES_USER: bizrush
-  #     POSTGRES_PASSWORD: bizrush
+  #     POSTGRES_PASSWORD: [REDACTED:password]
   #   volumes:
   #     - pgdata:/var/lib/postgresql/data
   #   ports:
@@ -73,6 +73,8 @@ services:
     build:
       context: ./apps
       target: android
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache
@@ -81,7 +83,8 @@ services:
     environment:
       - ANDROID_HOME=/opt/android-sdk
       - ANDROID_SDK_ROOT=/opt/android-sdk
-    command: bash -c "adb connect host.docker.internal:5555 2>/dev/null || true; flutter run"
+      - ADB_SERVER_SOCKET=tcp:host.docker.internal:5037
+    command: flutter run
     stdin_open: true
     tty: true
 
@@ -91,6 +94,8 @@ services:
     build:
       context: ./apps
       target: android
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache
@@ -99,7 +104,8 @@ services:
     environment:
       - ANDROID_HOME=/opt/android-sdk
       - ANDROID_SDK_ROOT=/opt/android-sdk
-    command: bash -c "adb connect host.docker.internal:5555 2>/dev/null || true; flutter run"
+      - ADB_SERVER_SOCKET=tcp:host.docker.internal:5037
+    command: flutter run
     stdin_open: true
     tty: true
 

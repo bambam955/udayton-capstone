@@ -37,7 +37,7 @@ ENV FLUTTER_SUPPRESS_ANALYTICS=true
 RUN curl https://mise.run | MISE_VERSION=v2026.2.0 sh
 
 # Install flutter (separate layer for independent caching because it's slow)
-RUN /root/.local/bin/mise use -g flutter@3.38.0
+RUN /root/.local/bin/mise use -g flutter@3.38.10
 
 # Install just and regenerate shims
 RUN /root/.local/bin/mise use -g just@1.46 && \
@@ -86,12 +86,17 @@ RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
     mv ${ANDROID_HOME}/cmdline-tools/cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest && \
     rm /tmp/cmdline-tools.zip
 
-# Install the full Android SDK
-RUN yes | sdkmanager --licenses > /dev/null 2>&1 && \
-    sdkmanager --install \
+# Install the Android SDK (NDK is its own layer because it's ~2 GB and rarely changes)
+RUN yes | sdkmanager --licenses >/dev/null 2>&1
+RUN sdkmanager --install "ndk;28.2.13676358" \
+    && rm -rf ${ANDROID_HOME}/.temp
+
+RUN sdkmanager --install \
     "platform-tools" \
     "platforms;android-36" \
+    "build-tools;34.0.0" \
     "build-tools;36.0.0" \
+    "cmake;3.22.1" \
     && rm -rf ${ANDROID_HOME}/.temp
 
 RUN flutter precache --android && \

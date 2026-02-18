@@ -15,7 +15,7 @@
         "nefrob.vscode-just-syntax"
       ],
       "settings": {
-        "dart.flutterSdkPath": "/opt/mise/installs/flutter/3.38.0"
+        "dart.flutterSdkPath": "/opt/mise/installs/flutter/3.38.10"
       }
     }
   }
