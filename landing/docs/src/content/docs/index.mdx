@@ -1,41 +1,40 @@
-
-
 ---
 title: BizRush Project
 description: Meet the team and navigate project documentation.
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { CardGrid } from '@astrojs/starlight/components';
+import CustomCard from '../../components/CustomCard.astro';
 
 # Meet the Team
 
 Meet the three members of the BizRush team. Add each teammate's details below.
 
 <CardGrid>
-	<Card title="Team Member 1" icon="user">
+	<CustomCard title="Team Member 1" icon="mdi:account">
 		![Placeholder portrait for Team Member 1](../../assets/team/member-1-placeholder.svg)
 
 		**Major:** Add major here  
 		**Role:** Add role here  
 		**Year:** Add year here  
 		**Bio:** Add short bio here.
-	</Card>
-	<Card title="Team Member 2" icon="user">
+	</CustomCard>
+	<CustomCard title="Team Member 2" icon="mdi:account">
 		![Placeholder portrait for Team Member 2](../../assets/team/member-2-placeholder.svg)
 
 		**Major:** Add major here  
 		**Role:** Add role here  
 		**Year:** Add year here  
 		**Bio:** Add short bio here.
-	</Card>
-	<Card title="Team Member 3" icon="user">
+	</CustomCard>
+	<CustomCard title="Team Member 3" icon="mdi:account">
 		![Placeholder portrait for Team Member 3](../../assets/team/member-3-placeholder.svg)
 
 		**Major:** Add major here  
 		**Role:** Add role here  
 		**Year:** Add year here  
 		**Bio:** Add short bio here.
-	</Card>
+	</CustomCard>
 </CardGrid>
 
 
