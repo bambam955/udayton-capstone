@@ -78,6 +78,7 @@ services:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache
       - gradle-cache:/root/.gradle
+      - android-debug-key:/root/.android
     working_dir: /workspace/main
     environment:
       - ANDROID_HOME=/opt/android-sdk
@@ -97,6 +98,7 @@ services:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache
       - gradle-cache:/root/.gradle
+      - android-debug-key:/root/.android
     working_dir: /workspace/driver
     environment:
       - ANDROID_HOME=/opt/android-sdk
@@ -142,6 +144,11 @@ services:
     tty: true
 
 volumes:
+  # Persists the Flutter package cache between runs
   pub-cache:
+  # Persists the Gradle build cache between runs
   gradle-cache:
+  # Persists the Android debug keystores between runs.
+  # This resolves runtime error about failed streamed installs.
+  android-debug-key:
   # pgdata:
