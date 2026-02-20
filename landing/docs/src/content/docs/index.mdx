@@ -4,14 +4,14 @@ description: Meet the team and navigate project documentation.
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
-
+import CustomCard from '../../components/CustomCard.astro';
 import { Image } from 'astro:assets';
 
 import TidianePhoto from '../../assets/team/Tidiane.jpg';
 import AlexPhoto from '../../assets/team/Alex.png';
 import BennettPhoto from '../../assets/team/Bennett.jpg';
 
-# Meet the Team
+## Meet the Team
 
 Meet the three members of the BizRush team. 
 
@@ -21,11 +21,11 @@ Meet the three members of the BizRush team.
 
 		**Major:** Computer Science  
 		**Role:** Lead Developer  
-		**Year:** 4th Year  
+		**Year:** 3rd Year
 		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
 	<CustomCard title="Tidiane Dia" icon="mdi:account">
-		 <Image src={tidianePhoto} alt="Tidiane Dia" />
+		<Image src={TidianePhoto} alt="Tidiane Dia" />
 
 		**Major:** Computer Information Systems  
 		**Role:** Associate Developer  
@@ -33,9 +33,9 @@ Meet the three members of the BizRush team.
 		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
 	<CustomCard title="Alex Testa" icon="mdi:account">
-		 <Image src={AlexPhoto} alt="Alex Testa" />
+		<Image src={AlexPhoto} alt="Alex Testa" />
 
-		**Major:** Computer Information Systems 
+		**Major:** Computer Information Systems
 		**Role:** Associate Developer  
 		**Year:** 4th Year 
 		{/* **Bio:** Add short bio here. */}
