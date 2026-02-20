@@ -7,13 +7,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 import { Image } from 'astro:assets';
 
-import tidianePhoto from '../../assets/team/tidiane.jpg';
-import AlexPhoto from '../../assets/team/Alex.png';
-import BennettPhoto from '../../assets/team/Bennett.jpg';
-
-import { Image } from 'astro:assets';
-
-import tidianePhoto from '../../assets/team/tidiane.jpg';
+import TidianePhoto from '../../assets/team/Tidiane.jpg';
 import AlexPhoto from '../../assets/team/Alex.png';
 import BennettPhoto from '../../assets/team/Bennett.jpg';
 
@@ -22,44 +16,13 @@ import BennettPhoto from '../../assets/team/Bennett.jpg';
 Meet the three members of the BizRush team. 
 
 <CardGrid>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-	<Card title="Team Member 1" icon="user">
-		![Placeholder portrait for Team Member 1](../../assets/team/member-1-placeholder.svg)
-=======
 	<CustomCard title="Bennett Moore" icon="mdi:account">
 		<Image src={BennettPhoto} alt="Bennett Moore" />
->>>>>>> Stashed changes
-=======
-	<CustomCard title="Bennett Moore" icon="mdi:account">
-		<Image src={BennettPhoto} alt="Bennett Moore" />
->>>>>>> Stashed changes
 
 		**Major:** Computer Science  
 		**Role:** Lead Developer  
 		**Year:** 4th Year  
-		**Bio:** Add short bio here.
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-	</Card>
-	<Card title="Team Member 2" icon="user">
-		![Placeholder portrait for Team Member 2](../../assets/team/member-2-placeholder.svg)
-=======
-	</CustomCard>
-	<CustomCard title="Tidiane Dia" icon="mdi:account">
-		 <Image src={tidianePhoto} alt="Tidiane Dia" />
->>>>>>> Stashed changes
-
-		**Major:** Computer Information Systems  
-		**Role:** Associate Developer  
-		**Year:** 4th Year  
-		**Bio:** Add short bio here.
-<<<<<<< Updated upstream
-	</Card>
-	<Card title="Team Member 3" icon="user">
-		![Placeholder portrait for Team Member 3](../../assets/team/member-3-placeholder.svg)
-=======
-=======
+		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
 	<CustomCard title="Tidiane Dia" icon="mdi:account">
 		 <Image src={tidianePhoto} alt="Tidiane Dia" />
@@ -67,7 +30,7 @@ Meet the three members of the BizRush team.
 		**Major:** Computer Information Systems  
 		**Role:** Associate Developer  
 		**Year:** 4th Year  
-		**Bio:** Add short bio here.
+		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
 	<CustomCard title="Alex Testa" icon="mdi:account">
 		 <Image src={AlexPhoto} alt="Alex Testa" />
@@ -75,18 +38,6 @@ Meet the three members of the BizRush team.
 		**Major:** Computer Information Systems 
 		**Role:** Associate Developer  
 		**Year:** 4th Year 
-		**Bio:** Add short bio here.
->>>>>>> Stashed changes
+		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
-	<CustomCard title="Alex Testa" icon="mdi:account">
-		 <Image src={AlexPhoto} alt="Alex Testa" />
->>>>>>> Stashed changes
-
-		**Major:** Computer Information Systems 
-		**Role:** Associate Developer  
-		**Year:** 4th Year 
-		**Bio:** Add short bio here.
-	</Card>
 </CardGrid>
-
-
