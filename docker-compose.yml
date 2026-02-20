@@ -1,0 +1,154 @@
+# BizRush services
+# Backend services (no profile) always start with any "just up" command.
+# Frontend services are opt-in via profiles: main-web, driver-web,
+# main-android, driver-android, admin.
+# Utility services (tools profile) are only used via "docker compose run".
+
+services:
+  # ---------- Backend (always start) ---------- #
+
+  # api:
+  #   build: ./api
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - db
+
+  # db:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_DB: bizrush
+  #     POSTGRES_USER: bizrush
+  #     POSTGRES_PASSWORD: [REDACTED:password]
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+  # mockoon-orders:
+  #   image: mockoon/cli:latest
+  #   ...
+
+  # mockoon-payments:
+  #   image: mockoon/cli:latest
+  #   ...
+
+  # ---------- Frontend (opt-in via profiles) ---------- #
+
+  main-web:
+    platform: linux/amd64
+    profiles: [main-web]
+    build:
+      context: ./apps
+      target: web
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+    working_dir: /workspace/main
+    ports:
+      - "${MAIN_WEB_PORT:-8080}:8080"
+    stdin_open: true
+    tty: true
+
+  driver-web:
+    platform: linux/amd64
+    profiles: [driver-web]
+    build:
+      context: ./apps
+      target: web
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+    working_dir: /workspace/driver
+    environment:
+      - WEB_PORT=${DRIVER_WEB_PORT:-8081}
+    ports:
+      - "${DRIVER_WEB_PORT:-8081}:${DRIVER_WEB_PORT:-8081}"
+    stdin_open: true
+    tty: true
+
+  main-android:
+    platform: linux/amd64
+    profiles: [main-android]
+    build:
+      context: ./apps
+      target: android
+    network_mode: host
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+      - gradle-cache:/root/.gradle
+      - android-debug-key:/root/.android
+    working_dir: /workspace/main
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+    command: flutter run
+    stdin_open: true
+    tty: true
+
+  driver-android:
+    platform: linux/amd64
+    profiles: [driver-android]
+    build:
+      context: ./apps
+      target: android
+    network_mode: host
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+      - gradle-cache:/root/.gradle
+      - android-debug-key:/root/.android
+    working_dir: /workspace/driver
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+    command: flutter run
+    stdin_open: true
+    tty: true
+
+  # admin:
+  #   profiles: [admin]
+  #   build: ./admin
+  #   ports:
+  #     - "3001:3001"
+
+  # ---------- Utility (docker compose run only) ---------- #
+
+  apps-dev-tools:
+    platform: linux/amd64
+    profiles: [tools]
+    build:
+      context: ./apps
+      target: base
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+    working_dir: /workspace
+    tty: true
+
+  apps-android:
+    platform: linux/amd64
+    profiles: [tools]
+    build:
+      context: ./apps
+      target: android
+    volumes:
+      - ./apps:/workspace
+      - pub-cache:/root/.pub-cache
+      - gradle-cache:/root/.gradle
+    working_dir: /workspace
+    environment:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+    tty: true
+
+volumes:
+  # Persists the Flutter package cache between runs
+  pub-cache:
+  # Persists the Gradle build cache between runs
+  gradle-cache:
+  # Persists the Android debug keystores between runs.
+  # This resolves runtime error about failed streamed installs.
+  android-debug-key:
+  # pgdata:

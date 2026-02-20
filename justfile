@@ -1,74 +1,155 @@
+# BizRush — project orchestration
+# Backend services always start; frontend services are opt-in.
+# Usage: just up <service>...   where service is main-web, driver-web,
+#        main-android, driver-android, or admin
+
+set shell := ["bash", "-cu"]
+
+DC := "docker compose"
+ALL_COMPONENTS := "main driver"
+ALL_DC_SERVICES := "main-web driver-web main-android driver-android" # admin
+
+# ---------- Main commands ---------- #
+
 # List available recipes
 default:
-    @just --list
+    @echo "Components: {{ALL_COMPONENTS}}"
+    @echo "Docker Compose services: {{ ALL_DC_SERVICES }}"
+    @echo ""
+    @just --list --unsorted
+    @echo ""
+    @echo "Apps recipes:"
+    @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
+
+# Start backend + selected frontend services
+up *services:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "{{services}}" ]; then
+        echo "Usage: just up <service>..."
+        echo "Services: {{ ALL_DC_SERVICES }}"
+        exit 2
+    fi
+    echo "Running services {{ services }}..."
+    flags=""
+    needs_adb=false
+    for svc in {{services}}; do
+        flags+=" --profile $svc"
+        [[ "$svc" == *-android ]] && needs_adb=true
+    done
+    if $needs_adb; then
+        echo "Ensuring ADB server accepts remote connections..."
+        adb kill-server 2>/dev/null || true
+        adb -a -P 5037 start-server || echo "⚠ adb start-server failed — is adb installed?"
+    fi
+    {{ DC }} $flags up -d
+    # Attach to the first service for interactive stdin (hot reload keys)
+    attach_svc="$(echo {{services}} | awk '{print $1}')"
+    echo "Attaching to service $attach_svc..."
+    {{ DC }} attach "$attach_svc"
+
+# Stop all services
+down:
+    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android {{ DC }} down
+
+# ---------- Dev commands (default to all components) ---------- #
+
+# Run tests
+test *components:
+    just _foreach-component test {{components}}
+
+# Analyze code
+check *components:
+    just _foreach-component check {{components}}
+
+# Format code
+format *components:
+    just _foreach-component format {{components}}
+
+# Install dependencies
+deps *components:
+    just _foreach-component deps {{components}}
+
+# Clean build artifacts
+clean *components:
+    just _foreach-component clean {{components}}
+
+# Run flutter doctor
+doctor:
+    {{ DC }} run --rm apps-android just doctor
 
 # ---------- Build commands ---------- #
 
-# Build for web
-build-web: deps
-    cd app && flutter build web
+# Build a component (pass extra args after name, e.g. just build main --release)
+build component *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{component}}" in
+        main|driver)
+            {{ DC }} run --rm apps-android just build "{{component}}" {{args}}
+            ;;
+        # admin)
+        #     {{ DC }} run --rm admin-dev just build {{args}}
+        #     ;;
+        # api)
+        #     {{ DC }} run --rm api-dev just build {{args}}
+        #     ;;
+        *)
+            echo "❌ Unknown component: {{component}}"
+            echo "Known components: {{ALL_COMPONENTS}}"
+            exit 1
+            ;;
+    esac
 
-# Build APK (debug or release)
-build-apk target='debug': deps
-    cd app && flutter build apk --{{target}}
+# ---------- Dev environment ---------- #
 
-# Build Android App Bundle for Play Store
-build-aab: deps
-    cd app && flutter build appbundle --release
+# Open a shell in the dev container
+shell:
+    {{ DC }} run --rm apps-dev-tools bash
 
-# ---------- Run commands ---------- #
+# Verify and set up the development environment
+setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v pre-commit >/dev/null && pre-commit install || echo "⚠ pre-commit not installed (optional)"
+    command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
+    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android \
+        {{ DC }} build
+    just deps
 
-# Run on Chrome (web)
-run-web: deps
-    cd app && flutter run -d chrome
+# ---------- Internal ---------- #
 
-# Run on Android emulator (launches emulator if needed)
-run-android: deps _ensure-emulator
-    cd app && flutter run -d emulator-5554
+# Loop over components (or all if none given) and run a recipe for each
+[private]
+_foreach-component recipe *components:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    targets="{{components}}"
+    if [ -z "$targets" ]; then
+        targets="{{ALL_COMPONENTS}}"
+    fi
+    for c in $targets; do
+        just _run-for "{{recipe}}" "$c"
+    done
 
-# Run on a connected physical device
-run-device: deps
-    cd app && flutter run -d $(flutter devices | grep -v Chrome | grep -v emulator | head -1 | awk '{print $1}')
-
-# Run with custom device/args
-run *args: deps
-    cd app && flutter run {{args}}
-
-# ---------- Development commands ---------- #
-
-# Run all unit tests
-test: deps
-    cd app && flutter test
-
-# Run tests with coverage
-test-cov: deps
-    cd app && flutter test --coverage
-
-# Check for issues (analyze)
-check: deps
-    cd app && flutter analyze
-
-# Format code
-format:
-    cd app && dart format .
-
-# Install dependencies
-deps:
-    cd app && flutter pub get
-
-# Clean build artifacts
-clean:
-    cd app && flutter clean
-
-# Full rebuild (clean + deps + build)
-rebuild: clean deps build-apk
-
-# ---------- Utilities ---------- #
-
-# Launch the Android emulator
-launch-emulator:
-    flutter emulators --launch Medium_Phone_API_36.1
-
-# Internal: ensure emulator is running
-_ensure-emulator:
-    @flutter devices | grep -q emulator || just launch-emulator && sleep 5
+# Map a component to its Docker service and run the recipe
+[private]
+_run-for recipe component:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{component}}" in
+        main|driver)
+            {{ DC }} run --rm apps-dev-tools just "{{recipe}}" "{{component}}"
+            ;;
+        # admin)
+        #     {{ DC }} run --rm admin-dev just "{{recipe}}"
+        #     ;;
+        # api)
+        #     {{ DC }} run --rm api-dev just "{{recipe}}"
+        #     ;;
+        *)
+            echo "❌ Unknown component: {{component}}"
+            echo "Known components: {{ALL_COMPONENTS}}"
+            exit 1
+            ;;
+    esac
