@@ -3,38 +3,41 @@ title: BizRush Project
 description: Meet the team and navigate project documentation.
 ---
 
-import { CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid } from '@astrojs/starlight/components';
 import CustomCard from '../../components/CustomCard.astro';
+import { Image } from 'astro:assets';
 
-# Meet the Team
+import TidianePhoto from '../../assets/team/Tidiane.jpg';
+import AlexPhoto from '../../assets/team/Alex.png';
+import BennettPhoto from '../../assets/team/Bennett.jpg';
 
-Meet the three members of the BizRush team. Add each teammate's details below.
+## Meet the Team
+
+Meet the three members of the BizRush team. 
 
 <CardGrid>
-	<CustomCard title="Team Member 1" icon="mdi:account">
-		![Placeholder portrait for Team Member 1](../../assets/team/member-1-placeholder.svg)
+	<CustomCard title="Bennett Moore" icon="mdi:account">
+		<Image src={BennettPhoto} alt="Bennett Moore" />
 
-		**Major:** Add major here  
-		**Role:** Add role here  
-		**Year:** Add year here  
-		**Bio:** Add short bio here.
+		**Major:** Computer Science  
+		**Role:** Lead Developer  
+		**Year:** 3rd Year
+		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
-	<CustomCard title="Team Member 2" icon="mdi:account">
-		![Placeholder portrait for Team Member 2](../../assets/team/member-2-placeholder.svg)
+	<CustomCard title="Tidiane Dia" icon="mdi:account">
+		<Image src={TidianePhoto} alt="Tidiane Dia" />
 
-		**Major:** Add major here  
-		**Role:** Add role here  
-		**Year:** Add year here  
-		**Bio:** Add short bio here.
+		**Major:** Computer Information Systems  
+		**Role:** Associate Developer  
+		**Year:** 4th Year  
+		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
-	<CustomCard title="Team Member 3" icon="mdi:account">
-		![Placeholder portrait for Team Member 3](../../assets/team/member-3-placeholder.svg)
+	<CustomCard title="Alex Testa" icon="mdi:account">
+		<Image src={AlexPhoto} alt="Alex Testa" />
 
-		**Major:** Add major here  
-		**Role:** Add role here  
-		**Year:** Add year here  
-		**Bio:** Add short bio here.
+		**Major:** Computer Information Systems
+		**Role:** Associate Developer  
+		**Year:** 4th Year 
+		{/* **Bio:** Add short bio here. */}
 	</CustomCard>
 </CardGrid>
-
-

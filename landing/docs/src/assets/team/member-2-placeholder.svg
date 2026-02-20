@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400" role="img" aria-labelledby="title2 desc2">
-  <title id="title2">Team Member 2 placeholder</title>
-  <desc id="desc2">Placeholder profile image for team member 2.</desc>
-  <rect width="640" height="400" fill="#e8f7dd" />
-  <circle cx="320" cy="155" r="70" fill="#79b56b" />
-  <rect x="210" y="245" width="220" height="95" rx="45" fill="#79b56b" />
-  <text x="320" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#1f3720">Member 2</text>
-</svg>
