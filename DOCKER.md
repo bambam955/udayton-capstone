@@ -70,7 +70,7 @@ Run emulator on the host, connect from Docker:
 
 ```bash
 # Start emulator, then run (ADB TCP is enabled automatically)
-just emulator
+just apps/emulator
 just up main-android
 ```
 
@@ -83,7 +83,7 @@ sdkmanager "emulator" "platform-tools" "system-images;android-36;google_apis;arm
 avdmanager create avd -n dev -k "system-images;android-36;google_apis;arm64-v8a"
 
 # Terminal 1: Start emulator
-just emulator
+just apps/emulator
 
 # Terminal 2: Run (ADB TCP is enabled automatically)
 just up main-android

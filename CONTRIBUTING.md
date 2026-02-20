@@ -2,11 +2,18 @@
 
 ## Prerequisites
 
+### Dev Tooling
+
 - [Docker](https://docs.docker.com/get-docker/) (Docker Desktop on Mac/Windows, Docker Engine on Linux)
 - [`just`](https://github.com/casey/just) command runner
 - [`pre-commit`](https://pre-commit.com/) (optional, recommended) — runs formatting and lint checks automatically on each commit
 
-You do **not** need to install Flutter, the Android SDK, Java, or Gradle locally. All build tooling runs inside Docker containers. The root `justfile` wraps everything in `docker compose run`, delegating to `app/justfile` inside the container.
+### Project Tech Stack
+
+- Flutter
+- Android Studio and Android emulator
+
+You do **not** need to install the Android SDK, Java, or Gradle locally. All build tooling runs inside Docker containers for a consistent build environment. The root `justfile` wraps everything in `docker compose run`, delegating to `app/justfile` inside the container.
 
 ## Getting Started
 
@@ -19,7 +26,7 @@ cd bizrush
 just setup
 
 # Start web dev server (http://localhost:8080)
-just up
+just up main-web
 ```
 
 If `pre-commit` is installed, `just setup` will automatically run `pre-commit install` to set up the Git hooks.
@@ -30,18 +37,15 @@ The first build takes ~10-15 minutes to download SDKs. Subsequent builds use Doc
 
 | Command | Description |
 |---------|-------------|
-| `just up` | Start web dev server at http://localhost:8080 |
+| `just up <services>` | Start backend + selected frontend services |
 | `just down` | Stop all services |
-| `just test` | Run tests |
-| `just check` | Static analysis (`flutter analyze`) |
-| `just format` | Format code (`dart format`) |
-| `just deps` | Install dependencies (`flutter pub get`) |
-| `just build` | Build debug APK |
-| `just build release` | Build release APK |
-| `just run-web` | One-off web run (vs. `just up` which stays attached) |
-| `just run-android` | Run on Android emulator (see below) |
-| `just doctor` | Run `flutter doctor` in the container |
-| `just clean` | Clean build artifacts |
+| `just test <components>` | Run tests |
+| `just check <components>` | Static source code analysis and linting |
+| `just format <components>` | Format code |
+| `just deps <components>` | Install dependencies (`flutter pub get`) |
+| `just build <component> [args]` | Build a deployable version of the specified component |
+| `just doctor` | Run `flutter doctor` in the dev container |
+| `just clean <components>` | Clean build artifacts |
 | `just` | List all available commands |
 
 ## Running on Android
@@ -52,11 +56,11 @@ The Android emulator runs natively on your host machine; Docker handles all Flut
 
 ```bash
 # Terminal 1: Start an emulator on the host
-just emulator
+just --justfile apps/justfile emulator
 
-# Terminal 2: Enable ADB over TCP, then run
-just adb-tcp
-just run-android
+# Terminal 2: run an app on the emulator
+just up main-android
+just up driver-android
 ```
 
 On macOS, you may need to install emulator tooling first — see [DOCKER.md](DOCKER.md#macos) for details.
@@ -65,16 +69,10 @@ On macOS, you may need to install emulator tooling first — see [DOCKER.md](DOC
 
 1. Install [Android Studio](https://developer.android.com/studio) and create an emulator via Device Manager
 2. Start the emulator from Device Manager
-3. Enable ADB over TCP:
-   ```powershell
-   adb tcpip 5555
-   ```
-4. Run the app (from WSL2 or Git Bash):
+3. Run the app (from WSL2 or Git Bash):
    ```bash
-   just run-android
+   just up main-android
    ```
-
-On Windows, `just run-android` uses a local Flutter installation instead of Docker, since nested virtualization prevents Docker from accessing the host emulator. You will need Flutter installed locally for this command only.
 
 ## Testing
 
