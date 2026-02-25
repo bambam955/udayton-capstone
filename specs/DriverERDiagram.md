@@ -1,4 +1,4 @@
-# Driver Application E-R Diagram  
+# Driver Application E-R Diagram
 ## Grocery Pickup-to-Delivery Marketplace Platform
 
 This Entity–Relationship (E-R) diagram represents the complete data model for the **Driver Application** of the Grocery Pickup-to-Delivery Marketplace system. The driver app is responsible for delivery execution, real-time status tracking, earnings management, and communication between drivers and the platform.
@@ -83,4 +83,4 @@ The schema is designed using normalized relational principles to:
 This E-R diagram represents the **operational backbone of the driver ecosystem**, ensuring deliveries are executed reliably, traceably, and securely.
 
 
-![Driver E-R Diagram](<../../assets/E-Rimages/BizRush-Driver E-R Diagram.drawio.png>)
+![Driver E-R Diagram](<./assets/E-R-diagrams/BizRush-Driver E-R Diagram.drawio.png>)

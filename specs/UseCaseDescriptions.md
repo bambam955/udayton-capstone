@@ -1,30 +1,30 @@
-# Grocery Pickup-to-Delivery Marketplace App  
+# Grocery Pickup-to-Delivery Marketplace App
 ## Use Case Descriptions (Mockoon Proof of Concept)
 
 ---
 
 # Table of Contents
 
-1. Customer Use Cases  
-   1.1 [C1 – Browse Mock Products and Build Cart](#c1--browse-mock-products-and-build-cart)  
-   1.2 [C2 – Simulate Retailer Account Linking](#c2--simulate-retailer-account-linking)  
-   1.3 [C3 – Place Mock Pickup Order](#c3--place-mock-pickup-order)  
-   1.4 [C4 – Track Simulated Order Status](#c4--track-simulated-order-status)  
-   1.5 [C5 – Submit Mock Support Requests](#c5--submit-mock-support-requests)  
+1. Customer Use Cases
+   1.1 [C1 – Browse Mock Products and Build Cart](#c1--browse-mock-products-and-build-cart)
+   1.2 [C2 – Simulate Retailer Account Linking](#c2--simulate-retailer-account-linking)
+   1.3 [C3 – Place Mock Pickup Order](#c3--place-mock-pickup-order)
+   1.4 [C4 – Track Simulated Order Status](#c4--track-simulated-order-status)
+   1.5 [C5 – Submit Mock Support Requests](#c5--submit-mock-support-requests)
 
-2. Driver Use Cases  
-   2.1 [D1 – Driver Login](#d1--driver-login)  
-   2.2 [D2 – Fetch Available Mock Deliveries](#d2--fetch-available-mock-deliveries)  
-   2.3 [D3 – Accept Mock Delivery](#d3--accept-mock-delivery)  
-   2.4 [D4 – Confirm Pickup](#d4--confirm-pickup)  
-   2.5 [D5 – Complete Delivery with Proof (Photo)](#d5--complete-delivery-with-proof-photo)  
+2. Driver Use Cases
+   2.1 [D1 – Driver Login](#d1--driver-login)
+   2.2 [D2 – Fetch Available Mock Deliveries](#d2--fetch-available-mock-deliveries)
+   2.3 [D3 – Accept Mock Delivery](#d3--accept-mock-delivery)
+   2.4 [D4 – Confirm Pickup](#d4--confirm-pickup)
+   2.5 [D5 – Complete Delivery with Proof (Photo)](#d5--complete-delivery-with-proof-photo)
 
-3. Admin Use Cases  
-   3.1 [A1 – View All Orders](#a1--view-all-orders)  
-   3.2 [A2 – Manually Update Order Status](#a2--manually-update-order-status)  
-   3.3 [A3 – Issue Mock Refund](#a3--issue-mock-refund)  
-   3.4 [A4 – View Drivers](#a4--view-drivers)  
-   3.5 [A5 – Simulate API Failure](#a5--simulate-api-failure)  
+3. Admin Use Cases
+   3.1 [A1 – View All Orders](#a1--view-all-orders)
+   3.2 [A2 – Manually Update Order Status](#a2--manually-update-order-status)
+   3.3 [A3 – Issue Mock Refund](#a3--issue-mock-refund)
+   3.4 [A4 – View Drivers](#a4--view-drivers)
+   3.5 [A5 – Simulate API Failure](#a5--simulate-api-failure)
 
 ---
 
@@ -35,11 +35,11 @@
 ## C1 – Browse Mock Products and Build Cart
 
 ### Use Case Description
-- **Use Case ID:** C1  
-- **Primary Actor:** Customer  
-- **Goal:** Browse mock retailer products and add/remove items to a cart.  
-- **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** C1
+- **Primary Actor:** Customer
+- **Goal:** Browse mock retailer products and add/remove items to a cart.
+- **Scope:** Customer App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Mockoon server is running.
@@ -90,11 +90,11 @@ Customer selects a retailer and navigates to the product browsing screen.
 ## C2 – Simulate Retailer Account Linking
 
 ### Use Case Description
-- **Use Case ID:** C2  
-- **Primary Actor:** Customer  
-- **Goal:** Simulate connecting a retailer account using Mockoon (no real OAuth).  
-- **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** C2
+- **Primary Actor:** Customer
+- **Goal:** Simulate connecting a retailer account using Mockoon (no real OAuth).
+- **Scope:** Customer App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Mockoon server is running.
@@ -142,11 +142,11 @@ Customer taps “Connect Walmart” or “Connect Target.”
 ## C3 – Place Mock Pickup Order
 
 ### Use Case Description
-- **Use Case ID:** C3  
-- **Primary Actor:** Customer  
-- **Goal:** Submit an order payload to Mockoon and receive an orderId and initial status.  
-- **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** C3
+- **Primary Actor:** Customer
+- **Goal:** Submit an order payload to Mockoon and receive an orderId and initial status.
+- **Scope:** Customer App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Customer has items in cart.
@@ -201,11 +201,11 @@ Customer taps “Place Order” on the checkout screen.
 ## C4 – Track Simulated Order Status
 
 ### Use Case Description
-- **Use Case ID:** C4  
-- **Primary Actor:** Customer  
-- **Goal:** Display changing order statuses by polling Mockoon status endpoint.  
-- **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** C4
+- **Primary Actor:** Customer
+- **Goal:** Display changing order statuses by polling Mockoon status endpoint.
+- **Scope:** Customer App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Customer has an existing orderId.
@@ -257,11 +257,11 @@ Customer opens the tracking screen for a specific order.
 ## C5 – Submit Mock Support Requests
 
 ### Use Case Description
-- **Use Case ID:** C5  
-- **Primary Actor:** Customer  
-- **Goal:** Submit a support ticket to Mockoon and receive a ticket confirmation.  
-- **Scope:** Customer App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** C5
+- **Primary Actor:** Customer
+- **Goal:** Submit a support ticket to Mockoon and receive a ticket confirmation.
+- **Scope:** Customer App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Customer app is running.
@@ -313,11 +313,11 @@ Customer submits a support form.
 ## D1 – Driver Login
 
 ### Use Case Description
-- **Use Case ID:** D1  
-- **Primary Actor:** Driver  
-- **Goal:** Authenticate driver and load the driver dashboard using mock auth.  
-- **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** D1
+- **Primary Actor:** Driver
+- **Goal:** Authenticate driver and load the driver dashboard using mock auth.
+- **Scope:** Driver App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Mockoon server is running.
@@ -367,11 +367,11 @@ Driver submits login credentials.
 ## D2 – Fetch Available Mock Deliveries
 
 ### Use Case Description
-- **Use Case ID:** D2  
-- **Primary Actor:** Driver  
-- **Goal:** View a list of available deliveries from Mockoon.  
-- **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** D2
+- **Primary Actor:** Driver
+- **Goal:** View a list of available deliveries from Mockoon.
+- **Scope:** Driver App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Driver is logged in (token exists).
@@ -413,11 +413,11 @@ Driver opens “Available Deliveries.”
 ## D3 – Accept Mock Delivery
 
 ### Use Case Description
-- **Use Case ID:** D3  
-- **Primary Actor:** Driver  
-- **Goal:** Accept a delivery job and move it into an assigned/active state.  
-- **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** D3
+- **Primary Actor:** Driver
+- **Goal:** Accept a delivery job and move it into an assigned/active state.
+- **Scope:** Driver App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Driver logged in.
@@ -465,11 +465,11 @@ Driver taps “Accept” on a delivery.
 ## D4 – Confirm Pickup
 
 ### Use Case Description
-- **Use Case ID:** D4  
-- **Primary Actor:** Driver  
-- **Goal:** Confirm pickup to move delivery into “out for delivery.”  
-- **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** D4
+- **Primary Actor:** Driver
+- **Goal:** Confirm pickup to move delivery into “out for delivery.”
+- **Scope:** Driver App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Driver has an assigned delivery.
@@ -517,11 +517,11 @@ Driver taps “Confirm Pickup.”
 ## D5 – Complete Delivery with Proof (Photo)
 
 ### Use Case Description
-- **Use Case ID:** D5  
-- **Primary Actor:** Driver  
-- **Goal:** Complete delivery and submit proof of delivery (mock).  
-- **Scope:** Driver App (Flutter) + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** D5
+- **Primary Actor:** Driver
+- **Goal:** Complete delivery and submit proof of delivery (mock).
+- **Scope:** Driver App (Flutter) + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Delivery is active and out for delivery.
@@ -571,11 +571,11 @@ Driver taps “Complete Delivery.”
 ## A1 – View All Orders
 
 ### Use Case Description
-- **Use Case ID:** A1  
-- **Primary Actor:** Admin  
-- **Goal:** View all orders and their statuses in a dashboard for monitoring.  
-- **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** A1
+- **Primary Actor:** Admin
+- **Goal:** View all orders and their statuses in a dashboard for monitoring.
+- **Scope:** Admin Dashboard + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Mockoon server is running.
@@ -616,11 +616,11 @@ Admin opens the Orders page.
 ## A2 – Manually Update Order Status
 
 ### Use Case Description
-- **Use Case ID:** A2  
-- **Primary Actor:** Admin  
-- **Goal:** Manually change an order status to drive the POC workflow.  
-- **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** A2
+- **Primary Actor:** Admin
+- **Goal:** Manually change an order status to drive the POC workflow.
+- **Scope:** Admin Dashboard + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Order exists.
@@ -663,11 +663,11 @@ Admin selects an order and changes status.
 ## A3 – Issue Mock Refund
 
 ### Use Case Description
-- **Use Case ID:** A3  
-- **Primary Actor:** Admin  
-- **Goal:** Simulate a refund flow for demo (no real payment).  
-- **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** A3
+- **Primary Actor:** Admin
+- **Goal:** Simulate a refund flow for demo (no real payment).
+- **Scope:** Admin Dashboard + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Order exists.
@@ -709,11 +709,11 @@ Admin submits a refund action.
 ## A4 – View Drivers
 
 ### Use Case Description
-- **Use Case ID:** A4  
-- **Primary Actor:** Admin  
-- **Goal:** View driver list and statuses for monitoring.  
-- **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** A4
+- **Primary Actor:** Admin
+- **Goal:** View driver list and statuses for monitoring.
+- **Scope:** Admin Dashboard + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Mockoon running.
@@ -752,11 +752,11 @@ Admin opens Drivers page.
 ## A5 – Simulate API Failure
 
 ### Use Case Description
-- **Use Case ID:** A5  
-- **Primary Actor:** Admin  
-- **Goal:** Demonstrate that the apps handle API failures gracefully.  
-- **Scope:** Admin Dashboard + Mockoon  
-- **Level:** User Goal  
+- **Use Case ID:** A5
+- **Primary Actor:** Admin
+- **Goal:** Demonstrate that the apps handle API failures gracefully.
+- **Scope:** Admin Dashboard + Mockoon
+- **Level:** User Goal
 
 ### Preconditions
 - Mockoon has a failing route or scenario configured (500/timeout).

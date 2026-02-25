@@ -1,14 +1,14 @@
-# Grocery Pickup-to-Delivery Marketplace App  
-## Use Case Diagrams  
+# Grocery Pickup-to-Delivery Marketplace App
+## Use Case Diagrams
 ### Mockoon Proof of Concept
 
 ---
 
 # Table of Contents
 
-1. [Customer Use Case Diagram](#customer-use-case-diagram)  
-2. [Driver Use Case Diagram](#driver-use-case-diagram)  
-3. [Admin Use Case Diagram](#admin-use-case-diagram)  
+1. [Customer Use Case Diagram](#customer-use-case-diagram)
+2. [Driver Use Case Diagram](#driver-use-case-diagram)
+3. [Admin Use Case Diagram](#admin-use-case-diagram)
 
 ---
 

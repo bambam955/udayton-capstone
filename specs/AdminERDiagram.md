@@ -1,7 +1,7 @@
-# Admin UI E-R Diagram  
+# Admin UI E-R Diagram
 ## Grocery Pickup-to-Delivery Marketplace Platform
 
-This Entity–Relationship (E-R) diagram represents the complete data architecture for the **Admin User Interface (Admin UI)** of the Grocery Pickup-to-Delivery Marketplace system.  
+This Entity–Relationship (E-R) diagram represents the complete data architecture for the **Admin User Interface (Admin UI)** of the Grocery Pickup-to-Delivery Marketplace system.
 
 While the Customer and Driver applications focus on transactional and operational workflows, the Admin UI serves as the **governance, oversight, and control layer** of the platform. It enables administrative users to monitor activity, manage risk, enforce policy, handle disputes, configure system rules, and maintain platform integrity.
 
@@ -136,7 +136,7 @@ Ensures administrators can directly communicate with drivers or customers when n
 
 ## Design Philosophy
 
-The Admin UI schema follows normalized relational design principles with strong foreign key relationships and clear entity boundaries.  
+The Admin UI schema follows normalized relational design principles with strong foreign key relationships and clear entity boundaries.
 
 Key design goals include:
 
@@ -149,4 +149,4 @@ Key design goals include:
 This E-R diagram represents the **control plane** of the platform — the layer that governs, audits, and maintains the operational ecosystem formed by the Customer and Driver applications.
 
 
-![Admin E-R Diagram](<../../assets/E-Rimages/BizRush-Admin E-R Diagram.drawio.png>)
+![Admin E-R Diagram](<./assets/E-Rimages/BizRush-Admin E-R Diagram.drawio.png>)

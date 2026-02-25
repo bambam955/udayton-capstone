@@ -1,9 +1,9 @@
 # Scope of Work (SOW)
 ## Grocery Pickup-to-Delivery Marketplace App
 
-**Framework:** Flutter (iOS + Android)  
-**Backend:** API-driven services  
-**Admin:** Web dashboard  
+**Framework:** Flutter (iOS + Android)
+**Backend:** API-driven services
+**Admin:** Web dashboard
 **Retailer Model:** Store employees pick orders; drivers deliver
 
 ---
@@ -165,7 +165,7 @@ The platform acts as a logistics and orchestration layer between customers, reta
 - Secure storage for credentials
 
 ### Backend Architecture
-- REST 
+- REST
 - PostgreSQL database
 - Background job queues
 - Webhooks and polling for retailer updates
