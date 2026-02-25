@@ -2,57 +2,94 @@
 
 ## Prerequisites
 
-### Flutter & Android SDK Setup
+### Dev Tooling
 
-1. **Install Flutter**
-   - Follow the [Flutter installation guide](https://docs.flutter.dev/install/manual) for your OS
-   - Verify installation: `flutter doctor`
+- [Docker](https://docs.docker.com/get-docker/) (Docker Desktop on Mac/Windows, Docker Engine on Linux)
+- [`just`](https://github.com/casey/just) command runner
+- [`pre-commit`](https://pre-commit.com/) (optional, recommended) — runs formatting and lint checks automatically on each commit
 
-2. **Set up Android SDK**
-   - Install [Android Studio](https://developer.android.com/studio)
-   - Open SDK Manager (Tools > SDK Manager) and install:
-     - SDK Platform (latest API level)
-     - Android SDK Build Tools
-     - Android SDK Platform Tools
-   - Accept licenses: `flutter doctor --android-licenses`
+### Project Tech Stack
 
-3. **Verify setup**
-   ```bash
-   flutter doctor
-   ```
-   All items should be checked. Fix any warnings before developing.
+- Flutter
+- Android Studio and Android emulator
 
-## Development Workflow
+You do **not** need to install the Android SDK, Java, or Gradle locally. All build tooling runs inside Docker containers for a consistent build environment. The root `justfile` wraps everything in `docker compose run`, delegating to `app/justfile` inside the container.
 
-1. Clone the repository
-2. Run `just deps` to install dependencies
-3. Connect an Android device or start an emulator
-4. Run `flutter run` to build and launch the app
-
-### `just`
-
-This project uses the [`just`](https://just.systems/man/en) command runner to provide easy access to common development commands.
+## Getting Started
 
 ```bash
-just build-apk    # Build an APK release
-just build-web    # Build a web release
-just test         # Run unit tests
+# Clone the repository
+git clone https://github.com/bizrush-capstone/bizrush.git
+cd bizrush
+
+# One-time setup: build images, install deps, verify environment
+just setup
+
+# Start web dev server (http://localhost:8080)
+just up main-web
 ```
+
+If `pre-commit` is installed, `just setup` will automatically run `pre-commit install` to set up the Git hooks.
+
+The first build takes ~10-15 minutes to download SDKs. Subsequent builds use Docker cache.
+
+## Common Commands
+
+| Command | Description |
+|---------|-------------|
+| `just up <services>` | Start backend + selected frontend services |
+| `just down` | Stop all services |
+| `just test <components>` | Run tests |
+| `just check <components>` | Static source code analysis and linting |
+| `just format <components>` | Format code |
+| `just deps <components>` | Install dependencies (`flutter pub get`) |
+| `just build <component> [args]` | Build a deployable version of the specified component |
+| `just doctor` | Run `flutter doctor` in the dev container |
+| `just clean <components>` | Clean build artifacts |
+| `just` | List all available commands |
+
+## Running on Android
+
+The Android emulator runs natively on your host machine; Docker handles all Flutter/SDK build tooling. They connect via ADB over TCP.
+
+### Linux / macOS
+
+```bash
+# Terminal 1: Start an emulator on the host
+just --justfile apps/justfile emulator
+
+# Terminal 2: run an app on the emulator
+just up main-android
+just up driver-android
+```
+
+On macOS, you may need to install emulator tooling first — see [DOCKER.md](DOCKER.md#macos) for details.
+
+### Windows
+
+1. Install [Android Studio](https://developer.android.com/studio) and create an emulator via Device Manager
+2. Start the emulator from Device Manager
+3. Run the app (from WSL2 or Git Bash):
+   ```bash
+   just up main-android
+   ```
 
 ## Testing
 
-Run tests with:
-
 ```bash
-flutter test
+just test
 ```
 
 ## Code Quality
 
-Follow [Flutter style guidelines](https://dart.dev/guides/language/effective-dart/style).
+- Run `just check` before submitting changes
+- Run `just format` to auto-format code
+- Follow [Dart style guidelines](https://dart.dev/guides/language/effective-dart/style)
 
 ## Submitting Changes
 
-- Create a feature branch
-- Write clear commit messages
-- Submit a pull request with a description of changes
+1. Create a feature branch
+2. Make your changes
+3. Run `just check` and `just test` to verify
+4. Write clear commit messages
+5. Submit a pull request with a description of changes
