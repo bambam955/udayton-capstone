@@ -1,9 +1,10 @@
 # Scope of Work (SOW)
+
 ## Grocery Pickup-to-Delivery Marketplace App
 
-**Framework:** Flutter (iOS + Android)  
-**Backend:** API-driven services  
-**Admin:** Web dashboard  
+**Framework:** Flutter (iOS + Android)
+**Backend:** API-driven services
+**Admin:** Web dashboard
 **Retailer Model:** Store employees pick orders; drivers deliver
 
 ---
@@ -55,17 +56,20 @@ The platform acts as a logistics and orchestration layer between customers, reta
 ### 5.1 Customer App (Flutter)
 
 #### Account Management
+
 - Sign up and login (email/phone)
 - Address book
 - Payment methods
 - Order history
 
 #### Retailer Account Linking
+
 - Connect Mockoon API for proof of concept(mock data)
 - Secure token storage and refresh handling
 - Disconnect and re-authentication flows
 
 #### Shopping
+
 - Retailer and location selection
 - Product browsing and search
 - Cart management
@@ -73,11 +77,13 @@ The platform acts as a logistics and orchestration layer between customers, reta
 - Delivery window selection based on pickup availability
 
 #### Checkout
+
 - Payment authorization
 - Order confirmation
 - Fee and tax breakdown
 
 #### Order Tracking
+
 - Order lifecycle tracking
 - Live driver tracking once assigned
 - Push notifications and in-app alerts
@@ -87,22 +93,26 @@ The platform acts as a logistics and orchestration layer between customers, reta
 ### 5.2 Driver App (Flutter)
 
 #### Onboarding
+
 - Profile and vehicle setup
 - Identity verification
 - Payout account setup
 
 #### Delivery Workflow
+
 - Job offers with pay and distance estimates
 - Pickup confirmation at retailer
 - Navigation to delivery location
 - Proof of delivery (photo, GPS, timestamp)
 
 #### Earnings
+
 - Delivery history
 - Earnings summaries
 - Payout tracking
 
 #### Background Services
+
 - Foreground and background location updates
 - Push notifications
 - Offline handling and retry logic
@@ -153,19 +163,22 @@ The platform acts as a logistics and orchestration layer between customers, reta
 ## 6. Technical Scope
 
 ### Mobile Architecture
+
 - Flutter single codebase for iOS and Android
 - Modular feature-based structure
 - State management (Bloc, Riverpod, or equivalent)
 - Platform channels for native integrations
 
 ### Native Integrations
+
 - Maps (Google Maps or Mapbox)
 - Push notifications (Firebase)
 - Camera and media access
 - Secure storage for credentials
 
 ### Backend Architecture
-- REST 
+
+- REST
 - PostgreSQL database
 - Background job queues
 - Webhooks and polling for retailer updates
@@ -188,18 +201,21 @@ The platform acts as a logistics and orchestration layer between customers, reta
 ## 8. Phases and Milestones
 
 ### Phase 0: Discovery
+
 - Confirm retailer integration strategy
 - Define MVP feature set
 - Architecture and data modeling
 - Risk assessment
 
 ### Phase 1: MVP Development
+
 - Core customer and driver flows
 - Pickup order integration
 - Dispatch and payment services
 - Admin dashboard (core features)
 
 ### Phase 2: Hardening and Scale
+
 - Performance optimization
 - Advanced dispatch logic
 - Monitoring and analytics

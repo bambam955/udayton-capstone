@@ -1,4 +1,5 @@
-# Driver Application E-R Diagram  
+# Driver Application E-R Diagram
+
 ## Grocery Pickup-to-Delivery Marketplace Platform
 
 This Entity–Relationship (E-R) diagram represents the complete data model for the **Driver Application** of the Grocery Pickup-to-Delivery Marketplace system. The driver app is responsible for delivery execution, real-time status tracking, earnings management, and communication between drivers and the platform.
@@ -14,6 +15,7 @@ The data model is organized into three major functional domains:
 This domain manages driver identity, authentication, compliance, and operational readiness.
 
 It includes:
+
 - Driver account records
 - Sessions and device registration
 - Driver profile and background verification
@@ -24,6 +26,7 @@ It includes:
 - Driver notifications
 
 This ensures the platform can:
+
 - Authenticate drivers securely
 - Verify compliance requirements
 - Track active delivery readiness
@@ -37,6 +40,7 @@ This ensures the platform can:
 This domain handles the complete lifecycle of a delivery from assignment to completion.
 
 It includes:
+
 - Delivery assignments tied to orders
 - Delivery offers and acceptance workflow
 - Delivery status event logging
@@ -44,6 +48,7 @@ It includes:
 - Proof of delivery records (photo/signature)
 
 This supports:
+
 - Offer → Accept → Pickup → Deliver flows
 - Real-time delivery tracking
 - Audit logging of status changes
@@ -57,12 +62,14 @@ This supports:
 This domain manages driver compensation and operational issue handling.
 
 It includes:
+
 - Earnings per delivery
 - Bonuses, tips, and adjustments
 - Payout batches
 - Driver support tickets linked to deliveries
 
 This allows:
+
 - Transparent earnings calculation
 - Payment reconciliation
 - Dispute resolution
@@ -82,5 +89,4 @@ The schema is designed using normalized relational principles to:
 
 This E-R diagram represents the **operational backbone of the driver ecosystem**, ensuring deliveries are executed reliably, traceably, and securely.
 
-
-![Driver E-R Diagram](<../../assets/E-Rimages/BizRush-Driver E-R Diagram.drawio.png>)
+![Driver E-R Diagram](../assets/er-diagrams/driver-er-diagram.png)
