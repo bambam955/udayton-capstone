@@ -1,4 +1,5 @@
 # Entity–Relationship (E-R) Diagram
+
 ## Customer Application Database Design
 
 The Entity–Relationship (E-R) Diagram represents the logical data model for the Customer Application of the Grocery Pickup-to-Delivery Marketplace platform. This diagram defines the core entities, attributes, primary keys, foreign keys, and relationships required to support customer account management, retailer integration, cart management, order processing, delivery tracking, payments, support, and notifications.
@@ -25,5 +26,4 @@ This structure ensures the application supports:
 
 The following diagrams illustrates all entities and their relationships in detail.
 
-
-![Customer E-R Diagram](<./assets/E-R-diagrams/BizRush-Customer E-R.drawio.png>)
+![Customer E-R Diagram](../assets/er-diagrams/customer-er-diagram.png)

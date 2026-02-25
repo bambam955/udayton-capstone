@@ -1,5 +1,7 @@
 # Grocery Pickup-to-Delivery Marketplace App
+
 ## System Sequence Diagrams (SSDs)
+
 ### Mockoon Proof of Concept
 
 ---
@@ -35,31 +37,31 @@
 
 ## C1 – Browse Mock Products and Build Cart
 
-<img width="759" height="610" alt="image" src="https://github.com/user-attachments/assets/36aad469-8fde-4bf0-b1bc-0c5fe015c3aa" />
+![C1 System Sequence Diagram](../assets/use-cases/ssd-c1.png)
 
 ---
 
 ## C2 – Simulate Retailer Account Linking
 
-<img width="741" height="788" alt="image" src="https://github.com/user-attachments/assets/5cc9fee1-7392-4fec-9a4c-376d4bcfd230" />
+![C2 System Sequence Diagram](../assets/use-cases/ssd-c2.png)
 
 ---
 
 ## C3 – Place Mock Pickup Order
 
-<img width="641" height="746" alt="image" src="https://github.com/user-attachments/assets/26822637-72f9-42df-b95e-3482b391d534" />
+![C3 System Sequence Diagram](../assets/use-cases/ssd-c3.png)
 
 ---
 
 ## C4 – Track Simulated Order Status
 
-<img width="537" height="706" alt="image" src="https://github.com/user-attachments/assets/33f073d4-409d-45cd-baef-2009ec8cf69c" />
+![C4 System Sequence Diagram](../assets/use-cases/ssd-c4.png)
 
 ---
 
 ## C5 – Submit Mock Support Requests
 
-<img width="816" height="540" alt="image" src="https://github.com/user-attachments/assets/4a2b62a3-af31-4b40-a75c-c98fcacad0a5" />
+![C5 System Sequence Diagram](../assets/use-cases/ssd-c5.png)
 
 ---
 
@@ -69,31 +71,31 @@
 
 ## D1 – Driver Login
 
-<img width="712" height="851" alt="image" src="https://github.com/user-attachments/assets/845f3e0d-fd0a-4726-b1a2-3563fc116b7d" />
+![D1 System Sequence Diagram](../assets/use-cases/ssd-d1.png)
 
 ---
 
 ## D2 – Fetch Available Mock Deliveries
 
-<img width="589" height="601" alt="image" src="https://github.com/user-attachments/assets/3e394853-7ad0-4e32-ba7a-fc14f8ba38ba" />
+![D2 System Sequence Diagram](../assets/use-cases/ssd-d2.png)
 
 ---
 
 ## D3 – Accept Mock Delivery
 
-<img width="758" height="776" alt="image" src="https://github.com/user-attachments/assets/13a59a29-06c3-47d0-ac36-beccd7b5b934" />
+![D3 System Sequence Diagram](../assets/use-cases/ssd-d3.png)
 
 ---
 
 ## D4 – Confirm Pickup
 
-<img width="767" height="707" alt="image" src="https://github.com/user-attachments/assets/29cb3266-0eec-48f7-b38b-37ec0ba91caf" />
+![D4 System Sequence Diagram](../assets/use-cases/ssd-d4.png)
 
 ---
 
 ## D5 – Complete Delivery with Proof (Photo)
 
-<img width="763" height="695" alt="image" src="https://github.com/user-attachments/assets/38b18bfe-2ca4-4ecd-b678-8722426c3374" />
+![D5 System Sequence Diagram](../assets/use-cases/ssd-d5.png)
 
 ---
 
@@ -103,30 +105,30 @@
 
 ## A1 – View All Orders
 
-<img width="657" height="635" alt="image" src="https://github.com/user-attachments/assets/16225a1f-c05a-46b4-a6de-1f39b4ef578f" />
+![A1 System Sequence Diagram](../assets/use-cases/ssd-a1.png)
 
 ---
 
 ## A2 – Manually Update Order Status
 
-<img width="602" height="635" alt="image" src="https://github.com/user-attachments/assets/1bf16406-048c-4f4c-a57b-5cf4f4a96608" />
+![A2 System Sequence Diagram](../assets/use-cases/ssd-a2.png)
 
 ---
 
 ## A3 – Issue Mock Refund
 
-<img width="673" height="628" alt="image" src="https://github.com/user-attachments/assets/f55d4e1f-0015-477c-be39-50f3e56573c4" />
+![A3 System Sequence Diagram](../assets/use-cases/ssd-a3.png)
 
 ---
 
 ## A4 – View Drivers
 
-<img width="785" height="803" alt="image" src="https://github.com/user-attachments/assets/6cbd0ed3-7c10-4b02-ba5e-d073623addf4" />
+![A4 System Sequence Diagram](../assets/use-cases/ssd-a4.png)
 
 ---
 
 ## A5 – Simulate API Failure
 
-<img width="491" height="668" alt="image" src="https://github.com/user-attachments/assets/b807bec0-387b-4ba0-9037-050439d3e373" />
+![A5 System Sequence Diagram](../assets/use-cases/ssd-a5.png)
 
 ---
