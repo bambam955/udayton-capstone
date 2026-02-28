@@ -36,7 +36,8 @@ ENV FLUTTER_SUPPRESS_ANALYTICS=true
 # Install mise
 RUN curl https://mise.run | MISE_VERSION=v2026.2.0 sh
 
-# Install flutter (separate layer for independent caching because it's slow)
+# Install flutter.
+# This needs to be in its own layer for independent caching because it's so big.
 RUN /root/.local/bin/mise use -g flutter@3.38.10
 
 # Install just and regenerate shims
@@ -46,7 +47,8 @@ RUN /root/.local/bin/mise use -g just@1.46 && \
 RUN flutter config --no-analytics \
     --no-enable-linux-desktop \
     --no-enable-macos-desktop \
-    --no-enable-windows-desktop
+    --no-enable-windows-desktop \
+    --no-enable-ios
 
 WORKDIR /workspace
 
@@ -54,6 +56,8 @@ WORKDIR /workspace
 # Web: base + pre-cached web build toolchain
 # =============================================================================
 FROM base AS web
+
+RUN flutter config --no-enable-android
 
 RUN flutter precache --web
 
@@ -100,6 +104,7 @@ RUN sdkmanager --install \
     && rm -rf ${ANDROID_HOME}/.temp
 
 RUN flutter precache --android && \
-    flutter config --android-sdk ${ANDROID_HOME}
+    flutter config --android-sdk ${ANDROID_HOME} \
+    --no-enable-web
 
 CMD ["bash"]
