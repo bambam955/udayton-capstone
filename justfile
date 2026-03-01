@@ -6,8 +6,8 @@
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
-ALL_COMPONENTS := "main driver"
-ALL_DC_SERVICES := "main-web driver-web main-android driver-android" # admin
+ALL_COMPONENTS := "main driver admin"
+ALL_DC_SERVICES := "main-web driver-web main-android driver-android admin"
 
 # ---------- Main commands ---------- #
 
@@ -20,6 +20,9 @@ default:
     @echo ""
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
+    @echo ""
+    @echo "Admin recipes:"
+    @just --justfile admin-base/justfile --list-heading "" --list-prefix "    admin/" --list --unsorted
 
 # Start backend + selected frontend services
 up *services:
@@ -50,7 +53,7 @@ up *services:
 
 # Stop all services
 down:
-    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android {{ DC }} down
+    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android,admin {{ DC }} down
 
 # ---------- Dev commands (default to all components) ---------- #
 
@@ -88,9 +91,9 @@ build component *args:
         main|driver)
             {{ DC }} run --rm apps-android just build "{{component}}" {{args}}
             ;;
-        # admin)
-        #     {{ DC }} run --rm admin-dev just build {{args}}
-        #     ;;
+        admin)
+            {{ DC }} run --rm admin just build {{args}}
+            ;;
         # api)
         #     {{ DC }} run --rm api-dev just build {{args}}
         #     ;;
@@ -113,7 +116,7 @@ setup:
     set -euo pipefail
     command -v pre-commit >/dev/null && pre-commit install || echo "⚠ pre-commit not installed (optional)"
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
-    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android \
+    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android,admin \
         {{ DC }} build
     just deps
 
@@ -141,9 +144,9 @@ _run-for recipe component:
         main|driver)
             {{ DC }} run --rm apps-dev-tools just "{{recipe}}" "{{component}}"
             ;;
-        # admin)
-        #     {{ DC }} run --rm admin-dev just "{{recipe}}"
-        #     ;;
+        admin)
+            {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
+            ;;
         # api)
         #     {{ DC }} run --rm api-dev just "{{recipe}}"
         #     ;;

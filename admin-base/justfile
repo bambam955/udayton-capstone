@@ -1,0 +1,29 @@
+set shell := ["bash", "-cu"]
+
+# List available recipes
+default:
+    @just --list
+
+# Run tests
+test:
+    @echo "No tests have been developed yet."
+
+# Analyze code
+check:
+    npm run check
+
+# Format code
+format:
+    npm run format
+
+# Install dependencies
+deps:
+    npm i --no-fund
+
+# Clean build artifacts
+clean:
+    rm -rf .next
+
+# Build production artifact
+build:
+    npm run build

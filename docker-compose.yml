@@ -107,11 +107,24 @@ services:
     stdin_open: true
     tty: true
 
-  # admin:
-  #   profiles: [admin]
-  #   build: ./admin
-  #   ports:
-  #     - "3001:3001"
+  admin:
+    platform: linux/amd64
+    profiles: [admin]
+    build:
+      context: ./admin-base
+    volumes:
+      - ./admin-base:/workspace
+      - admin-node-modules:/workspace/node_modules
+      - npm-cache:/root/.npm
+    working_dir: /workspace
+    ports:
+      - "${ADMIN_PORT:-3001}:3001"
+    # command: >-
+    #   # bash -lc 'if [ ! -d node_modules ] || [ -z "$(ls -A node_modules 2>/dev/null)" ];
+    #   # then npm ci; fi;
+    command: npm run dev -- --hostname 0.0.0.0 --port ${ADMIN_PORT:-3001}
+    stdin_open: true
+    tty: true
 
   # ---------- Utility (docker compose run only) ---------- #
 
@@ -143,6 +156,18 @@ services:
       - ANDROID_SDK_ROOT=/opt/android-sdk
     tty: true
 
+  admin-dev-tools:
+    platform: linux/amd64
+    profiles: [tools]
+    build:
+      context: ./admin-base
+    volumes:
+      - ./admin-base:/workspace
+      - admin-node-modules:/workspace/node_modules
+      - npm-cache:/root/.npm
+    working_dir: /workspace
+    tty: true
+
 volumes:
   # Persists the Flutter package cache between runs
   pub-cache:
@@ -151,4 +176,8 @@ volumes:
   # Persists the Android debug keystores between runs.
   # This resolves runtime error about failed streamed installs.
   android-debug-key:
+  # Persists Node dependencies for admin dashboard between runs
+  admin-node-modules:
+  # Persists npm download cache between runs
+  npm-cache:
   # pgdata:
