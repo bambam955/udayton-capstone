@@ -1,5 +1,5 @@
 # BizRush services
-# Backend services (no profile) always start with any "just up" command.
+# Backend services (WIP) (no profile) always start with any "just up" command.
 # Frontend services are opt-in via profiles: main-web, driver-web,
 # main-android, driver-android, admin.
 # Utility services (tools profile) are only used via "docker compose run".

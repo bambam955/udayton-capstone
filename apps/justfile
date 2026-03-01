@@ -13,7 +13,9 @@ emulator:
     set -euo pipefail
     case "$(uname -s)" in
         Linux|Darwin)
-            command -v flutter >/dev/null || echo "❌ Flutter not installed"
+            command -v flutter >/dev/null || {
+                echo "❌ Flutter not installed"; exit 1
+            }
             avd=$(flutter emulators 2>/dev/null | grep '•' | grep -v '^Id' | head -1 | awk '{print $1}')
             if [ -z "$avd" ]; then
                 echo "❌ No emulators found. Create one with: flutter emulators --create"

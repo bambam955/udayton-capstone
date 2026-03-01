@@ -18,6 +18,8 @@ format:
 
 # Install dependencies
 deps:
+    # Use install over clean-install to ensure package-lock.json can be updated.
+    # This recipe will only ever be run in a development context.
     npm i --no-fund
 
 # Clean build artifacts

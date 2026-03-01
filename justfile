@@ -1,5 +1,5 @@
 # BizRush — project orchestration
-# Backend services always start; frontend services are opt-in.
+# Backend services always start (WIP); frontend services are opt-in.
 # Usage: just up <service>...   where service is main-web, driver-web,
 #        main-android, driver-android, or admin
 
