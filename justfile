@@ -92,7 +92,8 @@ build component *args:
             {{ DC }} run --rm apps-android just build "{{component}}" {{args}}
             ;;
         admin)
-            {{ DC }} run --rm admin just build {{args}}
+            # Build the docker image
+            docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/
             ;;
         # api)
         #     {{ DC }} run --rm api-dev just build {{args}}

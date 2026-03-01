@@ -112,6 +112,7 @@ services:
     profiles: [admin]
     build:
       context: ./admin-base
+      target: dev
     volumes:
       - ./admin-base:/workspace
       - admin-node-modules:/workspace/node_modules
@@ -160,6 +161,7 @@ services:
     profiles: [tools]
     build:
       context: ./admin-base
+      target: dev
     volumes:
       - ./admin-base:/workspace
       - admin-node-modules:/workspace/node_modules
