@@ -7,28 +7,6 @@ set shell := ["bash", "-cu"]
 default:
     @just --list
 
-# Start emulator on host (for connecting from Docker)
-emulator:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    case "$(uname -s)" in
-        Linux|Darwin)
-            command -v flutter >/dev/null || {
-                echo "❌ Flutter not installed"; exit 1
-            }
-            avd=$(flutter emulators 2>/dev/null | grep '•' | grep -v '^Id' | head -1 | awk '{print $1}')
-            if [ -z "$avd" ]; then
-                echo "❌ No emulators found. Create one with: flutter emulators --create"
-                exit 1
-            fi
-            echo "Launching $avd..."
-            flutter emulators --launch "$avd"
-            ;;
-        MINGW*|MSYS*|CYGWIN*|Windows_NT)
-            echo "Start emulator from Android Studio Device Manager"
-            ;;
-    esac
-
 # Run tests
 test app: (_in-app app "flutter test")
 

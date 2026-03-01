@@ -73,7 +73,8 @@ services:
     build:
       context: ./apps
       target: android
-    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache
@@ -83,6 +84,8 @@ services:
     environment:
       - ANDROID_HOME=/opt/android-sdk
       - ANDROID_SDK_ROOT=/opt/android-sdk
+      - ADB_SERVER_SOCKET=tcp:${ADB_HOST:-host.docker.internal}:${ADB_PORT:-5037}
+      - ANDROID_SERIAL=${ANDROID_SERIAL:-}
     command: flutter run
     stdin_open: true
     tty: true
@@ -93,7 +96,8 @@ services:
     build:
       context: ./apps
       target: android
-    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache
@@ -103,6 +107,8 @@ services:
     environment:
       - ANDROID_HOME=/opt/android-sdk
       - ANDROID_SDK_ROOT=/opt/android-sdk
+      - ADB_SERVER_SOCKET=tcp:${ADB_HOST:-host.docker.internal}:${ADB_PORT:-5037}
+      - ANDROID_SERIAL=${ANDROID_SERIAL:-}
     command: flutter run
     stdin_open: true
     tty: true
@@ -146,6 +152,8 @@ services:
     build:
       context: ./apps
       target: android
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./apps:/workspace
       - pub-cache:/root/.pub-cache

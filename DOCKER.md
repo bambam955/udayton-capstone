@@ -71,8 +71,8 @@ just doctor
 |---|---|---|---|
 | `main-web` | `main-web` | `8080` | Flutter web server (`/workspace/main`) |
 | `driver-web` | `driver-web` | `8081` | Flutter web server (`/workspace/driver`) |
-| `main-android` | `main-android` | N/A | `flutter run` against host emulator (host network mode) |
-| `driver-android` | `driver-android` | N/A | `flutter run` against host emulator (host network mode) |
+| `main-android` | `main-android` | N/A | `flutter run` in Docker using host ADB bridge |
+| `driver-android` | `driver-android` | N/A | `flutter run` in Docker using host ADB bridge |
 | `admin` | `admin` | `3001` | Next.js dev server |
 
 The `just up ...` recipe attaches to the first selected service for interactive stdin (for example hot reload keys).
@@ -90,20 +90,27 @@ From the repo root `justfile`:
 
 ## Android Emulator Notes
 
-For Android profiles, `just up ...-android` tries to run:
+For Android profiles, `just up ...-android` runs `just android-preflight`, which comes out to:
 
 ```bash
-adb kill-server
-adb -a -P 5037 start-server
+adb start-server
+adb devices
 ```
 
-Start an emulator on the host first:
+Android containers connect to host ADB via:
 
 ```bash
-just apps/emulator
+ADB_SERVER_SOCKET=tcp:${ADB_HOST:-host.docker.internal}:${ADB_PORT:-5037}
+```
+
+Start an emulator/device on the host first:
+
+```bash
+just emulator
 just up main-android
 ```
 
+If multiple devices are connected, set `ANDROID_SERIAL=<device-id>` before `just up ...-android`.
 If no emulator exists, create one with `flutter emulators --create` (from a host with Flutter installed).
 
 ## Environment Variables
@@ -114,6 +121,10 @@ Override default ports as needed:
 MAIN_WEB_PORT=3000 just up main-web
 DRIVER_WEB_PORT=3002 just up driver-web
 ADMIN_PORT=3010 just up admin
+
+# Android host-ADB bridge overrides (optional)
+ADB_HOST=host.docker.internal ADB_PORT=5037 just up main-android
+ANDROID_SERIAL=emulator-5554 just up main-android
 ```
 
 ## Troubleshooting
