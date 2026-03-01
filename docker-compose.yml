@@ -125,7 +125,7 @@ services:
       - npm-cache:/root/.npm
     working_dir: /workspace
     ports:
-      - "${ADMIN_PORT:-3001}:3001"
+      - "${ADMIN_PORT:-3001}:${ADMIN_PORT:-3001}"
     # command: >-
     #   # bash -lc 'if [ ! -d node_modules ] || [ -z "$(ls -A node_modules 2>/dev/null)" ];
     #   # then npm ci; fi;
