@@ -1,0 +1,34 @@
+# Flutter app commands — runs inside container or with local Flutter.
+# The root justfile delegates here via Docker; you can also run directly.
+
+set shell := ["bash", "-cu"]
+
+# List available recipes
+default:
+    @just --list
+
+# Run tests
+test app: (_in-app app "flutter test")
+
+# Analyze code
+check app: (_in-app app "flutter analyze")
+
+# Format code
+format app: (_in-app app "dart format .")
+
+# Install dependencies
+deps app: (_in-app app "flutter pub get")
+
+# Clean build artifacts
+clean app: (_in-app app "flutter clean")
+
+# Build APK (e.g. just build main --release)
+build app *args: (_in-app app "flutter build apk " + args)
+
+# Run flutter doctor
+doctor: (_in-app "main" "flutter doctor -v")
+
+# Run command inside an app directory
+[private]
+_in-app app cmd:
+    cd ./{{ app }} && {{ cmd }}

@@ -1,0 +1,22 @@
+{
+  "name": "BizRush",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": {
+    "main-deps": "cd apps/main && flutter pub get",
+    "driver-deps": "cd apps/driver && flutter pub get"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter",
+        "nefrob.vscode-just-syntax"
+      ],
+      "settings": {
+        "dart.flutterSdkPath": "/opt/mise/installs/flutter/3.38.10"
+      }
+    }
+  }
+}
