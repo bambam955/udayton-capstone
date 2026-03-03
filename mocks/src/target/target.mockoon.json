@@ -1,235 +1,235 @@
 {
-    "uuid": "8c528d70-ef95-4bf5-bf90-0a7a32fc9f7e",
-    "lastMigration": 30,
-    "name": "Target Retailer Mock",
-    "endpointPrefix": "",
-    "latency": 0,
-    "port": 3000,
-    "hostname": "0.0.0.0",
-    "folders": [],
-    "routes": [
+  "uuid": "8c528d70-ef95-4bf5-bf90-0a7a32fc9f7e",
+  "lastMigration": 30,
+  "name": "Target Retailer Mock",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "0.0.0.0",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "ee1131b2-c773-4ef1-8608-cf0d8088f96f",
+      "documentation": "Get Target-style inventory",
+      "method": "get",
+      "endpoint": "partner/v1/inventory",
+      "responses": [
         {
-            "uuid": "ee1131b2-c773-4ef1-8608-cf0d8088f96f",
-            "documentation": "Get Target-style inventory",
-            "method": "get",
-            "endpoint": "partner/v1/inventory",
-            "responses": [
-                {
-                    "uuid": "4e8ae73d-1ce8-4a11-81e3-f4d7ca12e2db",
-                    "body": "{\n  \"retailer\": \"target\",\n  \"requestRef\": \"{{faker 'string.uuid'}}\",\n  \"products\": [\n    {\n      \"tcin\": \"10000001\",\n      \"title\": \"Laundry Detergent 92oz\",\n      \"unitPrice\": 14.99,\n      \"currencyCode\": \"USD\",\n      \"availabilityByStore\": [\n        { \"storeId\": \"1843\", \"status\": \"IN_STOCK\", \"qty\": 18 },\n        { \"storeId\": \"1844\", \"status\": \"LOW_STOCK\", \"qty\": 4 }\n      ]\n    },\n    {\n      \"tcin\": \"10000002\",\n      \"title\": \"Trash Bags 40ct\",\n      \"unitPrice\": 11.49,\n      \"currencyCode\": \"USD\",\n      \"availabilityByStore\": [\n        { \"storeId\": \"1843\", \"status\": \"IN_STOCK\", \"qty\": 46 }\n      ]\n    },\n    {\n      \"tcin\": \"10000003\",\n      \"title\": \"Dish Soap 2-Pack\",\n      \"unitPrice\": 6.79,\n      \"currencyCode\": \"USD\",\n      \"availabilityByStore\": [\n        { \"storeId\": \"1843\", \"status\": \"OUT_OF_STOCK\", \"qty\": 0 }\n      ]\n    }\n  ],\n  \"filters\": {\n    \"tcin\": \"{{queryParam 'tcin' 'all'}}\",\n    \"store_id\": \"{{queryParam 'store_id' 'all'}}\"\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 200,
-                    "label": "OK - Authorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [
-                        {
-                            "target": "header",
-                            "modifier": "x-target-api-key",
-                            "value": "tgt-dev-key",
-                            "operator": "equals",
-                            "invert": false
-                        }
-                    ],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": false,
-                    "callback": null
-                },
-                {
-                    "uuid": "7df0e2d4-cffb-49ff-ba59-2241ddf91da8",
-                    "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-target-api-key\"\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 401,
-                    "label": "Unauthorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": true,
-                    "callback": null
-                }
-            ],
-            "enabled": true,
-            "responseMode": null,
-            "randomResponse": false,
-            "sequentialResponse": false
+          "uuid": "4e8ae73d-1ce8-4a11-81e3-f4d7ca12e2db",
+          "body": "{\n  \"retailer\": \"target\",\n  \"requestRef\": \"{{faker 'string.uuid'}}\",\n  \"products\": [\n    {\n      \"tcin\": \"10000001\",\n      \"title\": \"Laundry Detergent 92oz\",\n      \"unitPrice\": 14.99,\n      \"currencyCode\": \"USD\",\n      \"availabilityByStore\": [\n        { \"storeId\": \"1843\", \"status\": \"IN_STOCK\", \"qty\": 18 },\n        { \"storeId\": \"1844\", \"status\": \"LOW_STOCK\", \"qty\": 4 }\n      ]\n    },\n    {\n      \"tcin\": \"10000002\",\n      \"title\": \"Trash Bags 40ct\",\n      \"unitPrice\": 11.49,\n      \"currencyCode\": \"USD\",\n      \"availabilityByStore\": [\n        { \"storeId\": \"1843\", \"status\": \"IN_STOCK\", \"qty\": 46 }\n      ]\n    },\n    {\n      \"tcin\": \"10000003\",\n      \"title\": \"Dish Soap 2-Pack\",\n      \"unitPrice\": 6.79,\n      \"currencyCode\": \"USD\",\n      \"availabilityByStore\": [\n        { \"storeId\": \"1843\", \"status\": \"OUT_OF_STOCK\", \"qty\": 0 }\n      ]\n    }\n  ],\n  \"filters\": {\n    \"tcin\": \"{{queryParam 'tcin' 'all'}}\",\n    \"store_id\": \"{{queryParam 'store_id' 'all'}}\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "OK - Authorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-target-api-key",
+              "value": "tgt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "callback": null
         },
         {
-            "uuid": "48f14fcb-89f5-460d-becc-d7d9d6f671c6",
-            "documentation": "Create Target-style order",
-            "method": "post",
-            "endpoint": "partner/v1/orders",
-            "responses": [
-                {
-                    "uuid": "0cf95fc6-76dd-40ef-9bdd-a5892d14bc6a",
-                    "body": "{\n  \"orderNumber\": \"TGT-{{faker 'string.alphanumeric' length=10 casing='upper'}}\",\n  \"state\": \"SUBMITTED\",\n  \"createdTimestamp\": \"{{now}}\",\n  \"timingProfile\": {\n    \"expectedTransitions\": [\n      { \"state\": \"PICKING\", \"inSeconds\": {{faker 'number.int' min=10 max=40}} },\n      { \"state\": \"READY_FOR_PICKUP\", \"inSeconds\": {{faker 'number.int' min=45 max=120}} },\n      { \"state\": \"OUT_FOR_DELIVERY\", \"inSeconds\": {{faker 'number.int' min=121 max=240}} },\n      { \"state\": \"DELIVERED\", \"inSeconds\": {{faker 'number.int' min=241 max=400}} }\n    ]\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 201,
-                    "label": "Created - Authorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [
-                        {
-                            "target": "header",
-                            "modifier": "x-target-api-key",
-                            "value": "tgt-dev-key",
-                            "operator": "equals",
-                            "invert": false
-                        }
-                    ],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": false,
-                    "callback": null
-                },
-                {
-                    "uuid": "83edb31c-c95d-40ca-a557-52ded7b8f7d4",
-                    "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-target-api-key\"\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 401,
-                    "label": "Unauthorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": true,
-                    "callback": null
-                }
-            ],
-            "enabled": true,
-            "responseMode": null,
-            "randomResponse": false,
-            "sequentialResponse": false
-        },
-        {
-            "uuid": "1a1f5561-df8e-4388-8793-b53f45d9696f",
-            "documentation": "Get Target-style order state with variable polling cadence hints",
-            "method": "get",
-            "endpoint": "partner/v1/orders/:orderNumber/status",
-            "responses": [
-                {
-                    "uuid": "d57b4017-c5b7-47b5-9c87-29f8d58e0de6",
-                    "body": "{\n  \"orderNumber\": \"{{urlParam 'orderNumber'}}\",\n  \"state\": \"{{oneOf (array 'SUBMITTED' 'PICKING' 'READY_FOR_PICKUP' 'OUT_FOR_DELIVERY' 'DELIVERED')}}\",\n  \"checkedAt\": \"{{now}}\",\n  \"pollHintSeconds\": {{faker 'number.int' min=20 max=120}},\n  \"stateModel\": [\n    \"SUBMITTED\",\n    \"PICKING\",\n    \"READY_FOR_PICKUP\",\n    \"OUT_FOR_DELIVERY\",\n    \"DELIVERED\"\n  ]\n}",
-                    "latency": 0,
-                    "statusCode": 200,
-                    "label": "OK - Authorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [
-                        {
-                            "target": "header",
-                            "modifier": "x-target-api-key",
-                            "value": "tgt-dev-key",
-                            "operator": "equals",
-                            "invert": false
-                        }
-                    ],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": false,
-                    "callback": null
-                },
-                {
-                    "uuid": "c1f3d2db-17ba-4968-b807-d095f2be93f7",
-                    "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-target-api-key\"\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 401,
-                    "label": "Unauthorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": true,
-                    "callback": null
-                }
-            ],
-            "enabled": true,
-            "responseMode": null,
-            "randomResponse": false,
-            "sequentialResponse": false
+          "uuid": "7df0e2d4-cffb-49ff-ba59-2241ddf91da8",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-target-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
         }
-    ],
-    "rootChildren": [
-        "ee1131b2-c773-4ef1-8608-cf0d8088f96f",
-        "48f14fcb-89f5-460d-becc-d7d9d6f671c6",
-        "1a1f5561-df8e-4388-8793-b53f45d9696f"
-    ],
-    "headers": [
-        {
-            "key": "Content-Type",
-            "value": "application/json"
-        }
-    ],
-    "proxyMode": false,
-    "proxyHost": "",
-    "proxyRemovePrefix": false,
-    "tlsOptions": {
-        "enabled": false,
-        "type": "CERT",
-        "pfxPath": "",
-        "certPath": "",
-        "keyPath": "",
-        "caPath": "",
-        "passphrase": ""
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "randomResponse": false,
+      "sequentialResponse": false
     },
-    "cors": true,
-    "chaosMode": false
+    {
+      "uuid": "48f14fcb-89f5-460d-becc-d7d9d6f671c6",
+      "documentation": "Create Target-style order",
+      "method": "post",
+      "endpoint": "partner/v1/orders",
+      "responses": [
+        {
+          "uuid": "0cf95fc6-76dd-40ef-9bdd-a5892d14bc6a",
+          "body": "{\n  \"orderNumber\": \"TGT-{{faker 'string.alphanumeric' length=10 casing='upper'}}\",\n  \"state\": \"SUBMITTED\",\n  \"createdTimestamp\": \"{{now}}\",\n  \"timingProfile\": {\n    \"expectedTransitions\": [\n      { \"state\": \"PICKING\", \"inSeconds\": {{faker 'number.int' min=10 max=40}} },\n      { \"state\": \"READY_FOR_PICKUP\", \"inSeconds\": {{faker 'number.int' min=45 max=120}} },\n      { \"state\": \"OUT_FOR_DELIVERY\", \"inSeconds\": {{faker 'number.int' min=121 max=240}} },\n      { \"state\": \"DELIVERED\", \"inSeconds\": {{faker 'number.int' min=241 max=400}} }\n    ]\n  }\n}",
+          "latency": 0,
+          "statusCode": 201,
+          "label": "Created - Authorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-target-api-key",
+              "value": "tgt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "callback": null
+        },
+        {
+          "uuid": "83edb31c-c95d-40ca-a557-52ded7b8f7d4",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-target-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "randomResponse": false,
+      "sequentialResponse": false
+    },
+    {
+      "uuid": "1a1f5561-df8e-4388-8793-b53f45d9696f",
+      "documentation": "Get Target-style order state with variable polling cadence hints",
+      "method": "get",
+      "endpoint": "partner/v1/orders/:orderNumber/status",
+      "responses": [
+        {
+          "uuid": "d57b4017-c5b7-47b5-9c87-29f8d58e0de6",
+          "body": "{\n  \"orderNumber\": \"{{urlParam 'orderNumber'}}\",\n  \"state\": \"{{oneOf (array 'SUBMITTED' 'PICKING' 'READY_FOR_PICKUP' 'OUT_FOR_DELIVERY' 'DELIVERED')}}\",\n  \"checkedAt\": \"{{now}}\",\n  \"pollHintSeconds\": {{faker 'number.int' min=20 max=120}},\n  \"stateModel\": [\n    \"SUBMITTED\",\n    \"PICKING\",\n    \"READY_FOR_PICKUP\",\n    \"OUT_FOR_DELIVERY\",\n    \"DELIVERED\"\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "OK - Authorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-target-api-key",
+              "value": "tgt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "callback": null
+        },
+        {
+          "uuid": "c1f3d2db-17ba-4968-b807-d095f2be93f7",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-target-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "randomResponse": false,
+      "sequentialResponse": false
+    }
+  ],
+  "rootChildren": [
+    "ee1131b2-c773-4ef1-8608-cf0d8088f96f",
+    "48f14fcb-89f5-460d-becc-d7d9d6f671c6",
+    "1a1f5561-df8e-4388-8793-b53f45d9696f"
+  ],
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "chaosMode": false
 }

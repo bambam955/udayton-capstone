@@ -1,240 +1,240 @@
 {
-    "lastMigration": 30,
-    "endpointPrefix": "",
-    "latency": 0,
-    "port": 3000,
-    "hostname": "0.0.0.0",
-    "proxyMode": false,
-    "proxyHost": "",
-    "proxyRemovePrefix": false,
-    "tlsOptions": {
-        "enabled": false,
-        "type": "CERT",
-        "pfxPath": "",
-        "certPath": "",
-        "keyPath": "",
-        "caPath": "",
-        "passphrase": ""
+  "lastMigration": 30,
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "0.0.0.0",
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "folders": [],
+  "chaosMode": false,
+  "name": "Walmart Price Mock",
+  "uuid": "1fdc3a0e-35d1-4495-8a60-eef7d127aec2",
+  "routes": [
+    {
+      "uuid": "cc821f7a-fd78-4d04-aee2-bf40a58235ca",
+      "documentation": "Set up CAP SKU All",
+      "method": "post",
+      "endpoint": "v3/price/cppreference",
+      "responses": [
+        {
+          "uuid": "8d95a025-f829-410e-ad90-3afc4fd97814",
+          "body": "{\n  \"martId\": \"\",\n  \"statusInfo\": {\n    \"subsidyEnrolled\": {{faker 'datatype.boolean'}},\n    \"subsidyPreference\": {{faker 'datatype.boolean'}}\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Successful Operation",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-walmart-api-key",
+              "value": "wmrt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id"
+        },
+        {
+          "uuid": "94f53afa-5e03-4977-ba23-6cd081a7d245",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "type": "http"
     },
-    "cors": true,
-    "headers": [],
-    "proxyReqHeaders": [
+    {
+      "uuid": "c2df1f18-ad96-4ba9-80a5-b59b59ba4bed",
+      "documentation": "Update bulk prices (Multiple)",
+      "method": "post",
+      "endpoint": "v3/price/feeds",
+      "responses": [
         {
-            "key": "",
-            "value": ""
-        }
-    ],
-    "proxyResHeaders": [
-        {
-            "key": "",
-            "value": ""
-        }
-    ],
-    "data": [],
-    "folders": [],
-    "chaosMode": false,
-    "name": "Walmart Price Mock",
-    "uuid": "1fdc3a0e-35d1-4495-8a60-eef7d127aec2",
-    "routes": [
-        {
-            "uuid": "cc821f7a-fd78-4d04-aee2-bf40a58235ca",
-            "documentation": "Set up CAP SKU All",
-            "method": "post",
-            "endpoint": "v3/price/cppreference",
-            "responses": [
-                {
-                    "uuid": "8d95a025-f829-410e-ad90-3afc4fd97814",
-                    "body": "{\n  \"martId\": \"\",\n  \"statusInfo\": {\n    \"subsidyEnrolled\": {{faker 'datatype.boolean'}},\n    \"subsidyPreference\": {{faker 'datatype.boolean'}}\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 200,
-                    "label": "Successful Operation",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [
-                        {
-                            "target": "header",
-                            "modifier": "x-walmart-api-key",
-                            "value": "wmrt-dev-key",
-                            "operator": "equals",
-                            "invert": false
-                        }
-                    ],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": false,
-                    "crudKey": "id"
-                },
-                {
-                    "uuid": "94f53afa-5e03-4977-ba23-6cd081a7d245",
-                    "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 401,
-                    "label": "Unauthorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": true,
-                    "callback": null
-                }
-            ],
-            "enabled": true,
-            "responseMode": null,
-            "type": "http"
+          "uuid": "2e859258-a59d-4117-8f0d-63b74aa045c0",
+          "body": "{\n  \"additionalAttributes\": {},\n  \"errors\": {},\n  \"feedId\": \"\"\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Successful Operation",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-walmart-api-key",
+              "value": "wmrt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id"
         },
         {
-            "uuid": "c2df1f18-ad96-4ba9-80a5-b59b59ba4bed",
-            "documentation": "Update bulk prices (Multiple)",
-            "method": "post",
-            "endpoint": "v3/price/feeds",
-            "responses": [
-                {
-                    "uuid": "2e859258-a59d-4117-8f0d-63b74aa045c0",
-                    "body": "{\n  \"additionalAttributes\": {},\n  \"errors\": {},\n  \"feedId\": \"\"\n}",
-                    "latency": 0,
-                    "statusCode": 200,
-                    "label": "Successful Operation",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [
-                        {
-                            "target": "header",
-                            "modifier": "x-walmart-api-key",
-                            "value": "wmrt-dev-key",
-                            "operator": "equals",
-                            "invert": false
-                        }
-                    ],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": false,
-                    "crudKey": "id"
-                },
-                {
-                    "uuid": "8490d07d-6d4a-4966-a1d3-013d6ac23b9d",
-                    "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 401,
-                    "label": "Unauthorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": true,
-                    "callback": null
-                }
-            ],
-            "enabled": true,
-            "responseMode": null,
-            "type": "http"
+          "uuid": "8490d07d-6d4a-4966-a1d3-013d6ac23b9d",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "type": "http"
+    },
+    {
+      "uuid": "606ebb36-58b3-46d9-b296-7a45de651ad6",
+      "documentation": "Update a price",
+      "method": "put",
+      "endpoint": "v3/price",
+      "responses": [
+        {
+          "uuid": "58f0c135-7731-4bde-bd60-d997835ea022",
+          "body": "{\n  \"errors\": [\n    {\n      \"category\": \"{{oneOf (array 'APPLICATION' 'SYSTEM' 'REQUEST' 'DATA')}}\",\n      \"causes\": [\n        {\n          \"code\": \"\",\n          \"description\": \"\",\n          \"field\": \"\",\n          \"type\": \"\"\n        }\n      ],\n      \"code\": \"\",\n      \"component\": \"\",\n      \"description\": \"\",\n      \"errorIdentifiers\": {},\n      \"field\": \"\",\n      \"gatewayErrorCategory\": \"{{oneOf (array 'INTERNAL_DATA_ERROR' 'EXTERNAL_DATA_ERROR' 'SYSTEM_ERROR')}}\",\n      \"info\": \"\",\n      \"serviceName\": \"\",\n      \"severity\": \"{{oneOf (array 'INFO' 'WARN' 'ERROR')}}\",\n      \"type\": \"\"\n    }\n  ],\n  \"mart\": \"\",\n  \"message\": \"\",\n  \"sku\": \"\",\n  \"statusCode\": {{faker 'number.int' max=99999}}\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Successful Operation",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-walmart-api-key",
+              "value": "wmrt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id"
         },
         {
-            "uuid": "606ebb36-58b3-46d9-b296-7a45de651ad6",
-            "documentation": "Update a price",
-            "method": "put",
-            "endpoint": "v3/price",
-            "responses": [
-                {
-                    "uuid": "58f0c135-7731-4bde-bd60-d997835ea022",
-                    "body": "{\n  \"errors\": [\n    {\n      \"category\": \"{{oneOf (array 'APPLICATION' 'SYSTEM' 'REQUEST' 'DATA')}}\",\n      \"causes\": [\n        {\n          \"code\": \"\",\n          \"description\": \"\",\n          \"field\": \"\",\n          \"type\": \"\"\n        }\n      ],\n      \"code\": \"\",\n      \"component\": \"\",\n      \"description\": \"\",\n      \"errorIdentifiers\": {},\n      \"field\": \"\",\n      \"gatewayErrorCategory\": \"{{oneOf (array 'INTERNAL_DATA_ERROR' 'EXTERNAL_DATA_ERROR' 'SYSTEM_ERROR')}}\",\n      \"info\": \"\",\n      \"serviceName\": \"\",\n      \"severity\": \"{{oneOf (array 'INFO' 'WARN' 'ERROR')}}\",\n      \"type\": \"\"\n    }\n  ],\n  \"mart\": \"\",\n  \"message\": \"\",\n  \"sku\": \"\",\n  \"statusCode\": {{faker 'number.int' max=99999}}\n}",
-                    "latency": 0,
-                    "statusCode": 200,
-                    "label": "Successful Operation",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [
-                        {
-                            "target": "header",
-                            "modifier": "x-walmart-api-key",
-                            "value": "wmrt-dev-key",
-                            "operator": "equals",
-                            "invert": false
-                        }
-                    ],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": false,
-                    "crudKey": "id"
-                },
-                {
-                    "uuid": "b34335ad-18ea-4ee7-a160-518e2d029d1a",
-                    "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
-                    "latency": 0,
-                    "statusCode": 401,
-                    "label": "Unauthorized",
-                    "headers": [
-                        {
-                            "key": "Content-Type",
-                            "value": "application/json"
-                        }
-                    ],
-                    "bodyType": "INLINE",
-                    "filePath": "",
-                    "databucketID": "",
-                    "sendFileAsBody": false,
-                    "rules": [],
-                    "rulesOperator": "OR",
-                    "disableTemplating": false,
-                    "fallbackTo404": false,
-                    "default": true,
-                    "callback": null
-                }
-            ],
-            "enabled": true,
-            "responseMode": null,
-            "type": "http"
+          "uuid": "b34335ad-18ea-4ee7-a160-518e2d029d1a",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
         }
-    ],
-    "rootChildren": [
-        "cc821f7a-fd78-4d04-aee2-bf40a58235ca",
-        "c2df1f18-ad96-4ba9-80a5-b59b59ba4bed",
-        "606ebb36-58b3-46d9-b296-7a45de651ad6"
-    ]
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "type": "http"
+    }
+  ],
+  "rootChildren": [
+    "cc821f7a-fd78-4d04-aee2-bf40a58235ca",
+    "c2df1f18-ad96-4ba9-80a5-b59b59ba4bed",
+    "606ebb36-58b3-46d9-b296-7a45de651ad6"
+  ]
 }

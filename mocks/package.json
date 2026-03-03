@@ -1,23 +1,23 @@
 {
-    "name": "@bizrush/mocks",
-    "version": "0.1.0",
-    "private": true,
-    "description": "Mock API tooling and tests for BizRush retailer mocks",
-    "scripts": {
-        "test": "jest --runInBand",
-        "check": "npm run check:format && npm run check:compose",
-        "check:format": "prettier --check .",
-        "check:compose": "docker compose -f ./docker-compose.yml config >/dev/null && docker compose config >/dev/null",
-        "format": "prettier --write ."
-    },
-    "devDependencies": {
-        "jest": "^30.2.0",
-        "prettier": "^3.6.2"
-    },
-    "jest": {
-        "testEnvironment": "node",
-        "testMatch": [
-            "**/tests/**/*.test.js"
-        ]
-    }
+  "name": "@bizrush/mocks",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mock API tooling and tests for BizRush retailer mocks",
+  "scripts": {
+    "test": "jest --runInBand",
+    "check": "npm run check:format && npm run check:compose",
+    "check:format": "prettier --check .",
+    "check:compose": "docker compose -f ./docker-compose.yml config >/dev/null && docker compose config >/dev/null",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "prettier": "^3.6.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  }
 }
