@@ -1,16 +1,22 @@
-const fs = require('fs')
-const path = require('path')
+const fs = require('fs');
+const path = require('path');
 
 function load(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
-const walmartDir = path.resolve(__dirname, '..', 'src', 'walmart')
+const walmartDir = path.resolve(__dirname, '..', 'src', 'walmart');
+const walmartDistFile = path.resolve(
+  __dirname,
+  '..',
+  'dist',
+  'walmart.mockoon.json'
+);
 const files = {
   items: path.join(walmartDir, 'items.mockoon.json'),
   orders: path.join(walmartDir, 'orders.mockoon.json'),
   price: path.join(walmartDir, 'price.mockoon.json'),
-}
+};
 
 const expected = {
   items: [
@@ -34,33 +40,35 @@ const expected = {
     ['post', 'v3/price/feeds'],
     ['put', 'v3/price'],
   ],
-}
+};
+
+const expectedAll = [...expected.items, ...expected.orders, ...expected.price];
 
 describe('walmart mock definitions', () => {
   test('files exist and are valid json', () => {
     Object.values(files).forEach((f) => {
-      expect(fs.existsSync(f)).toBe(true)
-      expect(() => load(f)).not.toThrow()
-    })
-  })
+      expect(fs.existsSync(f)).toBe(true);
+      expect(() => load(f)).not.toThrow();
+    });
+  });
 
   test('routes match expected method/path contract', () => {
     Object.entries(files).forEach(([domain, file]) => {
-      const env = load(file)
+      const env = load(file);
       const actual = env.routes.map((r) => [
         String(r.method).toLowerCase(),
         r.endpoint,
-      ])
-      expect(actual).toEqual(expected[domain])
-    })
-  })
+      ]);
+      expect(actual).toEqual(expected[domain]);
+    });
+  });
 
   test('all walmart routes require x-walmart-api-key', () => {
     Object.values(files).forEach((file) => {
-      const env = load(file)
+      const env = load(file);
       env.routes.forEach((route) => {
-        const first = route.responses[0]
-        expect(Array.isArray(first.rules)).toBe(true)
+        const first = route.responses[0];
+        expect(Array.isArray(first.rules)).toBe(true);
         expect(
           first.rules.some(
             (rule) =>
@@ -68,8 +76,18 @@ describe('walmart mock definitions', () => {
               rule.modifier === 'x-walmart-api-key' &&
               rule.value === 'wmrt-dev-key'
           )
-        ).toBe(true)
-      })
-    })
-  })
-})
+        ).toBe(true);
+      });
+    });
+  });
+
+  test('generated walmart file includes all walmart routes', () => {
+    expect(fs.existsSync(walmartDistFile)).toBe(true);
+    const env = load(walmartDistFile);
+    const actual = env.routes.map((r) => [
+      String(r.method).toLowerCase(),
+      r.endpoint,
+    ]);
+    expect(actual).toEqual(expectedAll);
+  });
+});
