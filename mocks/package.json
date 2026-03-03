@@ -1,9 +1,12 @@
 {
   "name": "@bizrush/mocks",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "description": "Mock API tooling and tests for BizRush retailer mocks",
   "scripts": {
+    "build": "node src/build.js",
+    "pretest": "npm run build",
     "test": "jest --runInBand",
     "check": "prettier --check .",
     "format": "prettier --write ."
@@ -11,11 +14,5 @@
   "devDependencies": {
     "jest": "^30.2.0",
     "prettier": "^3.6.2"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ]
   }
 }

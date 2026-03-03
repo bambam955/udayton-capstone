@@ -4,11 +4,11 @@ set shell := ["bash", "-cu"]
 default:
     @just --list
 
-# Run mock endpoint smoke tests
+# Run mock endpoint contract smoke tests
 test:
     npm run test
 
-# Validate mock JSON files and compose config
+# Validate mock JSON files
 check:
     npm run check
 
@@ -26,4 +26,4 @@ clean:
     @echo "Nothing to do."
 
 build:
-    @echo "Nothing to do."
+    npm run build

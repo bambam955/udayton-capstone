@@ -2,14 +2,12 @@ services:
   walmart-mock:
     image: mockoon/cli:latest
     command: >-
-      --data /data/walmart/items.mockoon.json
-      --data /data/walmart/orders.mockoon.json
-      --data /data/walmart/price.mockoon.json
+      --data /data/dist/walmart.mockoon.json
       --hostname 0.0.0.0
       --port 3000
       --disable-log-to-file
     volumes:
-      - ./src/walmart:/data/walmart:ro
+      - ./dist:/data/dist:ro
     ports:
       - '4010:3000'
 
