@@ -8,7 +8,7 @@ The project uses Docker Compose profiles for opt-in frontend services:
 
 - Frontend runtime profiles: `main-web`, `driver-web`, `main-android`, `driver-android`, `admin`
 - Utility profile: `tools` (`apps-dev-tools`, `apps-android`, `admin-dev-tools`) for one-off commands via `docker compose run`
-- Backend services are currently commented out in `docker-compose.yml` (API/DB/mocks are scaffolded but inactive)
+- Backend mocks run by default and are imported from `mocks/docker-compose.yml` (`walmart-mock` and `target-mock`)
 
 `apps/Dockerfile` is multi-stage and shared by both Flutter apps:
 
@@ -69,6 +69,8 @@ just doctor
 
 | Compose Service | Profile | Default Host Port | Notes |
 |---|---|---|---|
+| `walmart-mock` | Always on | `4010` | Mockoon Walmart retailer API |
+| `target-mock` | Always on | `4020` | Mockoon Target retailer API |
 | `main-web` | `main-web` | `8080` | Flutter web server (`/workspace/main`) |
 | `driver-web` | `driver-web` | `8081` | Flutter web server (`/workspace/driver`) |
 | `main-android` | `main-android` | N/A | `flutter run` in Docker using host ADB bridge |
@@ -83,6 +85,7 @@ From the repo root `justfile`:
 
 - `just test/check/format/deps/clean main|driver` -> `docker compose run --rm apps-dev-tools just <recipe> <app>`
 - `just test/check/format/deps/clean admin` -> `docker compose run --rm admin-dev-tools just <recipe>`
+- `just test/check/format/deps/clean mocks` -> `just --justfile mocks/justfile <recipe>`
 - `just build main|driver ...` -> `docker compose run --rm apps-android just build <app> ...`
 - `just build admin` -> `docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/`
 - `just doctor` -> `docker compose run --rm apps-android just doctor`

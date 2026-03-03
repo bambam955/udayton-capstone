@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
-ALL_COMPONENTS := "main driver admin"
+ALL_COMPONENTS := "main driver admin mocks"
 ALL_DC_SERVICES := "main-web driver-web main-android driver-android admin"
 
 # ---------- Main commands ---------- #
@@ -23,6 +23,9 @@ default:
     @echo ""
     @echo "Admin recipes:"
     @just --justfile admin-base/justfile --list-heading "" --list-prefix "    admin/" --list --unsorted
+    @echo ""
+    @echo "Mocks recipes:"
+    @just --justfile mocks/justfile --list-heading "" --list-prefix "    mocks/" --list --unsorted
 
 # Start backend + selected frontend services
 up *services:
@@ -145,6 +148,9 @@ _run-for recipe component:
             ;;
         admin)
             {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
+            ;;
+        mocks)
+            just --justfile mocks/justfile "{{recipe}}"
             ;;
         # api)
         #     {{ DC }} run --rm api-dev just "{{recipe}}"
