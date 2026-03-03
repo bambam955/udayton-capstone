@@ -24,3 +24,20 @@ services:
       - ./src/target:/data/target:ro
     ports:
       - '4020:3000'
+
+  mocks-dev-tools:
+    platform: linux/amd64
+    profiles: [tools]
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/workspace
+      - mocks-node-modules:/workspace/node_modules
+      - mocks-npm-cache:/root/.npm
+    working_dir: /workspace
+    tty: true
+
+volumes:
+  mocks-node-modules:
+  mocks-npm-cache:

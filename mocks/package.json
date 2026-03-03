@@ -5,9 +5,7 @@
   "description": "Mock API tooling and tests for BizRush retailer mocks",
   "scripts": {
     "test": "jest --runInBand",
-    "check": "npm run check:format && npm run check:compose",
-    "check:format": "prettier --check .",
-    "check:compose": "docker compose -f ./docker-compose.yml config >/dev/null && docker compose config >/dev/null",
+    "check": "prettier --check .",
     "format": "prettier --write ."
   },
   "devDependencies": {

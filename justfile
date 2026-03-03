@@ -21,11 +21,8 @@ default:
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
     @echo ""
-    @echo "Admin recipes:"
-    @just --justfile admin-base/justfile --list-heading "" --list-prefix "    admin/" --list --unsorted
-    @echo ""
-    @echo "Mocks recipes:"
-    @just --justfile mocks/justfile --list-heading "" --list-prefix "    mocks/" --list --unsorted
+    @echo "For admin/mocks recipes:"
+    @echo "    just --justfile <component>/justfile"
 
 # Start backend + selected frontend services
 up *services:
@@ -99,6 +96,9 @@ build component *args:
         # api)
         #     {{ DC }} run --rm api-dev just build {{args}}
         #     ;;
+        mocks)
+            echo "Nothing to build"
+            ;;
         *)
             echo "❌ Unknown component: {{component}}"
             echo "Known components: {{ALL_COMPONENTS}}"
@@ -150,7 +150,7 @@ _run-for recipe component:
             {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
             ;;
         mocks)
-            just --justfile mocks/justfile "{{recipe}}"
+            {{ DC }} run --rm mocks-dev-tools just "{{recipe}}"
             ;;
         # api)
         #     {{ DC }} run --rm api-dev just "{{recipe}}"
