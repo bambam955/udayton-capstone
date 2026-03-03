@@ -1,13 +1,13 @@
 # BizRush — project orchestration
-# Backend services always start; frontend services are opt-in.
+# Backend services always start (WIP); frontend services are opt-in.
 # Usage: just up <service>...   where service is main-web, driver-web,
 #        main-android, driver-android, or admin
 
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
-ALL_COMPONENTS := "main driver"
-ALL_DC_SERVICES := "main-web driver-web main-android driver-android" # admin
+ALL_COMPONENTS := "main driver admin"
+ALL_DC_SERVICES := "main-web driver-web main-android driver-android admin"
 
 # ---------- Main commands ---------- #
 
@@ -20,6 +20,9 @@ default:
     @echo ""
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
+    @echo ""
+    @echo "Admin recipes:"
+    @just --justfile admin-base/justfile --list-heading "" --list-prefix "    admin/" --list --unsorted
 
 # Start backend + selected frontend services
 up *services:
@@ -38,9 +41,7 @@ up *services:
         [[ "$svc" == *-android ]] && needs_adb=true
     done
     if $needs_adb; then
-        echo "Ensuring ADB server accepts remote connections..."
-        adb kill-server 2>/dev/null || true
-        adb -a -P 5037 start-server || echo "⚠ adb start-server failed — is adb installed?"
+        just android-preflight
     fi
     {{ DC }} $flags up -d
     # Attach to the first service for interactive stdin (hot reload keys)
@@ -50,7 +51,7 @@ up *services:
 
 # Stop all services
 down:
-    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android {{ DC }} down
+    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android,admin {{ DC }} down
 
 # ---------- Dev commands (default to all components) ---------- #
 
@@ -88,9 +89,10 @@ build component *args:
         main|driver)
             {{ DC }} run --rm apps-android just build "{{component}}" {{args}}
             ;;
-        # admin)
-        #     {{ DC }} run --rm admin-dev just build {{args}}
-        #     ;;
+        admin)
+            # Build the docker image
+            docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/
+            ;;
         # api)
         #     {{ DC }} run --rm api-dev just build {{args}}
         #     ;;
@@ -113,7 +115,7 @@ setup:
     set -euo pipefail
     command -v pre-commit >/dev/null && pre-commit install || echo "⚠ pre-commit not installed (optional)"
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
-    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android \
+    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android,admin \
         {{ DC }} build
     just deps
 
@@ -141,9 +143,9 @@ _run-for recipe component:
         main|driver)
             {{ DC }} run --rm apps-dev-tools just "{{recipe}}" "{{component}}"
             ;;
-        # admin)
-        #     {{ DC }} run --rm admin-dev just "{{recipe}}"
-        #     ;;
+        admin)
+            {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
+            ;;
         # api)
         #     {{ DC }} run --rm api-dev just "{{recipe}}"
         #     ;;
@@ -153,3 +155,65 @@ _run-for recipe component:
             exit 1
             ;;
     esac
+
+# ---------- Android commands ---------- #
+
+# Start emulator on host (for connecting from Docker)
+emulator:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "$(uname -s)" in
+        Linux|Darwin)
+            command -v flutter >/dev/null || {
+                echo "❌ Flutter not installed"; exit 1
+            }
+            avd=$(flutter emulators 2>/dev/null | grep '•' | grep -v '^Id' | head -1 | awk '{print $1}')
+            if [ -z "$avd" ]; then
+                echo "❌ No emulators found. Create one with: flutter emulators --create"
+                exit 1
+            fi
+            echo "Launching $avd..."
+            flutter emulators --launch "$avd"
+            ;;
+        MINGW*|MSYS*|CYGWIN*|Windows_NT)
+            echo "Start emulator from Android Studio Device Manager"
+            ;;
+    esac
+
+# Verify host ADB/emulator state for Android Docker workflows
+android-preflight:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v adb >/dev/null 2>&1; then
+        echo "ERROR: adb not found on host."
+        echo "Install Android platform-tools and retry."
+        exit 1
+    fi
+    echo "Starting host ADB server (listening for Docker clients)..."
+    adb kill-server >/dev/null 2>&1 || true
+    if ! adb -a start-server >/dev/null 2>&1; then
+        echo "WARNING: 'adb -a start-server' failed; falling back to 'adb start-server'."
+        adb start-server >/dev/null
+    fi
+    devices="$(adb devices | awk 'NR>1 && $2=="device" {print $1}')"
+    if [ -z "$devices" ]; then
+        echo "ERROR: no Android devices/emulators detected on host."
+        echo "Start an emulator on host first (for example: just emulator), then retry."
+        exit 1
+    fi
+    count="$(printf '%s\n' "$devices" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [ "$count" -gt 1 ] && [ -z "${ANDROID_SERIAL:-}" ]; then
+        echo "WARNING: multiple devices detected. Set ANDROID_SERIAL=<device-id> to target one explicitly."
+    fi
+    adb_host="${ADB_HOST:-host.docker.internal}"
+    adb_port="${ADB_PORT:-5037}"
+    echo "Verifying Docker can reach host ADB at ${adb_host}:${adb_port}..."
+    if ! {{ DC }} run --rm --no-deps \
+        -e ADB_SERVER_SOCKET="tcp:${adb_host}:${adb_port}" \
+        apps-android bash -lc 'adb devices >/dev/null'; then
+        echo "ERROR: Docker cannot connect to host ADB at ${adb_host}:${adb_port}."
+        echo "Try: adb kill-server && adb -a start-server"
+        echo "Then re-run: just up main-android"
+        exit 1
+    fi
+    echo "ADB preflight OK. Containers will use ADB_SERVER_SOCKET=tcp:${adb_host}:${adb_port}"
