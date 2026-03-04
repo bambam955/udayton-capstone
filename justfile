@@ -150,7 +150,11 @@ _run-for recipe component:
             {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
             ;;
         mocks)
-            {{ DC }} run --rm mocks-dev-tools just "{{recipe}}"
+            if [[ "{{recipe}}" == "test" ]]; then
+                just mocks/test
+            else
+                {{ DC }} run --rm mocks-dev-tools just "{{recipe}}"
+            fi
             ;;
         # api)
         #     {{ DC }} run --rm api-dev just "{{recipe}}"
