@@ -23,7 +23,7 @@ deps:
     npm i --no-fund
 
 clean:
-    @echo "Nothing to do."
+    rm -rf dist/
 
 build:
     npm run build

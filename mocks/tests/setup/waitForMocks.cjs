@@ -40,4 +40,4 @@ async function waitForMocks({ timeoutMs = 30000, intervalMs = 500 } = {}) {
   throw new Error('Timed out waiting for mock services to become ready');
 }
 
-export { waitForMocks };
+module.exports = { waitForMocks };
