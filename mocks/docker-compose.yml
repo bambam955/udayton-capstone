@@ -1,6 +1,30 @@
 services:
+  # This "service" ensures that the actual services have to wait on dependencies to be installed
+  # without requiring manual steps from devs.
+  mocks-build:
+    platform: linux/amd64
+    build:
+      context: .
+      target: dev
+    command: >-
+      bash -lc '
+      if [ ! -d node_modules ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
+        npm ci --no-fund;
+      fi;
+      npm run build
+      '
+    volumes:
+      - .:/workspace
+      - mocks-node-modules:/workspace/node_modules
+      - mocks-npm-cache:/root/.npm
+    working_dir: /workspace
+    restart: "no"
+
   walmart-mock:
     image: mockoon/cli:latest
+    depends_on:
+      mocks-build:
+        condition: service_completed_successfully
     command: >-
       --data /data/dist/walmart.mockoon.json
       --hostname 0.0.0.0
@@ -13,6 +37,9 @@ services:
 
   target-mock:
     image: mockoon/cli:latest
+    depends_on:
+      mocks-build:
+        condition: service_completed_successfully
     command: >-
       --data /data/dist/target.mockoon.json
       --hostname 0.0.0.0
