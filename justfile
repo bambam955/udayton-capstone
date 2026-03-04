@@ -150,6 +150,7 @@ _run-for recipe component:
             {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
             ;;
         mocks)
+            # TODO: figure out a better way to solve this without having to use DinD
             if [[ "{{recipe}}" == "test" ]]; then
                 just mocks/test
             else
