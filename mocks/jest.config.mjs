@@ -7,4 +7,4 @@ const config = {
   testMatch: '<rootDir>/tests/**/*.test.js',
 };
 
-module.exports = config;
+export default config;

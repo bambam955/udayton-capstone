@@ -1,11 +1,21 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const targetFile = path.resolve(
   __dirname,
   '..',
   'src',
   'target',
+  'target.mockoon.json'
+);
+const targetDistFile = path.resolve(
+  __dirname,
+  '..',
+  'dist',
   'target.mockoon.json'
 );
 
@@ -21,6 +31,20 @@ describe('target mock definition', () => {
 
   test('target routes are present', () => {
     const env = load(targetFile);
+    const actual = env.routes.map((r) => [
+      String(r.method).toLowerCase(),
+      r.endpoint,
+    ]);
+    expect(actual).toEqual([
+      ['get', 'partner/v1/inventory'],
+      ['post', 'partner/v1/orders'],
+      ['get', 'partner/v1/orders/:orderNumber/status'],
+    ]);
+  });
+
+  test('generated target file includes expected routes', () => {
+    expect(fs.existsSync(targetDistFile)).toBe(true);
+    const env = load(targetDistFile);
     const actual = env.routes.map((r) => [
       String(r.method).toLowerCase(),
       r.endpoint,
