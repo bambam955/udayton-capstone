@@ -18,7 +18,7 @@ services:
       - mocks-node-modules:/workspace/node_modules
       - mocks-npm-cache:/root/.npm
     working_dir: /workspace
-    restart: "no"
+    restart: 'no'
 
   walmart-mock:
     image: mockoon/cli:latest

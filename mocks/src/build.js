@@ -70,7 +70,11 @@ export function buildWalmart() {
   const merged = {
     ...items,
     name: 'Walmart Mock',
-    routes: [...(items.routes || []), ...(orders.routes || []), ...(price.routes || [])],
+    routes: [
+      ...(items.routes || []),
+      ...(orders.routes || []),
+      ...(price.routes || []),
+    ],
     folders: mergeUniqueByUuid(
       mergeUniqueByUuid(items.folders || [], orders.folders || []),
       price.folders || []
@@ -79,7 +83,11 @@ export function buildWalmart() {
       mergeUniqueByUuid(items.data || [], orders.data || []),
       price.data || []
     ),
-    headers: [...(items.headers || []), ...(orders.headers || []), ...(price.headers || [])],
+    headers: [
+      ...(items.headers || []),
+      ...(orders.headers || []),
+      ...(price.headers || []),
+    ],
     proxyReqHeaders: [
       ...(items.proxyReqHeaders || []),
       ...(orders.proxyReqHeaders || []),
