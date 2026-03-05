@@ -1,30 +1,54 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bizrush/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('Main nav shows tab-specific content and cart works on Home', (
+    WidgetTester tester,
+  ) async {
+    Future<void> selectMainTab(int index) async {
+      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      navBar.onDestinationSelected?.call(index);
+      await tester.pumpAndSettle();
+    }
+
     await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byKey(const Key('customer-logo')), findsOneWidget);
+    expect(find.byKey(const Key('main-tab-home')), findsOneWidget);
+    expect(find.text('Recommended items'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await selectMainTab(2);
+    expect(find.byKey(const Key('main-tab-orders')), findsOneWidget);
+    expect(find.byKey(const Key('order-card-ord_1001')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('order-view-ord_1001')));
+    await tester.pumpAndSettle();
+    expect(find.text('Order demo details'), findsOneWidget);
+    expect(find.byKey(const Key('details-sheet-title')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('details-sheet-close')));
+    await tester.pumpAndSettle();
+    expect(find.text('Order demo details'), findsNothing);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await selectMainTab(3);
+    expect(find.byKey(const Key('main-tab-support')), findsOneWidget);
+    expect(find.byKey(const Key('support-ticket-tk_771')), findsOneWidget);
+
+    await selectMainTab(4);
+    expect(find.byKey(const Key('main-tab-account')), findsOneWidget);
+    expect(find.text('Connected stores'), findsOneWidget);
+
+    await selectMainTab(0);
+
+    await tester.tap(find.byKey(const Key('store-walmart_eastgate')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('add-to-cart-item_201')));
+    await tester.tap(find.byKey(const Key('add-to-cart-item_201')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('cart-line-item_201')), findsOneWidget);
+    expect(find.byKey(const Key('cart-totals-card')), findsOneWidget);
   });
 }
