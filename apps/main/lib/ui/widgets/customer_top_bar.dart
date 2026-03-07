@@ -16,7 +16,7 @@ class CustomerTopBar extends StatelessWidget {
         children: [
           Expanded(
             child: Image.asset(
-              '../../images/bizrushlogo.png',
+              'assets/images/bizrushlogo.png',
               key: const Key('customer-logo'),
               height: 34,
               fit: BoxFit.contain,

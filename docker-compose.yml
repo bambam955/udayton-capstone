@@ -4,7 +4,12 @@
 # main-android, driver-android, admin.
 # Utility services (tools profile) are only used via "docker compose run".
 
+include:
+  - ./mocks/docker-compose.yml
+
 services:
+  # ---------- Backend (always start) ---------- #
+
   db:
     image: postgres:16
     environment:
@@ -22,15 +27,12 @@ services:
       timeout: 5s
       retries: 10
 
-  
-  
-  # mockoon-orders:
-  #   image: mockoon/cli:latest
-  #   ...
-
-  # mockoon-payments:
-  #   image: mockoon/cli:latest
-  #   ...
+  # api:
+  #   build: ./api
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - db
 
   # ---------- Frontend (opt-in via profiles) ---------- #
 
@@ -188,4 +190,4 @@ volumes:
   admin-node-modules:
   # Persists npm download cache between runs
   npm-cache:
-  pgdata:
+  # pgdata:

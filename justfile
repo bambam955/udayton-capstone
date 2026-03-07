@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
-ALL_COMPONENTS := "main driver admin"
+ALL_COMPONENTS := "main driver admin mocks"
 ALL_DC_SERVICES := "main-web driver-web main-android driver-android admin"
 
 # ---------- Main commands ---------- #
@@ -21,8 +21,8 @@ default:
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
     @echo ""
-    @echo "Admin recipes:"
-    @just --justfile admin-base/justfile --list-heading "" --list-prefix "    admin/" --list --unsorted
+    @echo "For admin/mocks recipes:"
+    @echo "    just --justfile <component>/justfile"
 
 # Start backend + selected frontend services
 up *services:
@@ -96,6 +96,9 @@ build component *args:
         # api)
         #     {{ DC }} run --rm api-dev just build {{args}}
         #     ;;
+        mocks)
+            echo "Nothing to build"
+            ;;
         *)
             echo "❌ Unknown component: {{component}}"
             echo "Known components: {{ALL_COMPONENTS}}"
@@ -145,6 +148,14 @@ _run-for recipe component:
             ;;
         admin)
             {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
+            ;;
+        mocks)
+            # TODO: figure out a better way to solve this without having to use DinD
+            if [[ "{{recipe}}" == "test" ]]; then
+                just mocks/test
+            else
+                {{ DC }} run --rm mocks-dev-tools just "{{recipe}}"
+            fi
             ;;
         # api)
         #     {{ DC }} run --rm api-dev just "{{recipe}}"
