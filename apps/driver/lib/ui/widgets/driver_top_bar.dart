@@ -16,7 +16,7 @@ class DriverTopBar extends StatelessWidget {
         children: [
           Expanded(
             child: Image.asset(
-              '../../images/bizrushdriverlogo.png',
+              'assets/images/bizrushdriverlogo.png',
               key: const Key('driver-logo'),
               height: 34,
               fit: BoxFit.contain,

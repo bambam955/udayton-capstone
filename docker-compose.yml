@@ -4,6 +4,9 @@
 # main-android, driver-android, admin.
 # Utility services (tools profile) are only used via "docker compose run".
 
+include:
+  - ./mocks/docker-compose.yml
+
 services:
   # ---------- Backend (always start) ---------- #
 
@@ -24,14 +27,6 @@ services:
   #     - pgdata:/var/lib/postgresql/data
   #   ports:
   #     - "5432:5432"
-
-  # mockoon-orders:
-  #   image: mockoon/cli:latest
-  #   ...
-
-  # mockoon-payments:
-  #   image: mockoon/cli:latest
-  #   ...
 
   # ---------- Frontend (opt-in via profiles) ---------- #
 

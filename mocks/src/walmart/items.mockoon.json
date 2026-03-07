@@ -1,0 +1,240 @@
+{
+  "lastMigration": 30,
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "0.0.0.0",
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "folders": [],
+  "chaosMode": false,
+  "name": "Walmart Items Mock",
+  "uuid": "7c54efd5-483e-4b09-8c89-b2474366c9f9",
+  "routes": [
+    {
+      "uuid": "cda802e5-876b-4b82-9c35-f2b6b70de2a4",
+      "documentation": "Get status of an item feed",
+      "method": "get",
+      "endpoint": "v3/items/feeds",
+      "responses": [
+        {
+          "uuid": "2fe477ed-c4f3-4420-bd34-088f4ccd98c7",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "successful operation",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/xml"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-walmart-api-key",
+              "value": "wmrt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id"
+        },
+        {
+          "uuid": "d96d33c1-6142-4a6e-bdb3-d305bf48e2ef",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "type": "http"
+    },
+    {
+      "uuid": "7e28f279-1d05-4f44-9bd3-a63cde6b00c0",
+      "documentation": "Upload an item feed",
+      "method": "post",
+      "endpoint": "v3/items/feeds",
+      "responses": [
+        {
+          "uuid": "d6b97c39-5f0f-4d79-9be1-fac3cb8202b1",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "successful operation",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/xml"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-walmart-api-key",
+              "value": "wmrt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id"
+        },
+        {
+          "uuid": "59b78d9d-e28a-438e-b0e3-005d65e6f363",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "type": "http"
+    },
+    {
+      "uuid": "6541fb8d-5a50-4761-b2ab-e7012f6d3fbb",
+      "documentation": "Get status of an item within a feed",
+      "method": "get",
+      "endpoint": "v3/items/feeds/:feedId",
+      "responses": [
+        {
+          "uuid": "ac2a65dd-d56b-4a03-a0bf-9f6a5187b91b",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "successful operation",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/xml"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "x-walmart-api-key",
+              "value": "wmrt-dev-key",
+              "operator": "equals",
+              "invert": false
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id"
+        },
+        {
+          "uuid": "6944dab1-8597-41a2-a410-0b3eb54e68a4",
+          "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Missing or invalid x-walmart-api-key\"\n  }\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "Unauthorized",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callback": null
+        }
+      ],
+      "enabled": true,
+      "responseMode": null,
+      "type": "http"
+    }
+  ],
+  "rootChildren": [
+    "cda802e5-876b-4b82-9c35-f2b6b70de2a4",
+    "7e28f279-1d05-4f44-9bd3-a63cde6b00c0",
+    "6541fb8d-5a50-4761-b2ab-e7012f6d3fbb"
+  ]
+}
