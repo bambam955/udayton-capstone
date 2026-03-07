@@ -190,4 +190,4 @@ volumes:
   admin-node-modules:
   # Persists npm download cache between runs
   npm-cache:
-  # pgdata:
+  pgdata:
