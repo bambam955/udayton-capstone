@@ -1,20 +1,20 @@
 # BizRush — project orchestration
-# Backend services always start (WIP); frontend services are opt-in.
-# Usage: just up <service>...   where service is main-web, driver-web,
+# Backend services run in Docker; Flutter apps run locally; admin runs in Docker.
+# Usage: just up <service>... where service is main-web, driver-web,
 #        main-android, driver-android, or admin
 
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
 ALL_COMPONENTS := "main driver admin mocks"
-ALL_DC_SERVICES := "main-web driver-web main-android driver-android admin"
+ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
 # ---------- Main commands ---------- #
 
 # List available recipes
 default:
     @echo "Components: {{ALL_COMPONENTS}}"
-    @echo "Docker Compose services: {{ ALL_DC_SERVICES }}"
+    @echo "Run services: {{ALL_UP_SERVICE_HELP}}"
     @echo ""
     @just --list --unsorted
     @echo ""
@@ -24,34 +24,99 @@ default:
     @echo "For admin/mocks recipes:"
     @echo "    just --justfile <component>/justfile"
 
-# Start backend + selected frontend services
+# Start backend services in Docker, then run selected app(s) locally
 up *services:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "{{services}}" ]; then
         echo "Usage: just up <service>..."
-        echo "Services: {{ ALL_DC_SERVICES }}"
+        echo "Services: {{ ALL_UP_SERVICE_HELP }}"
         exit 2
     fi
-    echo "Running services {{ services }}..."
-    flags=""
-    needs_adb=false
-    for svc in {{services}}; do
-        flags+=" --profile $svc"
-        [[ "$svc" == *-android ]] && needs_adb=true
-    done
-    if $needs_adb; then
-        just android-preflight
-    fi
-    {{ DC }} $flags up -d
-    # Attach to the first service for interactive stdin (hot reload keys)
-    attach_svc="$(echo {{services}} | awk '{print $1}')"
-    echo "Attaching to service $attach_svc..."
-    {{ DC }} attach "$attach_svc"
 
-# Stop all services
+    launch_local() {
+        case "$1" in
+            main|main-web)
+                local port="${MAIN_WEB_PORT:-8080}"
+                echo "Starting main web app on http://localhost:${port}"
+                (cd apps/main && flutter run -d web-server --web-hostname localhost --web-port "${port}")
+                ;;
+            driver|driver-web)
+                local port="${DRIVER_WEB_PORT:-8081}"
+                echo "Starting driver web app on http://localhost:${port}"
+                (cd apps/driver && flutter run -d web-server --web-hostname localhost --web-port "${port}")
+                ;;
+            main-android)
+                echo "Starting main Android app"
+                (cd apps/main && flutter run)
+                ;;
+            driver-android)
+                echo "Starting driver Android app"
+                (cd apps/driver && flutter run)
+                ;;
+            *)
+                echo "❌ Unknown service: $1"
+                echo "Known services: {{ ALL_UP_SERVICE_HELP }}"
+                exit 1
+                ;;
+        esac
+    }
+
+    requested="{{services}}"
+    read -r -a services <<< "$requested"
+    local_services=()
+    has_admin=false
+    for svc in "${services[@]}"; do
+        case "$svc" in
+            main|main-web|driver|driver-web|main-android|driver-android)
+                local_services+=("$svc")
+                ;;
+            admin)
+                has_admin=true
+                ;;
+            *)
+                echo "❌ Unknown service: $svc"
+                echo "Known services: {{ ALL_UP_SERVICE_HELP }}"
+                exit 1
+                ;;
+        esac
+    done
+
+    echo "Starting backend services with docker compose..."
+    {{ DC }} up -d
+
+    if $has_admin; then
+        if [ "${#local_services[@]}" -eq 0 ]; then
+            echo "Starting admin dashboard in Docker"
+            {{ DC }} --profile admin up admin
+            exit 0
+        fi
+
+        {{ DC }} --profile admin up -d admin
+    fi
+
+    if [ "${#local_services[@]}" -eq 0 ]; then
+        echo "No local services selected."
+        exit 0
+    fi
+
+    pids=()
+    if [ "${#local_services[@]}" -eq 1 ]; then
+        launch_local "${local_services[0]}"
+        exit 0
+    fi
+
+    for svc in "${local_services[@]}"; do
+        launch_local "$svc" &
+        pids+=("$!")
+    done
+
+    echo "Started ${#local_services[@]} local service(s) in the background: ${pids[*]}"
+    wait
+
+# Stop backend services
 down:
-    COMPOSE_PROFILES=main-web,driver-web,main-android,driver-android,admin {{ DC }} down
+    COMPOSE_PROFILES=admin {{ DC }} down
 
 # ---------- Dev commands (default to all components) ---------- #
 
@@ -77,7 +142,7 @@ clean *components:
 
 # Run flutter doctor
 doctor:
-    {{ DC }} run --rm apps-android just doctor
+    just apps/doctor
 
 # ---------- Build commands ---------- #
 
@@ -87,15 +152,11 @@ build component *args:
     set -euo pipefail
     case "{{component}}" in
         main|driver)
-            {{ DC }} run --rm apps-android just build "{{component}}" {{args}}
+            just apps/build "{{component}}" {{args}}
             ;;
         admin)
-            # Build the docker image
             docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/
             ;;
-        # api)
-        #     {{ DC }} run --rm api-dev just build {{args}}
-        #     ;;
         mocks)
             echo "Nothing to build"
             ;;
@@ -108,9 +169,9 @@ build component *args:
 
 # ---------- Dev environment ---------- #
 
-# Open a shell in the dev container
+# Open a local shell
 shell:
-    {{ DC }} run --rm apps-dev-tools bash
+    bash
 
 # Verify and set up the development environment
 setup:
@@ -118,8 +179,9 @@ setup:
     set -euo pipefail
     command -v pre-commit >/dev/null && pre-commit install || echo "⚠ pre-commit not installed (optional)"
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
-    COMPOSE_PROFILES=tools,main-web,driver-web,main-android,driver-android,admin \
-        {{ DC }} build
+    command -v flutter >/dev/null || { echo "❌ Flutter not installed"; exit 1; }
+    command -v npm >/dev/null || { echo "❌ npm not installed"; exit 1; }
+    COMPOSE_PROFILES=admin {{ DC }} build
     just deps
 
 # ---------- Internal ---------- #
@@ -137,29 +199,21 @@ _foreach-component recipe *components:
         just _run-for "{{recipe}}" "$c"
     done
 
-# Map a component to its Docker service and run the recipe
+# Map a component to local tooling and run the recipe
 [private]
 _run-for recipe component:
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{component}}" in
         main|driver)
-            {{ DC }} run --rm apps-dev-tools just "{{recipe}}" "{{component}}"
+            just --justfile apps/justfile "{{recipe}}" "{{component}}"
             ;;
         admin)
-            {{ DC }} run --rm admin-dev-tools just "{{recipe}}"
+            just --justfile admin-base/justfile "{{recipe}}"
             ;;
         mocks)
-            # TODO: figure out a better way to solve this without having to use DinD
-            if [[ "{{recipe}}" == "test" ]]; then
-                just mocks/test
-            else
-                {{ DC }} run --rm mocks-dev-tools just "{{recipe}}"
-            fi
+            just --justfile mocks/justfile "{{recipe}}"
             ;;
-        # api)
-        #     {{ DC }} run --rm api-dev just "{{recipe}}"
-        #     ;;
         *)
             echo "❌ Unknown component: {{component}}"
             echo "Known components: {{ALL_COMPONENTS}}"
@@ -169,7 +223,7 @@ _run-for recipe component:
 
 # ---------- Android commands ---------- #
 
-# Start emulator on host (for connecting from Docker)
+# Start emulator on host
 emulator:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -190,41 +244,3 @@ emulator:
             echo "Start emulator from Android Studio Device Manager"
             ;;
     esac
-
-# Verify host ADB/emulator state for Android Docker workflows
-android-preflight:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if ! command -v adb >/dev/null 2>&1; then
-        echo "ERROR: adb not found on host."
-        echo "Install Android platform-tools and retry."
-        exit 1
-    fi
-    echo "Starting host ADB server (listening for Docker clients)..."
-    adb kill-server >/dev/null 2>&1 || true
-    if ! adb -a start-server >/dev/null 2>&1; then
-        echo "WARNING: 'adb -a start-server' failed; falling back to 'adb start-server'."
-        adb start-server >/dev/null
-    fi
-    devices="$(adb devices | awk 'NR>1 && $2=="device" {print $1}')"
-    if [ -z "$devices" ]; then
-        echo "ERROR: no Android devices/emulators detected on host."
-        echo "Start an emulator on host first (for example: just emulator), then retry."
-        exit 1
-    fi
-    count="$(printf '%s\n' "$devices" | sed '/^$/d' | wc -l | tr -d ' ')"
-    if [ "$count" -gt 1 ] && [ -z "${ANDROID_SERIAL:-}" ]; then
-        echo "WARNING: multiple devices detected. Set ANDROID_SERIAL=<device-id> to target one explicitly."
-    fi
-    adb_host="${ADB_HOST:-host.docker.internal}"
-    adb_port="${ADB_PORT:-5037}"
-    echo "Verifying Docker can reach host ADB at ${adb_host}:${adb_port}..."
-    if ! {{ DC }} run --rm --no-deps \
-        -e ADB_SERVER_SOCKET="tcp:${adb_host}:${adb_port}" \
-        apps-android bash -lc 'adb devices >/dev/null'; then
-        echo "ERROR: Docker cannot connect to host ADB at ${adb_host}:${adb_port}."
-        echo "Try: adb kill-server && adb -a start-server"
-        echo "Then re-run: just up main-android"
-        exit 1
-    fi
-    echo "ADB preflight OK. Containers will use ADB_SERVER_SOCKET=tcp:${adb_host}:${adb_port}"
