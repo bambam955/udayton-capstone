@@ -23,7 +23,7 @@ deps:
     npm i --no-fund
 
 clean:
-    rm -rf dist/
+    sudo rm -rf dist/
 
 build:
     npm run build
