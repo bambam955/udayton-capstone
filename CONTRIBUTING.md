@@ -46,7 +46,7 @@ If `pre-commit` is installed, `just setup` will automatically run `pre-commit in
 | `just clean <components>` | Clean build artifacts |
 | `just` | List all available commands |
 
-`main` and `driver` are Flutter app components. `admin` and `mocks` use Node tooling.
+`main`, `driver`, and `shared` are Flutter components. `admin` and `mocks` use Node tooling.
 
 ## Running on Android
 

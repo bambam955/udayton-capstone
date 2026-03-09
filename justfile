@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
-ALL_COMPONENTS := "main driver admin mocks"
+ALL_COMPONENTS := "main driver apps_shared admin mocks"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
 # ---------- Main commands ---------- #
@@ -154,6 +154,9 @@ build component *args:
         main|driver)
             just apps/build "{{component}}" {{args}}
             ;;
+        apps_shared)
+            echo "Nothing to build"
+            ;;
         admin)
             docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/
             ;;
@@ -207,6 +210,9 @@ _run-for recipe component:
     case "{{component}}" in
         main|driver)
             just --justfile apps/justfile "{{recipe}}" "{{component}}"
+            ;;
+        apps_shared)
+            just --justfile apps/justfile "{{recipe}}" "shared"
             ;;
         admin)
             just --justfile admin-base/justfile "{{recipe}}"
