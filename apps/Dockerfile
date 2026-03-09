@@ -1,19 +1,11 @@
 # =============================================================================
 # Base: Ubuntu + mise + Flutter (shared by all targets)
 # =============================================================================
-# We use a multi-stage Dockerfile so that lightweight commands (test, check,
-# format) run against the small "base" image, while heavier toolchains (web
-# build tools, Android SDK + JDK) are only pulled in by the stages that need
-# them. This keeps the common-case fast.
+# Multi-stage image for optional container-based tooling.
+# Lightweight commands (test, check, format) can be run against the small "base" image,
+# while heavier toolchains (web and Android) are only included where required.
 #
-# mise manages Flutter and just versions inside the container, matching how
-# we manage tools on the host. The root justfile delegates commands into the
-# container via `docker compose run --rm apps-dev-tools just <recipe>`, so
-# apps/justfile can be simple Flutter calls with no Docker awareness.
-#
-# VS Code connects to this container via Dev Containers (.devcontainer/),
-# so the Dart extension gets full language support using the container's
-# Flutter SDK — no local Flutter installation needed.
+# MISE manages Flutter/just versions for this image.
 # =============================================================================
 FROM ubuntu:24.04 AS base
 
