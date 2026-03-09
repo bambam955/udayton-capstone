@@ -17,9 +17,14 @@ export function createAuthRouter(service: AuthService): Router {
 
   router.post('/login', async (req, res, next) => {
     try {
+      // Route-level validation keeps service input fully typed/sanitized.
       const parsed = loginSchema.safeParse(req.body);
       if (!parsed.success) {
-        throw new HttpError(400, 'INVALID_REQUEST', parsed.error.issues[0]?.message ?? 'Invalid payload.');
+        throw new HttpError(
+          400,
+          'INVALID_REQUEST',
+          parsed.error.issues[0]?.message ?? 'Invalid payload.'
+        );
       }
 
       const result = await service.login(parsed.data);

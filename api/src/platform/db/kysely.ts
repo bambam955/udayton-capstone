@@ -7,6 +7,7 @@ let db: Kysely<Database> | undefined;
 
 export function getDb(): Kysely<Database> {
   if (!db) {
+    // Reuse one typed Kysely instance across repositories.
     db = new Kysely<Database>({
       dialect: new PostgresDialect({
         pool: getPool()

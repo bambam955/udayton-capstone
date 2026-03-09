@@ -14,6 +14,7 @@ export class AuthService {
   constructor(private readonly repo: AuthRepository) {}
 
   async login(input: LoginInput): Promise<LoginResult> {
+    // Email lookup is normalized to avoid duplicate identities by casing.
     const user = await this.repo.findUserByEmail(input.role, input.email.toLowerCase());
 
     if (!user || !constantTimeEquals(user.passwordHash, input.password)) {
@@ -22,6 +23,7 @@ export class AuthService {
 
     const sessionId = randomUUID();
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    // JWT carries both role and session id so logout/revocation can key off session.
     const accessToken = signAccessToken({
       sub: user.userId,
       role: user.role,

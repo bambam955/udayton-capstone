@@ -6,6 +6,7 @@ import type { AuthPrincipal } from '../types.js';
 declare global {
   namespace Express {
     interface Request {
+      // Auth context attached after bearer token validation.
       principal?: AuthPrincipal;
     }
   }
@@ -30,6 +31,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 
   try {
     const decoded = verifyAccessToken(token);
+    // Keep request principal minimal and transport-safe.
     req.principal = {
       userId: decoded.sub,
       role: decoded.role,

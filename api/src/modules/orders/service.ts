@@ -11,6 +11,7 @@ export class OrdersService {
       throw new HttpError(403, 'FORBIDDEN', 'Only customer accounts can list customer orders.');
     }
 
+    // Enforce a bounded query window to protect DB and API latency.
     const normalizedLimit = Math.min(Math.max(limit, 1), 100);
     return this.repo.listByCustomer(principal.userId, normalizedLimit);
   }

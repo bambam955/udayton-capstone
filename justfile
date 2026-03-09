@@ -157,6 +157,9 @@ build component *args:
         admin)
             docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/
             ;;
+        api)
+            docker buildx build --tag bizrush/api:latest --target prod -f api/Dockerfile api/
+            ;;
         mocks)
             echo "Nothing to build"
             ;;

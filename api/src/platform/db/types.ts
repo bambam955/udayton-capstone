@@ -1,5 +1,6 @@
 import type { ColumnType } from 'kysely';
 
+// Timestamp columns accept string/Date on writes and normalize to Date on reads.
 export type DBTimestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface CustomersTable {

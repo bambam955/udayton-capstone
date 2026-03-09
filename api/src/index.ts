@@ -8,6 +8,7 @@ import { KyselyOrdersRepository } from './modules/orders/repository.js';
 import { OrdersService } from './modules/orders/service.js';
 import { getDb } from './platform/db/kysely.js';
 
+// Build concrete adapters once at process startup and inject into modules.
 const db = getDb();
 
 const app = createApp({

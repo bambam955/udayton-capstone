@@ -4,13 +4,17 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run lint && npm run format:check",
     "test": "vitest run"
   },
   "dependencies": {
@@ -27,8 +31,14 @@
     "@types/node": "^24.6.0",
     "@types/pg": "^8.15.5",
     "@types/supertest": "^6.0.3",
+    "@eslint/js": "^9.38.0",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jiti": "^2.6.1",
+    "prettier": "^3.6.2",
     "supertest": "^7.1.4",
     "tsx": "^4.20.6",
+    "typescript-eslint": "^8.46.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }

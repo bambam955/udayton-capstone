@@ -11,9 +11,18 @@ export class KyselyOrdersRepository implements OrdersRepository {
   constructor(private readonly db: Kysely<Database>) {}
 
   async listByCustomer(customerId: string, limit: number): Promise<OrderListItem[]> {
+    // Read model keeps response compact for mobile order history screens.
     const rows = await this.db
       .selectFrom('orders')
-      .select(['order_id', 'customer_id', 'retailer_id', 'status', 'total_cents', 'currency', 'placed_at'])
+      .select([
+        'order_id',
+        'customer_id',
+        'retailer_id',
+        'status',
+        'total_cents',
+        'currency',
+        'placed_at'
+      ])
       .where('customer_id', '=', customerId)
       .orderBy('created_at', 'desc')
       .limit(limit)

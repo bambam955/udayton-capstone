@@ -14,6 +14,7 @@ export class KyselyAuthRepository implements AuthRepository {
   constructor(private readonly db: Kysely<Database>) {}
 
   async findUserByEmail(role: AuthRole, email: string): Promise<AuthUser | null> {
+    // Each role maps to a separate table in the current schema.
     if (role === 'customer') {
       const row = await this.db
         .selectFrom('customers')
@@ -68,6 +69,7 @@ export class KyselyAuthRepository implements AuthRepository {
   }
 
   async createSession(session: SessionRecord): Promise<void> {
+    // Sessions are role-scoped and persisted to matching session tables.
     if (session.role === 'customer') {
       await this.db
         .insertInto('customer_sessions')

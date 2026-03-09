@@ -6,6 +6,7 @@ let pool: Pool | undefined;
 
 export function getPool(): Pool {
   if (!pool) {
+    // Singleton pool prevents uncontrolled connection fan-out.
     pool = new Pool({
       connectionString: env.DATABASE_URL,
       max: 10,
