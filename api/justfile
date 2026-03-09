@@ -12,10 +12,9 @@ deps:
 test:
     npm test
 
-# Static checks requested for this service.
+# Static checks for this service.
 check:
-    npm run lint
-    npm run format:check
+    npm run check
 
 # Apply code formatting.
 format:

@@ -1,8 +1,15 @@
+/// <reference types="node" />
+
 import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export default tseslint.config(
+const configDir = dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig(
   {
     ignores: ['dist/**', 'node_modules/**', 'coverage/**']
   },
@@ -13,7 +20,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
-        tsconfigRootDir: process.cwd()
+        tsconfigRootDir: configDir
       }
     },
     rules: {
