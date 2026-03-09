@@ -26,8 +26,9 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   String _searchQueryNearby = '';
 
   late final List<DriverJob> _jobs = initialDriverJobs
-      .map((job) =>
-          job.copyWith(detailLines: List<String>.from(job.detailLines)))
+      .map(
+        (job) => job.copyWith(detailLines: List<String>.from(job.detailLines)),
+      )
       .toList();
 
   late final List<DriverSupportCase> _supportCases =
@@ -51,9 +52,11 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
 
   List<DriverJob> get _activeJobs {
     return _jobs
-        .where((job) =>
-            job.stage == DeliveryStage.assigned ||
-            job.stage == DeliveryStage.outForDelivery)
+        .where(
+          (job) =>
+              job.stage == DeliveryStage.assigned ||
+              job.stage == DeliveryStage.outForDelivery,
+        )
         .toList();
   }
 

@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 
 class MetaInfo {
-  const MetaInfo({
-    required this.icon,
-    required this.text,
-  });
+  const MetaInfo({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
 }
 
 class MetaInfoRow extends StatelessWidget {
-  const MetaInfoRow({
-    super.key,
-    required this.items,
-  });
+  const MetaInfoRow({super.key, required this.items});
 
   final List<MetaInfo> items;
 

@@ -26,17 +26,16 @@ Future<void> showDriverJobDetailsSheet({
       return DetailsSheetScaffold(
         title: 'Delivery details',
         subtitle: job.title,
-        badge: StatusBadge(
-          label: stageLabel,
-          tone: stageTone,
-        ),
+        badge: StatusBadge(label: stageLabel, tone: stageTone),
         sections: [
           SurfaceCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Route summary',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Route summary',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 8),
                 Text('${job.pickup} → ${job.dropoff}'),
               ],
@@ -46,8 +45,10 @@ Future<void> showDriverJobDetailsSheet({
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Trip metrics',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Trip metrics',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 8),
                 MetaInfoRow(
                   items: [
@@ -55,18 +56,9 @@ Future<void> showDriverJobDetailsSheet({
                       icon: Icons.attach_money_rounded,
                       text: job.payEstimateText,
                     ),
-                    MetaInfo(
-                      icon: Icons.route_rounded,
-                      text: job.distanceText,
-                    ),
-                    MetaInfo(
-                      icon: Icons.schedule_rounded,
-                      text: job.etaText,
-                    ),
-                    MetaInfo(
-                      icon: Icons.place_rounded,
-                      text: job.zone,
-                    ),
+                    MetaInfo(icon: Icons.route_rounded, text: job.distanceText),
+                    MetaInfo(icon: Icons.schedule_rounded, text: job.etaText),
+                    MetaInfo(icon: Icons.place_rounded, text: job.zone),
                   ],
                 ),
               ],
@@ -76,8 +68,10 @@ Future<void> showDriverJobDetailsSheet({
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Detail notes',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Detail notes',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 8),
                 for (final line in job.detailLines)
                   Padding(

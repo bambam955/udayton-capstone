@@ -34,10 +34,7 @@ class DriverJob {
   final double basePay;
   final double tipAmount;
 
-  DriverJob copyWith({
-    DeliveryStage? stage,
-    List<String>? detailLines,
-  }) {
+  DriverJob copyWith({DeliveryStage? stage, List<String>? detailLines}) {
     return DriverJob(
       id: id,
       title: title,
