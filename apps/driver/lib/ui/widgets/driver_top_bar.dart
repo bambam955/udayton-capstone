@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DriverTopBar extends StatelessWidget {
-  const DriverTopBar({
-    super.key,
-    required this.onProfileAction,
-  });
+  const DriverTopBar({super.key, required this.onProfileAction});
 
   final ValueChanged<String> onProfileAction;
 
@@ -25,10 +22,7 @@ class DriverTopBar extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'BizRush Driver',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -37,18 +31,9 @@ class DriverTopBar extends StatelessWidget {
             key: const Key('driver-profile-menu'),
             onSelected: onProfileAction,
             itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'view_profile',
-                child: Text('View profile'),
-              ),
-              PopupMenuItem(
-                value: 'switch_role',
-                child: Text('Switch role'),
-              ),
-              PopupMenuItem(
-                value: 'sign_out',
-                child: Text('Sign out'),
-              ),
+              PopupMenuItem(value: 'view_profile', child: Text('View profile')),
+              PopupMenuItem(value: 'switch_role', child: Text('Switch role')),
+              PopupMenuItem(value: 'sign_out', child: Text('Sign out')),
             ],
             icon: const Icon(Icons.person_outline_rounded),
           ),

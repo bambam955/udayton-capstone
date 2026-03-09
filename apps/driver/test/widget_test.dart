@@ -21,8 +21,10 @@ void main() {
 
     await selectDriverTab(1);
     expect(find.byKey(const Key('driver-tab-nearby')), findsOneWidget);
-    expect(find.byKey(const Key('driver-nearby-card-drv_job_101')),
-        findsOneWidget);
+    expect(
+      find.byKey(const Key('driver-nearby-card-drv_job_101')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('driver-view-details-drv_job_101')));
     await tester.pumpAndSettle();
     expect(find.text('Delivery details'), findsOneWidget);
@@ -34,36 +36,51 @@ void main() {
     await tester.tap(find.byKey(const Key('driver-accept-drv_job_101')));
     await tester.pumpAndSettle();
     expect(
-        find.byKey(const Key('driver-nearby-card-drv_job_101')), findsNothing);
+      find.byKey(const Key('driver-nearby-card-drv_job_101')),
+      findsNothing,
+    );
 
     await selectDriverTab(2);
     expect(find.byKey(const Key('driver-tab-deliveries')), findsOneWidget);
-    expect(find.byKey(const Key('driver-delivery-card-drv_job_101')),
-        findsOneWidget);
+    expect(
+      find.byKey(const Key('driver-delivery-card-drv_job_101')),
+      findsOneWidget,
+    );
 
-    await tester
-        .tap(find.byKey(const Key('driver-confirm-pickup-drv_job_101')));
+    await tester.tap(
+      find.byKey(const Key('driver-confirm-pickup-drv_job_101')),
+    );
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('driver-complete-delivery-drv_job_101')),
-        findsOneWidget);
+    expect(
+      find.byKey(const Key('driver-complete-delivery-drv_job_101')),
+      findsOneWidget,
+    );
 
-    await tester
-        .tap(find.byKey(const Key('driver-complete-delivery-drv_job_101')));
+    await tester.tap(
+      find.byKey(const Key('driver-complete-delivery-drv_job_101')),
+    );
     await tester.pumpAndSettle();
 
-    await tester
-        .tap(find.byKey(const Key('driver-deliveries-filter-Completed')));
+    await tester.tap(
+      find.byKey(const Key('driver-deliveries-filter-Completed')),
+    );
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('driver-delivery-card-drv_job_101')),
-        findsOneWidget);
+    expect(
+      find.byKey(const Key('driver-delivery-card-drv_job_101')),
+      findsOneWidget,
+    );
     expect(find.text('COMPLETED'), findsWidgets);
 
     await selectDriverTab(3);
     expect(find.byKey(const Key('driver-tab-earnings')), findsOneWidget);
-    expect(find.byKey(const Key('driver-earnings-row-drv_job_101')),
-        findsOneWidget);
     expect(
-        find.byKey(const Key('driver-earnings-today-gross')), findsOneWidget);
+      find.byKey(const Key('driver-earnings-row-drv_job_101')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('driver-earnings-today-gross')),
+      findsOneWidget,
+    );
 
     await selectDriverTab(4);
     expect(find.byKey(const Key('driver-tab-support')), findsOneWidget);

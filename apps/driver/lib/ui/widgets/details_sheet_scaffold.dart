@@ -50,10 +50,7 @@ class DetailsSheetScaffold extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (badge != null) ...[
-                        const SizedBox(width: 8),
-                        badge!,
-                      ],
+                      if (badge != null) ...[const SizedBox(width: 8), badge!],
                       const SizedBox(width: 4),
                       IconButton(
                         key: const Key('details-sheet-close'),

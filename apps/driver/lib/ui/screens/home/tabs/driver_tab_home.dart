@@ -56,10 +56,7 @@ class DriverTabHome extends StatelessWidget {
                   style: textTheme.bodyMedium,
                 )
               else ...[
-                Text(
-                  focusJob.title,
-                  style: textTheme.titleLarge,
-                ),
+                Text(focusJob.title, style: textTheme.titleLarge),
                 const SizedBox(height: 4),
                 Text(
                   '${focusJob.pickup} → ${focusJob.dropoff}',

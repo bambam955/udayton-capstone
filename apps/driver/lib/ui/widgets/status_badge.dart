@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 enum StatusBadgeTone { assigned, outForDelivery, completed, neutral }
 
 class StatusBadge extends StatelessWidget {
-  const StatusBadge({
-    super.key,
-    required this.label,
-    required this.tone,
-  });
+  const StatusBadge({super.key, required this.label, required this.tone});
 
   final String label;
   final StatusBadgeTone tone;
@@ -17,19 +13,19 @@ class StatusBadge extends StatelessWidget {
     final (background, foreground) = switch (tone) {
       StatusBadgeTone.assigned => (
           const Color(0xFFE7F0FF),
-          const Color(0xFF1F5FBF)
+          const Color(0xFF1F5FBF),
         ),
       StatusBadgeTone.outForDelivery => (
           const Color(0xFFFFF0E3),
-          const Color(0xFFB65A0A)
+          const Color(0xFFB65A0A),
         ),
       StatusBadgeTone.completed => (
           const Color(0xFFE6F6EB),
-          const Color(0xFF1B7F39)
+          const Color(0xFF1B7F39),
         ),
       StatusBadgeTone.neutral => (
           const Color(0xFFF1F3F5),
-          const Color(0xFF4A5560)
+          const Color(0xFF4A5560),
         ),
     };
 
