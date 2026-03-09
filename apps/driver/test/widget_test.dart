@@ -71,7 +71,6 @@ void main() {
 
     await tester.tap(find.byKey(const Key('driver-support-quick-pickup')));
     await tester.pumpAndSettle();
-    expect(
-        find.text('Pickup issue action clicked (demo only)'), findsOneWidget);
+    expect(find.text('Pickup issue clicked (demo only)'), findsOneWidget);
   });
 }
