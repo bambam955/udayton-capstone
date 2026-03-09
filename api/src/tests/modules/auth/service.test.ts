@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { HttpError } from '../../app/errors.js';
-import type { AuthRepository } from './repository.js';
-import { AuthService } from './service.js';
+import { HttpError } from '../../../app/errors.js';
+import type { AuthRepository } from '../../../modules/auth/repository.js';
+import { AuthService } from '../../../modules/auth/service.js';
 
 function makeRepo(): AuthRepository {
   return {

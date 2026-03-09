@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createApp } from './createApp.js';
+import { createApp } from '../../app/createApp.js';
 
 const app = createApp({
   authService: {

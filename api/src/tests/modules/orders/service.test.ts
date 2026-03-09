@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { HttpError } from '../../app/errors.js';
-import { OrdersService } from './service.js';
-import type { OrdersRepository } from './repository.js';
+import { HttpError } from '../../../app/errors.js';
+import type { OrdersRepository } from '../../../modules/orders/repository.js';
+import { OrdersService } from '../../../modules/orders/service.js';
 
 function makeRepo(): OrdersRepository {
   return {
