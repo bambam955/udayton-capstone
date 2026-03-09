@@ -24,7 +24,7 @@ deps:
 
 # Clean build artifacts
 clean:
-    rm -rf .next
+    sudo rm -rf .next
 
 # Build production artifact
 build:

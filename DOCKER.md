@@ -1,137 +1,77 @@
-# Docker Development Setup
+# Docker (Backend Services) Setup
 
-Develop the Flutter apps and admin dashboard without installing Flutter/Android/Node toolchains on your host. You only need Docker and [just](https://github.com/casey/just).
+Backend and mock services plus the admin dashboard are containerized; Flutter apps run locally with host toolchains.
+
+## Prerequisites
+
+- Docker
+- Flutter SDK
+- Node.js + npm
+- Android Studio + Android SDK/emulator (required for local Flutter Android targets)
+  - [Flutter Android setup reference](https://docs.flutter.dev/get-started/install)
 
 ## Architecture
 
-The project uses Docker Compose profiles for opt-in frontend services:
+`docker compose` now owns backend infrastructure, mock APIs, and the containerized admin dashboard:
 
-- Frontend runtime profiles: `main-web`, `driver-web`, `main-android`, `driver-android`, `admin`
-- Utility profile: `tools` (`apps-dev-tools`, `apps-android`, `admin-dev-tools`) for one-off commands via `docker compose run`
-- Backend mocks run by default and are imported from `mocks/docker-compose.yml` (`walmart-mock` and `target-mock`)
+- `walmart-mock` from `mocks/docker-compose.yml`
+- `target-mock` from `mocks/docker-compose.yml`
+- `admin` via profile `admin` from `admin-base/Dockerfile`
 
-`apps/Dockerfile` is multi-stage and shared by both Flutter apps:
+Frontend orchestration for Flutter lives in local tooling:
 
-| Target | Includes | Used by |
-|---|---|---|
-| `base` | Ubuntu + mise + Flutter 3.38.10 + just | `apps-dev-tools` |
-| `web` | Flutter web precache | `main-web`, `driver-web` |
-| `android` | OpenJDK 17 + Android SDK/NDK + Flutter Android precache | `apps-android`, `main-android`, `driver-android` |
-
-`admin-base/Dockerfile` is multi-stage for Next.js admin:
-
-| Target | Includes | Used by |
-|---|---|---|
-| `dev` | Node 22 + `rust-just` + npm deps + dev server on `3001` | `admin`, `admin-dev-tools` |
-| `prod` | Slim Node runtime with standalone Next.js output on `3000` | `just build admin` image build |
-
-First build can take 10-15 minutes due to Flutter/Android SDK downloads; subsequent builds reuse cache and named volumes.
+- Flutter web and Android via local `flutter`
+- Admin dashboard via local tooling is not used for runtime; it runs via Docker profile `admin`.
 
 ## Quick Start
 
 ```bash
-# One-time setup: build images and install dependencies
+# One-time setup (deps + backend dependencies)
 just setup
 
-# Start one or more frontend services
+# Start services
 just up main-web
-just up main-web driver-web
-just up driver-android admin
+just up driver-web
+just up admin
+just up main-android
 
-# Stop all services
+# Stop backend services
 just down
-
-# Run quality commands (all components by default)
-just test
-just check
-just format
-
-# Scope to a component
-just test main
-just check driver
-just format admin
-
-# Install deps
-just deps
-just deps main
-
-# Build artifacts
-just build main --release
-just build driver
-just build admin
-
-# Shell and doctor
-just shell
-just doctor
 ```
 
-## Services and Ports
+`just up` starts backend services first (for app/API dependencies), then:
+- runs Flutter app targets locally, or
+- runs `admin` in Docker via the `admin` profile.
 
-| Compose Service | Profile | Default Host Port | Notes |
-|---|---|---|---|
-| `walmart-mock` | Always on | `4010` | Mockoon Walmart retailer API |
-| `target-mock` | Always on | `4020` | Mockoon Target retailer API |
-| `main-web` | `main-web` | `8080` | Flutter web server (`/workspace/main`) |
-| `driver-web` | `driver-web` | `8081` | Flutter web server (`/workspace/driver`) |
-| `main-android` | `main-android` | N/A | `flutter run` in Docker using host ADB bridge |
-| `driver-android` | `driver-android` | N/A | `flutter run` in Docker using host ADB bridge |
-| `admin` | `admin` | `3001` | Next.js dev server |
-
-The `just up ...` recipe attaches to the first selected service for interactive stdin (for example hot reload keys).
-
-## `just` Command Mapping
+## `just` command mapping for local execution
 
 From the repo root `justfile`:
 
-- `just test/check/format/deps/clean main|driver` -> `docker compose run --rm apps-dev-tools just <recipe> <app>`
-- `just test/check/format/deps/clean admin` -> `docker compose run --rm admin-dev-tools just <recipe>`
-- `just test/check/format/deps/clean mocks` -> `just --justfile mocks/justfile <recipe>`
-- `just build main|driver ...` -> `docker compose run --rm apps-android just build <app> ...`
-- `just build admin` -> `docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/`
-- `just doctor` -> `docker compose run --rm apps-android just doctor`
-- `just shell` -> `docker compose run --rm apps-dev-tools bash`
-
-## Android Emulator Notes
-
-For Android profiles, `just up ...-android` runs `just android-preflight`, which comes out to:
-
-```bash
-adb start-server
-adb devices
-```
-
-Android containers connect to host ADB via:
-
-```bash
-ADB_SERVER_SOCKET=tcp:${ADB_HOST:-host.docker.internal}:${ADB_PORT:-5037}
-```
-
-Start an emulator/device on the host first:
-
-```bash
-just emulator
-just up main-android
-```
-
-If multiple devices are connected, set `ANDROID_SERIAL=<device-id>` before `just up ...-android`.
-If no emulator exists, create one with `flutter emulators --create` (from a host with Flutter installed).
+- `just up <service>` -> `docker compose up -d` for backend, then local app run:
+  - `main-web` / `main` -> `cd apps/main && flutter run -d web-server`
+  - `driver-web` / `driver` -> `cd apps/driver && flutter run -d web-server`
+  - `main-android` -> `cd apps/main && flutter run`
+  - `driver-android` -> `cd apps/driver && flutter run`
+  - `admin` -> runs `admin` compose profile container (`docker compose --profile admin up ...`)
+- `just test/check/format/deps/clean main|driver` -> `just --justfile apps/justfile ...`
+- `just test/check/format/deps/clean admin` -> `just --justfile admin-base/justfile ...`
+- `just build main|driver` -> `just --justfile apps/justfile build`
+- `just build admin` -> `docker buildx build -f admin-base/Dockerfile`
+- `just doctor` -> `just --justfile apps/justfile doctor`
+- `just shell` -> local shell
 
 ## Environment Variables
 
-Override default ports as needed:
+- Flutter web
+  - `MAIN_WEB_PORT` (default `8080`)
+  - `DRIVER_WEB_PORT` (default `8081`)
+- Admin
+  - `ADMIN_PORT` (default `3001`)
+
+### Example
 
 ```bash
 MAIN_WEB_PORT=3000 just up main-web
 DRIVER_WEB_PORT=3002 just up driver-web
 ADMIN_PORT=3010 just up admin
-
-# Android host-ADB bridge overrides (optional)
-ADB_HOST=host.docker.internal ADB_PORT=5037 just up main-android
-ANDROID_SERIAL=emulator-5554 just up main-android
 ```
-
-## Troubleshooting
-
-- No Android device found: run `adb devices`, then restart ADB and reconnect emulator.
-- Linux KVM denied: `sudo usermod -aG kvm $USER`, then log out/in.
-- Admin deps issues: remove `admin-node-modules` volume and rerun `just deps admin`.

@@ -1,8 +1,5 @@
-# BizRush services
-# Backend services (WIP) (no profile) always start with any "just up" command.
-# Frontend services are opt-in via profiles: main-web, driver-web,
-# main-android, driver-android, admin.
-# Utility services (tools profile) are only used via "docker compose run".
+# BizRush backend and admin services
+# Frontend Flutter apps are run locally.
 
 include:
   - ./mocks/docker-compose.yml
@@ -34,86 +31,7 @@ services:
   #   depends_on:
   #     - db
 
-  # ---------- Frontend (opt-in via profiles) ---------- #
-
-  main-web:
-    platform: linux/amd64
-    profiles: [main-web]
-    build:
-      context: ./apps
-      target: web
-    volumes:
-      - ./apps:/workspace
-      - pub-cache:/root/.pub-cache
-    working_dir: /workspace/main
-    ports:
-      - "${MAIN_WEB_PORT:-8080}:8080"
-    stdin_open: true
-    tty: true
-
-  driver-web:
-    platform: linux/amd64
-    profiles: [driver-web]
-    build:
-      context: ./apps
-      target: web
-    volumes:
-      - ./apps:/workspace
-      - pub-cache:/root/.pub-cache
-    working_dir: /workspace/driver
-    environment:
-      - WEB_PORT=${DRIVER_WEB_PORT:-8081}
-    ports:
-      - "${DRIVER_WEB_PORT:-8081}:${DRIVER_WEB_PORT:-8081}"
-    stdin_open: true
-    tty: true
-
-  main-android:
-    platform: linux/amd64
-    profiles: [main-android]
-    build:
-      context: ./apps
-      target: android
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./apps:/workspace
-      - pub-cache:/root/.pub-cache
-      - gradle-cache:/root/.gradle
-      - android-debug-key:/root/.android
-    working_dir: /workspace/main
-    environment:
-      - ANDROID_HOME=/opt/android-sdk
-      - ANDROID_SDK_ROOT=/opt/android-sdk
-      - ADB_SERVER_SOCKET=tcp:${ADB_HOST:-host.docker.internal}:${ADB_PORT:-5037}
-      - ANDROID_SERIAL=${ANDROID_SERIAL:-}
-    command: flutter run
-    stdin_open: true
-    tty: true
-
-  driver-android:
-    platform: linux/amd64
-    profiles: [driver-android]
-    build:
-      context: ./apps
-      target: android
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./apps:/workspace
-      - pub-cache:/root/.pub-cache
-      - gradle-cache:/root/.gradle
-      - android-debug-key:/root/.android
-    working_dir: /workspace/driver
-    environment:
-      - ANDROID_HOME=/opt/android-sdk
-      - ANDROID_SDK_ROOT=/opt/android-sdk
-      - ADB_SERVER_SOCKET=tcp:${ADB_HOST:-host.docker.internal}:${ADB_PORT:-5037}
-      - ANDROID_SERIAL=${ANDROID_SERIAL:-}
-    command: flutter run
-    stdin_open: true
-    tty: true
-
+  # Admin dashboard (containerized)
   admin:
     platform: linux/amd64
     profiles: [admin]
@@ -127,65 +45,10 @@ services:
     working_dir: /workspace
     ports:
       - "${ADMIN_PORT:-3001}:${ADMIN_PORT:-3001}"
-    # command: >-
-    #   # bash -lc 'if [ ! -d node_modules ] || [ -z "$(ls -A node_modules 2>/dev/null)" ];
-    #   # then npm ci; fi;
-    command: npm run dev -- --hostname 0.0.0.0 --port ${ADMIN_PORT:-3001}
-    tty: true
-
-  # ---------- Utility (docker compose run only) ---------- #
-
-  apps-dev-tools:
-    platform: linux/amd64
-    profiles: [tools]
-    build:
-      context: ./apps
-      target: base
-    volumes:
-      - ./apps:/workspace
-      - pub-cache:/root/.pub-cache
-    working_dir: /workspace
-    tty: true
-
-  apps-android:
-    platform: linux/amd64
-    profiles: [tools]
-    build:
-      context: ./apps
-      target: android
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./apps:/workspace
-      - pub-cache:/root/.pub-cache
-      - gradle-cache:/root/.gradle
-    working_dir: /workspace
-    environment:
-      - ANDROID_HOME=/opt/android-sdk
-      - ANDROID_SDK_ROOT=/opt/android-sdk
-    tty: true
-
-  admin-dev-tools:
-    platform: linux/amd64
-    profiles: [tools]
-    build:
-      context: ./admin-base
-      target: dev
-    volumes:
-      - ./admin-base:/workspace
-      - admin-node-modules:/workspace/node_modules
-      - npm-cache:/root/.npm
-    working_dir: /workspace
+    command: npm run dev -- --port ${ADMIN_PORT:-3001}
     tty: true
 
 volumes:
-  # Persists the Flutter package cache between runs
-  pub-cache:
-  # Persists the Gradle build cache between runs
-  gradle-cache:
-  # Persists the Android debug keystores between runs.
-  # This resolves runtime error about failed streamed installs.
-  android-debug-key:
   # Persists Node dependencies for admin dashboard between runs
   admin-node-modules:
   # Persists npm download cache between runs
