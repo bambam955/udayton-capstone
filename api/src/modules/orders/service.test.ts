@@ -26,9 +26,9 @@ describe('OrdersService', () => {
 
     await expect(
       service.listMyOrders({ userId: 'driver-1', role: 'driver', sessionId: 's1' }, 20)
-    ).rejects.toMatchObject<HttpError>({
+    ).rejects.toMatchObject({
       statusCode: 403,
       code: 'FORBIDDEN'
-    });
+    } satisfies Partial<HttpError>);
   });
 });

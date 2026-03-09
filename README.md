@@ -17,13 +17,19 @@ A platform for small businesses to rush-deliver supplies quickly and accurately.
     just up main-web
     ```
 
-4. Run the admin dashboard:
+4. Run the backend API + database:
+
+    ```bash
+    just up
+    ```
+
+5. Run the admin dashboard:
 
     ```bash
     just up admin
     ```
 
-5. Run a Flutter app in Android:
+6. Run a Flutter app in Android:
 
     ```bash
     just up main-android

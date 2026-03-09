@@ -42,9 +42,9 @@ describe('AuthService', () => {
 
     await expect(
       service.login({ role: 'driver', email: 'driver@example.com', password: 'wrong' })
-    ).rejects.toMatchObject<HttpError>({
+    ).rejects.toMatchObject({
       statusCode: 401,
       code: 'INVALID_CREDENTIALS'
-    });
+    } satisfies Partial<HttpError>);
   });
 });

@@ -1,0 +1,16 @@
+set shell := ["bash", "-cu"]
+
+deps:
+    npm install
+
+test:
+    npm test
+
+check:
+    npm run check
+
+format:
+    npm run check
+
+clean:
+    rm -rf dist node_modules

@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 DC := "docker compose"
-ALL_COMPONENTS := "main driver admin mocks"
+ALL_COMPONENTS := "main driver admin mocks api"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
 # ---------- Main commands ---------- #
@@ -21,7 +21,7 @@ default:
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
     @echo ""
-    @echo "For admin/mocks recipes:"
+    @echo "For admin/mocks/api recipes:"
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
@@ -29,9 +29,9 @@ up *services:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "{{services}}" ]; then
-        echo "Usage: just up <service>..."
-        echo "Services: {{ ALL_UP_SERVICE_HELP }}"
-        exit 2
+        echo "Starting backend services with docker compose..."
+        {{ DC }} up -d
+        exit 0
     fi
 
     launch_local() {
@@ -213,6 +213,9 @@ _run-for recipe component:
             ;;
         mocks)
             just --justfile mocks/justfile "{{recipe}}"
+            ;;
+        api)
+            just --justfile api/justfile "{{recipe}}"
             ;;
         *)
             echo "❌ Unknown component: {{component}}"

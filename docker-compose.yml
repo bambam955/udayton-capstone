@@ -24,12 +24,24 @@ services:
       timeout: 5s
       retries: 10
 
-  # api:
-  #   build: ./api
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - db
+  api:
+    build:
+      context: ./api
+      target: dev
+    volumes:
+      - ./api:/workspace
+      - api-node-modules:/workspace/node_modules
+    environment:
+      PORT: ${API_PORT:-3000}
+      DATABASE_URL: postgres://bizrush:${POSTGRES_PASSWORD}@db:5432/bizrush
+      JWT_SECRET: ${JWT_SECRET:-bizrush-local-dev-secret}
+    ports:
+      - "${API_PORT:-3000}:${API_PORT:-3000}"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: npm run dev
+    tty: true
 
   # Admin dashboard (containerized)
   admin:
@@ -49,6 +61,7 @@ services:
     tty: true
 
 volumes:
+  api-node-modules:
   # Persists Node dependencies for admin dashboard between runs
   admin-node-modules:
   # Persists npm download cache between runs

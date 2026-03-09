@@ -16,7 +16,7 @@ export function createApp(services: AppServices) {
   const app = express();
 
   app.use(express.json());
-  app.get('/health', healthRouter);
+  app.use('/health', healthRouter);
 
   app.use('/v1/auth', createAuthRouter(services.authService));
   app.use('/v1/customer', createOrdersRouter(services.ordersService));

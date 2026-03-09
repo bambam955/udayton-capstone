@@ -12,8 +12,7 @@ export interface AccessTokenPayload {
 
 export function signAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: '12h',
-    subject: payload.sub
+    expiresIn: '12h'
   });
 }
 
