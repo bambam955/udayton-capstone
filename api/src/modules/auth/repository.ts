@@ -11,6 +11,7 @@ export interface AuthRepository {
   revokeSession(role: AuthRole, sessionId: string): Promise<void>;
 }
 
+// Kysely implementation of the AuthRepository interface.
 export class KyselyAuthRepository implements AuthRepository {
   constructor(private readonly db: Kysely<Database>) {}
 

@@ -8,7 +8,7 @@ import type { AuthService } from './service.js';
 // Keep transport validation close to the HTTP boundary.
 const loginSchema = z.object({
   role: z.enum(['customer', 'driver', 'admin']),
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(1),
   deviceInfo: z.string().optional()
 });

@@ -9,7 +9,7 @@ const app = createApp({
     logout: vi.fn()
   } as never,
   ordersService: {
-    listMyOrders: vi.fn().mockResolvedValue([])
+    listOrders: vi.fn().mockResolvedValue([])
   } as never
 });
 

@@ -8,3 +8,8 @@ export interface OrderListItem {
   currency: string;
   placedAt: Date | null;
 }
+
+export interface ListOrdersInput {
+  limit: number;
+  customerId?: string;
+}
