@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
+// Load .env before we read process.env so local development works out-of-the-box.
 dotenv.config();
 
 // Fail fast on misconfiguration so bad env never reaches runtime paths.
@@ -13,4 +14,5 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+// Parse once and export a typed env object for the rest of the app.
 export const env: Env = envSchema.parse(process.env);

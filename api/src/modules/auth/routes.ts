@@ -5,6 +5,7 @@ import { HttpError } from '../../app/errors.js';
 import { requireAuth } from '../../app/middleware/auth.js';
 import type { AuthService } from './service.js';
 
+// Keep transport validation close to the HTTP boundary.
 const loginSchema = z.object({
   role: z.enum(['customer', 'driver', 'admin']),
   email: z.string().email(),
@@ -48,6 +49,7 @@ export function createAuthRouter(service: AuthService): Router {
   });
 
   router.get('/me', requireAuth, (req, res) => {
+    // Debug/self-introspection endpoint for authenticated clients.
     res.status(200).json({ principal: req.principal });
   });
 

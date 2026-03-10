@@ -86,12 +86,14 @@ export interface OrderStatusHistoryTable {
 }
 
 export interface Database {
+  // Users + auth/session tables
   customers: CustomersTable;
   drivers: DriversTable;
   admins: AdminsTable;
   customer_sessions: CustomerSessionsTable;
   driver_sessions: DriverSessionsTable;
   admin_sessions: AdminSessionsTable;
+  // Customer ordering domain
   orders: OrdersTable;
   order_status_history: OrderStatusHistoryTable;
 }

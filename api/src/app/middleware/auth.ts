@@ -6,7 +6,7 @@ import type { AuthPrincipal } from '../types.js';
 declare global {
   namespace Express {
     interface Request {
-      // Auth context attached after bearer token validation.
+      // Populated by requireAuth and consumed by downstream handlers.
       principal?: AuthPrincipal;
     }
   }
@@ -20,6 +20,7 @@ function unauthorized(res: Response): void {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  // API expects RFC6750-style Authorization header: "Bearer <token>".
   const authHeader = req.header('authorization');
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -44,6 +45,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 }
 
 export function requireRole(role: AuthPrincipal['role']) {
+  // Small guard factory for routes limited to one account role.
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.principal || req.principal.role !== role) {
       res.status(403).json({

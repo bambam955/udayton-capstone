@@ -1,3 +1,4 @@
+// Slim order shape returned by customer "order history" endpoint.
 export interface OrderListItem {
   orderId: string;
   customerId: string;

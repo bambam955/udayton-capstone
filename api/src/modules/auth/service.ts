@@ -6,7 +6,7 @@ import type { AuthRepository } from './repository.js';
 import type { LoginInput, LoginResult } from './types.js';
 
 function constantTimeEquals(expected: string, given: string): boolean {
-  // Placeholder for hash verification until password hashing is wired.
+  // TODO: replace with secure hash verification once password hashing is wired.
   return expected === given;
 }
 
@@ -50,6 +50,7 @@ export class AuthService {
   }
 
   async logout(role: LoginInput['role'], sessionId: string): Promise<void> {
+    // Revoking session means existing token should no longer be accepted.
     await this.repo.revokeSession(role, sessionId);
   }
 }

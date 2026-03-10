@@ -16,6 +16,7 @@ export function createOrdersRouter(service: OrdersService): Router {
       // Optional query param with conservative default for app list views.
       const limitInput = typeof req.query.limit === 'string' ? req.query.limit : '20';
       const limit = Number.parseInt(limitInput, 10);
+      // Service layer handles clamping and authorization checks.
       const orders = await service.listMyOrders(req.principal, Number.isNaN(limit) ? 20 : limit);
       res.status(200).json({ orders });
     } catch (error) {

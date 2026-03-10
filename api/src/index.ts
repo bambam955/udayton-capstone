@@ -8,7 +8,7 @@ import { KyselyOrdersRepository } from './modules/orders/repository.js';
 import { OrdersService } from './modules/orders/service.js';
 import { getDb } from './platform/db/kysely.js';
 
-// Build concrete adapters once at process startup and inject into modules.
+// Composition root: wire infrastructure into domain services once at startup.
 const db = getDb();
 
 const app = createApp({
@@ -16,6 +16,7 @@ const app = createApp({
   ordersService: new OrdersService(new KyselyOrdersRepository(db))
 });
 
+// Keep HTTP server creation explicit so graceful-shutdown hooks can be added later.
 const server = createServer(app);
 
 server.listen(env.PORT, () => {

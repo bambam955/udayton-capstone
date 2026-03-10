@@ -4,6 +4,7 @@ import { env } from '../../config/env.js';
 
 export type AuthRole = 'customer' | 'driver' | 'admin';
 
+// Claims required by middleware to build req.principal.
 export interface AccessTokenPayload {
   sub: string;
   role: AuthRole;
@@ -18,5 +19,6 @@ export function signAccessToken(payload: AccessTokenPayload): string {
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
+  // jsonwebtoken throws on invalid/expired signatures; caller maps that to 401.
   return jwt.verify(token, env.JWT_SECRET) as AccessTokenPayload;
 }

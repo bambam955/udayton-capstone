@@ -7,6 +7,7 @@ export class OrdersService {
   constructor(private readonly repo: OrdersRepository) {}
 
   async listMyOrders(principal: AuthPrincipal, limit: number): Promise<OrderListItem[]> {
+    // This endpoint is currently customer-only by product design.
     if (principal.role !== 'customer') {
       throw new HttpError(403, 'FORBIDDEN', 'Only customer accounts can list customer orders.');
     }

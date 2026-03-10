@@ -4,6 +4,7 @@ import type { Database } from '../../platform/db/types.js';
 import type { AuthRole } from '../../platform/auth/jwt.js';
 import type { AuthUser, SessionRecord } from './types.js';
 
+// Contract used by AuthService so business logic is decoupled from SQL details.
 export interface AuthRepository {
   findUserByEmail(role: AuthRole, email: string): Promise<AuthUser | null>;
   createSession(session: SessionRecord): Promise<void>;

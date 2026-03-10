@@ -1,5 +1,5 @@
 export class HttpError extends Error {
-  // Standard error shape used by handlers to map domain failures to HTTP responses.
+  // Throw this from services/routes when you want a controlled API response.
   constructor(
     public readonly statusCode: number,
     public readonly code: string,

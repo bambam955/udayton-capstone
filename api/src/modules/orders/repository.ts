@@ -32,6 +32,7 @@ export class KyselyOrdersRepository implements OrdersRepository {
       orderId: row.order_id,
       customerId: row.customer_id,
       retailerId: row.retailer_id,
+      // Defaults guard older/partial records from breaking the API contract.
       status: row.status ?? 'UNKNOWN',
       totalCents: row.total_cents ?? 0,
       currency: row.currency ?? 'USD',
