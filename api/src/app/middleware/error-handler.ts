@@ -2,6 +2,8 @@ import type { NextFunction, Request, Response } from 'express';
 
 import { HttpError } from '../errors.js';
 
+// This is the middleware definition for ensuring that all errors are returned to the frontend
+// in a robust and secure manner.
 export function errorHandler(
   err: unknown,
   _req: Request,

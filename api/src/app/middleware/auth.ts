@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { verifyAccessToken } from '../../platform/auth/jwt.js';
 import type { AuthPrincipal } from '../types.js';
 
+// Extend the Express.Request type.
 declare global {
   namespace Express {
     interface Request {
@@ -19,6 +20,7 @@ function unauthorized(res: Response): void {
   });
 }
 
+// This is the main middleware definition for adding authentication to a REST endpoint.
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   // API expects RFC6750-style Authorization header: "Bearer <token>".
   const authHeader = req.header('authorization');
