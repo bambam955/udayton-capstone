@@ -9,6 +9,7 @@ export interface AuthRepository {
   findUserByEmail(role: AuthRole, email: string): Promise<AuthUser | null>;
   createSession(session: SessionRecord): Promise<void>;
   revokeSession(role: AuthRole, sessionId: string): Promise<void>;
+  hasActiveSession(role: AuthRole, sessionId: string): Promise<boolean>;
 }
 
 // Kysely implementation of the AuthRepository interface.
@@ -124,5 +125,35 @@ export class KyselyAuthRepository implements AuthRepository {
     }
 
     await this.db.deleteFrom('admin_sessions').where('session_id', '=', sessionId).execute();
+  }
+
+  async hasActiveSession(role: AuthRole, sessionId: string): Promise<boolean> {
+    if (role === 'customer') {
+      const row = await this.db
+        .selectFrom('customer_sessions')
+        .select('session_id')
+        .where('session_id', '=', sessionId)
+        .executeTakeFirst();
+
+      return row !== undefined && row.session_id !== null;
+    }
+
+    if (role === 'driver') {
+      const row = await this.db
+        .selectFrom('driver_sessions')
+        .select('session_id')
+        .where('session_id', '=', sessionId)
+        .executeTakeFirst();
+
+      return row !== undefined && row.session_id !== null;
+    }
+
+    const row = await this.db
+      .selectFrom('admin_sessions')
+      .select('session_id')
+      .where('session_id', '=', sessionId)
+      .executeTakeFirst();
+
+    return row !== undefined && row.session_id !== null;
   }
 }

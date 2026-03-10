@@ -6,7 +6,8 @@ import { createApp } from '../../app/createApp.js';
 const app = createApp({
   authService: {
     login: vi.fn(),
-    logout: vi.fn()
+    logout: vi.fn(),
+    isSessionActive: vi.fn().mockResolvedValue(true)
   } as never,
   ordersService: {
     listOrders: vi.fn().mockResolvedValue([])

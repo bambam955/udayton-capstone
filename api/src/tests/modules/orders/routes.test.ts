@@ -22,14 +22,19 @@ function makeBearer(userId: string, role: 'customer' | 'driver' | 'admin'): stri
   return `Bearer ${token}`;
 }
 
+function makeAuthService(isSessionActive = true): object {
+  return {
+    login: vi.fn(),
+    logout: vi.fn(),
+    isSessionActive: vi.fn().mockResolvedValue(isSessionActive)
+  };
+}
+
 describe('orders routes', () => {
   it('returns 401 without bearer token', async () => {
     const repo = makeRepo();
     const app = createApp({
-      authService: {
-        login: vi.fn(),
-        logout: vi.fn()
-      } as never,
+      authService: makeAuthService(true) as never,
       ordersService: new OrdersService(repo)
     });
 
@@ -41,10 +46,7 @@ describe('orders routes', () => {
   it('returns customer orders for the authenticated customer', async () => {
     const repo = makeRepo();
     const app = createApp({
-      authService: {
-        login: vi.fn(),
-        logout: vi.fn()
-      } as never,
+      authService: makeAuthService(true) as never,
       ordersService: new OrdersService(repo)
     });
 
@@ -59,10 +61,7 @@ describe('orders routes', () => {
   it('returns 403 when customer requests another customerId', async () => {
     const repo = makeRepo();
     const app = createApp({
-      authService: {
-        login: vi.fn(),
-        logout: vi.fn()
-      } as never,
+      authService: makeAuthService(true) as never,
       ordersService: new OrdersService(repo)
     });
 
@@ -78,10 +77,7 @@ describe('orders routes', () => {
   it('returns all recent orders for admin without customerId', async () => {
     const repo = makeRepo();
     const app = createApp({
-      authService: {
-        login: vi.fn(),
-        logout: vi.fn()
-      } as never,
+      authService: makeAuthService(true) as never,
       ordersService: new OrdersService(repo)
     });
 
@@ -96,10 +92,7 @@ describe('orders routes', () => {
   it('filters by customerId for admin', async () => {
     const repo = makeRepo();
     const app = createApp({
-      authService: {
-        login: vi.fn(),
-        logout: vi.fn()
-      } as never,
+      authService: makeAuthService(true) as never,
       ordersService: new OrdersService(repo)
     });
 
@@ -115,10 +108,7 @@ describe('orders routes', () => {
   it('returns 403 for driver role', async () => {
     const repo = makeRepo();
     const app = createApp({
-      authService: {
-        login: vi.fn(),
-        logout: vi.fn()
-      } as never,
+      authService: makeAuthService(true) as never,
       ordersService: new OrdersService(repo)
     });
 
@@ -128,5 +118,21 @@ describe('orders routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+  });
+
+  it('returns 401 when session is revoked', async () => {
+    const repo = makeRepo();
+    const app = createApp({
+      authService: makeAuthService(false) as never,
+      ordersService: new OrdersService(repo)
+    });
+
+    const response = await request(app)
+      .get('/v1/orders')
+      .set('authorization', makeBearer('cust-1', 'customer'));
+
+    expect(response.status).toBe(401);
+    expect(response.body).toMatchObject({ error: 'UNAUTHORIZED' });
+    expect(vi.mocked(repo.listByCustomer)).not.toHaveBeenCalled();
   });
 });

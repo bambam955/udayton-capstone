@@ -53,4 +53,8 @@ export class AuthService {
     // Revoking session means existing token should no longer be accepted.
     await this.repo.revokeSession(role, sessionId);
   }
+
+  async isSessionActive(role: LoginInput['role'], sessionId: string): Promise<boolean> {
+    return this.repo.hasActiveSession(role, sessionId);
+  }
 }

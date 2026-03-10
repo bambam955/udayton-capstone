@@ -21,7 +21,7 @@ export function createApp(services: AppServices) {
 
   // Versioned API surface for mobile apps and admin dashboard.
   app.use('/v1/auth', createAuthRouter(services.authService));
-  app.use('/v1/orders', createOrdersRouter(services.ordersService));
+  app.use('/v1/orders', createOrdersRouter(services.ordersService, services.authService));
 
   // Terminal error mapper for all downstream handlers.
   app.use(errorHandler);

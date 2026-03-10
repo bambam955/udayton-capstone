@@ -8,7 +8,8 @@ function makeRepo(): AuthRepository {
   return {
     findUserByEmail: vi.fn(),
     createSession: vi.fn().mockResolvedValue(undefined),
-    revokeSession: vi.fn().mockResolvedValue(undefined)
+    revokeSession: vi.fn().mockResolvedValue(undefined),
+    hasActiveSession: vi.fn().mockResolvedValue(true)
   };
 }
 
@@ -46,5 +47,17 @@ describe('AuthService', () => {
       statusCode: 401,
       code: 'INVALID_CREDENTIALS'
     } satisfies Partial<HttpError>);
+  });
+
+  it('checks session activity by role and sessionId', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.hasActiveSession).mockResolvedValueOnce(false);
+    const service = new AuthService(repo);
+
+    const isActive = await service.isSessionActive('admin', 'session-1');
+
+    expect(isActive).toBe(false);
+    expect(repo.hasActiveSession).toHaveBeenCalledOnce();
+    expect(repo.hasActiveSession).toHaveBeenCalledWith('admin', 'session-1');
   });
 });

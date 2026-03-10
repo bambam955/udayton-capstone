@@ -4,16 +4,21 @@ import { z } from 'zod';
 import { HttpError } from '../../app/errors.js';
 import { requireAuth } from '../../app/middleware/auth.js';
 import type { OrdersService } from './service.js';
+import type { AuthService } from '../auth/service.js';
 
 const listOrdersQuerySchema = z.object({
   limit: z.coerce.number().int().positive().default(20),
   customerId: z.string().min(1).optional()
 });
 
-export function createOrdersRouter(service: OrdersService): Router {
+export function createOrdersRouter(
+  service: OrdersService,
+  authService: Pick<AuthService, 'isSessionActive'>
+): Router {
+  const isSessionActive = authService.isSessionActive.bind(authService);
   const router = Router();
 
-  router.get('/', requireAuth, async (req, res, next) => {
+  router.get('/', requireAuth(isSessionActive), async (req, res, next) => {
     try {
       if (!req.principal) {
         throw new HttpError(401, 'UNAUTHORIZED', 'A valid bearer token is required.');

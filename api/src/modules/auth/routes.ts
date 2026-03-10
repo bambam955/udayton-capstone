@@ -13,7 +13,10 @@ const loginSchema = z.object({
   deviceInfo: z.string().optional()
 });
 
-export function createAuthRouter(service: AuthService): Router {
+export function createAuthRouter(
+  service: AuthService
+): Router {
+  const isSessionActive = service.isSessionActive.bind(service);
   const router = Router();
 
   router.post('/login', async (req, res, next) => {
@@ -35,7 +38,7 @@ export function createAuthRouter(service: AuthService): Router {
     }
   });
 
-  router.post('/logout', requireAuth, async (req, res, next) => {
+  router.post('/logout', requireAuth(isSessionActive), async (req, res, next) => {
     try {
       if (!req.principal) {
         throw new HttpError(401, 'UNAUTHORIZED', 'A valid bearer token is required.');
@@ -48,7 +51,7 @@ export function createAuthRouter(service: AuthService): Router {
     }
   });
 
-  router.get('/me', requireAuth, (req, res) => {
+  router.get('/me', requireAuth(isSessionActive), (req, res) => {
     // Debug/self-introspection endpoint for authenticated clients.
     res.status(200).json({ principal: req.principal });
   });
