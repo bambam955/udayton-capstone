@@ -13,9 +13,7 @@ const loginSchema = z.object({
   deviceInfo: z.string().optional()
 });
 
-export function createAuthRouter(
-  service: AuthService
-): Router {
+export function createAuthRouter(service: AuthService): Router {
   const isSessionActive = service.isSessionActive.bind(service);
   const router = Router();
 
