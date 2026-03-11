@@ -5,17 +5,14 @@ include:
   - ./mocks/docker-compose.yml
 
 services:
-  # ---------- Backend (always start) ---------- #
-
   db:
     image: postgres:16
     environment:
       POSTGRES_DB: bizrush
       POSTGRES_USER: bizrush
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_local}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
@@ -23,15 +20,20 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
-  # api:
-  #   build: ./api
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - db
-
   # Admin dashboard (containerized)
+  flyway:
+    image: flyway/flyway:12.1.0
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      -url=jdbc:postgresql://db:5432/bizrush
+      -user=bizrush
+      -password=${POSTGRES_PASSWORD:-change_me_local}
+      -connectRetries=60
+      migrate
+    volumes:
+      - ./db/migrations:/flyway/sql
   admin:
     platform: linux/amd64
     profiles: [admin]
@@ -48,9 +50,8 @@ services:
     command: npm run dev -- --port ${ADMIN_PORT:-3001}
     tty: true
 
+
 volumes:
-  # Persists Node dependencies for admin dashboard between runs
   admin-node-modules:
-  # Persists npm download cache between runs
   npm-cache:
   pgdata:
