@@ -35,24 +35,32 @@ up *services:
     fi
 
     launch_local() {
+        local dart_define=()
+        if [ -n "${ACCESS_TOKEN:-}" ]; then
+            dart_define=(--dart-define "ACCESS_TOKEN=${ACCESS_TOKEN}")
+        fi
+
         case "$1" in
             main|main-web)
                 local port="${MAIN_WEB_PORT:-8080}"
                 echo "Starting main web app on http://localhost:${port}"
-                (cd apps/main && flutter run -d web-server --web-hostname localhost --web-port "${port}")
+                (cd apps/main && flutter run "${dart_define[@]}" -d web-server --web-hostname localhost --web-port "${port}")
                 ;;
             driver|driver-web)
                 local port="${DRIVER_WEB_PORT:-8081}"
                 echo "Starting driver web app on http://localhost:${port}"
-                (cd apps/driver && flutter run -d web-server --web-hostname localhost --web-port "${port}")
+                (cd apps/driver && flutter run "${dart_define[@]}" -d web-server --web-hostname localhost --web-port "${port}")
                 ;;
             main-android)
                 echo "Starting main Android app"
-                (cd apps/main && flutter run)
+                (cd apps/main && flutter run "${dart_define[@]}")
                 ;;
             driver-android)
                 echo "Starting driver Android app"
-                (cd apps/driver && flutter run)
+                if [ -z "${ACCESS_TOKEN:-}" ]; then
+                    echo "⚠ ACCESS_TOKEN is not set; map features may be unavailable."
+                fi
+                (cd apps/driver && flutter run "${dart_define[@]}")
                 ;;
             *)
                 echo "❌ Unknown service: $1"

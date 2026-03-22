@@ -1,9 +1,15 @@
 import 'package:bizrush_shared/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'config/mapbox_config.dart';
 import 'ui/screens/home/driver_home_shell.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (isMapboxPlatformSupported && hasMapboxAccessToken) {
+    MapboxOptions.setAccessToken(mapboxAccessToken);
+  }
   runApp(const MyApp());
 }
 

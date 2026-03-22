@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/driver_top_bar.dart';
 import '../../widgets/status_badge.dart';
+import 'driver_delivery_map_screen.dart';
 import 'driver_home_fake_data.dart';
 import 'driver_home_models.dart';
 import 'driver_job_details_sheet.dart';
@@ -117,6 +118,11 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     });
 
     _showDemoMessage('${job.title} accepted (demo only)');
+
+    final updatedJob = _findJob(jobId);
+    if (updatedJob != null) {
+      _openMap(updatedJob, DriverRoutePhase.toPickup);
+    }
   }
 
   void _confirmPickup(String jobId) {
@@ -130,6 +136,11 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     });
 
     _showDemoMessage('Pickup confirmed for ${job.title} (demo only)');
+
+    final updatedJob = _findJob(jobId);
+    if (updatedJob != null) {
+      _openMap(updatedJob, DriverRoutePhase.toDropoff);
+    }
   }
 
   void _completeDelivery(String jobId) {
@@ -194,6 +205,32 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     );
   }
 
+  Future<void> _openMap(DriverJob job, DriverRoutePhase phase) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DriverDeliveryMapScreen(job: job, phase: phase),
+      ),
+    );
+  }
+
+  void _openMapForActiveJob(String jobId) {
+    final job = _findJob(jobId);
+    if (job == null) {
+      return;
+    }
+
+    final phase = switch (job.stage) {
+      DeliveryStage.assigned => DriverRoutePhase.toPickup,
+      DeliveryStage.outForDelivery => DriverRoutePhase.toDropoff,
+      _ => null,
+    };
+    if (phase == null) {
+      return;
+    }
+
+    _openMap(job, phase);
+  }
+
   static String _stageLabel(DeliveryStage stage) {
     return switch (stage) {
       DeliveryStage.available => 'AVAILABLE',
@@ -248,6 +285,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
           },
           onConfirmPickup: _confirmPickup,
           onCompleteDelivery: _completeDelivery,
+          onOpenMap: _openMapForActiveJob,
           onViewDetails: _openDetails,
         ),
       3 => DriverTabEarnings(
