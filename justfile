@@ -211,6 +211,9 @@ _run-for recipe component:
         main|driver)
             just --justfile apps/justfile "{{recipe}}" "{{component}}"
             ;;
+        apps_shared)
+            just --justfile apps/justfile "{{recipe}}" "shared"
+            ;;
         admin)
             just --justfile admin-base/justfile "{{recipe}}"
             ;;
