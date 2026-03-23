@@ -25,11 +25,11 @@ default:
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
-up *services:
+run *services:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "{{services}}" ]; then
-        echo "Usage: just up <service>..."
+        echo "Usage: just run <service>..."
         echo "Services: {{ ALL_UP_SERVICE_HELP }}"
         exit 2
     fi
