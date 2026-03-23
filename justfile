@@ -1,12 +1,12 @@
 # BizRush — project orchestration
 # Backend services run in Docker; Flutter apps run locally; admin runs in Docker.
-# Usage: just up <service>... where service is main-web, driver-web,
+# Usage: just run <service>... where service is main-web, driver-web,
 #        main-android, driver-android, or admin
 
 set shell := ["bash", "-cu"]
 
-DC := "docker compose"
-ALL_COMPONENTS := "main driver admin mocks api"
+ROOT_DC := "docker compose --project-name bizrush -f docker-compose.yml"
+ALL_COMPONENTS := "main driver apps_shared admin mocks api"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
 # ---------- Main commands ---------- #
@@ -25,12 +25,12 @@ default:
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
-up *services:
+run *services:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "{{services}}" ]; then
         echo "Starting backend services with docker compose..."
-        {{ DC }} up -d
+        {{ ROOT_DC }} up -d
         exit 0
     fi
 
@@ -83,16 +83,16 @@ up *services:
     done
 
     echo "Starting backend services with docker compose..."
-    {{ DC }} up -d
+    {{ ROOT_DC }} up -d
 
     if $has_admin; then
         if [ "${#local_services[@]}" -eq 0 ]; then
             echo "Starting admin dashboard in Docker"
-            {{ DC }} --profile admin up admin
+            {{ ROOT_DC }} --profile admin up admin
             exit 0
         fi
 
-        {{ DC }} --profile admin up -d admin
+        {{ ROOT_DC }} --profile admin up -d admin
     fi
 
     if [ "${#local_services[@]}" -eq 0 ]; then
@@ -116,7 +116,7 @@ up *services:
 
 # Stop backend services
 down:
-    COMPOSE_PROFILES=admin {{ DC }} down
+    {{ ROOT_DC }} --profile admin down
 
 # ---------- Dev commands (default to all components) ---------- #
 
@@ -184,7 +184,7 @@ setup:
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
     command -v flutter >/dev/null || { echo "❌ Flutter not installed"; exit 1; }
     command -v npm >/dev/null || { echo "❌ npm not installed"; exit 1; }
-    COMPOSE_PROFILES=admin {{ DC }} build
+    {{ ROOT_DC }} --profile admin build
     just deps
 
 # ---------- Internal ---------- #

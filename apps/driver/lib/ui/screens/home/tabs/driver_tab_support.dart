@@ -39,34 +39,25 @@ class DriverTabSupport extends StatelessWidget {
             children: [
               OutlinedButton(
                 key: const Key('driver-support-quick-pickup'),
-                onPressed: () => onQuickAction(
-                  'Pickup issue clicked (demo only)',
-                ),
-                style: OutlinedButton.styleFrom(
-                  shape: const StadiumBorder(),
-                ),
+                onPressed: () =>
+                    onQuickAction('Pickup issue clicked (demo only)'),
+                style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Pickup Issue'),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
                 key: const Key('driver-support-quick-delivery'),
-                onPressed: () => onQuickAction(
-                  'Delivery issue clicked (demo only)',
-                ),
-                style: OutlinedButton.styleFrom(
-                  shape: const StadiumBorder(),
-                ),
+                onPressed: () =>
+                    onQuickAction('Delivery issue clicked (demo only)'),
+                style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Delivery Issue'),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
                 key: const Key('driver-support-quick-payment'),
-                onPressed: () => onQuickAction(
-                  'Payment question clicked (demo only)',
-                ),
-                style: OutlinedButton.styleFrom(
-                  shape: const StadiumBorder(),
-                ),
+                onPressed: () =>
+                    onQuickAction('Payment question clicked (demo only)'),
+                style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Payment Question'),
               ),
             ],

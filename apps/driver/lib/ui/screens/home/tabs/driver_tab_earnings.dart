@@ -87,9 +87,7 @@ class DriverTabEarnings extends StatelessWidget {
         Text('Recent completed deliveries', style: textTheme.titleMedium),
         const SizedBox(height: 10),
         if (completedJobs.isEmpty)
-          const SurfaceCard(
-            child: Text('No completed deliveries yet'),
-          )
+          const SurfaceCard(child: Text('No completed deliveries yet'))
         else
           for (final job in completedJobs) ...[
             SurfaceCard(
@@ -102,8 +100,9 @@ class DriverTabEarnings extends StatelessWidget {
                       children: [
                         Text(
                           job.title,
-                          style: textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(

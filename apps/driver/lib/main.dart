@@ -1,8 +1,7 @@
+import 'package:bizrush_shared/theme.dart';
 import 'package:flutter/material.dart';
 
 import 'ui/screens/home/driver_home_shell.dart';
-import 'ui/theme/app_theme.dart';
-import 'ui/theme/no_stretch_scroll_behavior.dart';
 
 void main() {
   runApp(const MyApp());

@@ -12,11 +12,11 @@ Backend and mock services plus the admin dashboard are containerized; Flutter ap
 
 ## Architecture
 
-`docker compose` now owns backend infrastructure, mock APIs, and the containerized admin dashboard:
+The repo-root `docker-compose.yml` is the single runtime compose entrypoint. It includes the db and mock stacks so the top-level view has all backend services:
 
-- `walmart-mock` from `mocks/docker-compose.yml`
-- `target-mock` from `mocks/docker-compose.yml`
-- `admin` via profile `admin` from `admin-base/Dockerfile`
+- `db/docker-compose.yml` for PostgreSQL, Flyway, and the separate local seed loader
+- `mocks/docker-compose.yml` for the mock APIs
+- `docker-compose.yml` at the repo root for the admin dashboard plus the composed service set
 
 Frontend orchestration for Flutter lives in local tooling:
 
@@ -30,35 +30,25 @@ Frontend orchestration for Flutter lives in local tooling:
 just setup
 
 # Start services
-just up main-web
-just up driver-web
-just up admin
-just up main-android
+just run main-web
+just run driver-web
+just run admin
+just run main-android
 
 # Stop backend services
 just down
 ```
 
-`just up` starts backend services first (for app/API dependencies), then:
+`just run` starts backend services first (for app/API dependencies), then:
+- starts the mock APIs in the same root compose project
 - runs Flutter app targets locally, or
-- runs `admin` in Docker via the `admin` profile.
+- runs `admin` in Docker.
 
-## `just` command mapping for local execution
+To load just the database seed workflow directly:
 
-From the repo root `justfile`:
-
-- `just up <service>` -> `docker compose up -d` for backend, then local app run:
-  - `main-web` / `main` -> `cd apps/main && flutter run -d web-server`
-  - `driver-web` / `driver` -> `cd apps/driver && flutter run -d web-server`
-  - `main-android` -> `cd apps/main && flutter run`
-  - `driver-android` -> `cd apps/driver && flutter run`
-  - `admin` -> runs `admin` compose profile container (`docker compose --profile admin up ...`)
-- `just test/check/format/deps/clean main|driver` -> `just --justfile apps/justfile ...`
-- `just test/check/format/deps/clean admin` -> `just --justfile admin-base/justfile ...`
-- `just build main|driver` -> `just --justfile apps/justfile build`
-- `just build admin` -> `docker buildx build -f admin-base/Dockerfile`
-- `just doctor` -> `just --justfile apps/justfile doctor`
-- `just shell` -> local shell
+```bash
+just db/seed
+```
 
 ## Environment Variables
 
@@ -71,7 +61,7 @@ From the repo root `justfile`:
 ### Example
 
 ```bash
-MAIN_WEB_PORT=3000 just up main-web
-DRIVER_WEB_PORT=3002 just up driver-web
-ADMIN_PORT=3010 just up admin
+MAIN_WEB_PORT=3000 just run main-web
+DRIVER_WEB_PORT=3002 just run driver-web
+ADMIN_PORT=3010 just run admin
 ```
