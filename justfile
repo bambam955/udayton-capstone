@@ -5,7 +5,7 @@
 
 set shell := ["bash", "-cu"]
 
-DC := "docker compose"
+ROOT_DC := "COMPOSE_PROJECT_NAME=bizrush docker compose -f docker-compose.yml"
 ALL_COMPONENTS := "main driver admin mocks"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
@@ -21,7 +21,8 @@ default:
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
     @echo ""
-    @echo "For admin/mocks recipes:"
+    @echo "For db seeding and admin/mocks recipes:"
+    @echo "    just db-seed"
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
@@ -83,16 +84,16 @@ up *services:
     done
 
     echo "Starting backend services with docker compose..."
-    {{ DC }} up -d
+    {{ ROOT_DC }} up -d
 
     if $has_admin; then
         if [ "${#local_services[@]}" -eq 0 ]; then
             echo "Starting admin dashboard in Docker"
-            {{ DC }} --profile admin up admin
+            {{ ROOT_DC }} --profile admin up admin
             exit 0
         fi
 
-        {{ DC }} --profile admin up -d admin
+        {{ ROOT_DC }} --profile admin up -d admin
     fi
 
     if [ "${#local_services[@]}" -eq 0 ]; then
@@ -116,7 +117,12 @@ up *services:
 
 # Stop backend services
 down:
-    COMPOSE_PROFILES=admin {{ DC }} down
+    COMPOSE_PROFILES=admin {{ ROOT_DC }} down --remove-orphans
+
+# Seed the database with local sample data.
+# This command only starts the db stack and leaves mocks/admin untouched.
+db-seed:
+    {{ ROOT_DC }} up db-seed
 
 # ---------- Dev commands (default to all components) ---------- #
 
@@ -181,7 +187,7 @@ setup:
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
     command -v flutter >/dev/null || { echo "❌ Flutter not installed"; exit 1; }
     command -v npm >/dev/null || { echo "❌ npm not installed"; exit 1; }
-    COMPOSE_PROFILES=admin {{ DC }} build
+    COMPOSE_PROJECT_NAME=bizrush {{ ROOT_DC }} build admin
     just deps
 
 # ---------- Internal ---------- #

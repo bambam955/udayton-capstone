@@ -1,6 +1,7 @@
 -- ============================================================
--- Dummy seed data for local development
--- Seeds: customers, drivers, and delivery "moves"
+-- Local-development seed data
+-- Loaded by the separate `db-seed` compose service.
+-- Keep this out of the Flyway migration path.
 -- ============================================================
 
 -- Retailers used by seeded orders/moves
