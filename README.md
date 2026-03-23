@@ -2,6 +2,8 @@
 
 A platform for small businesses to rush-deliver supplies quickly and accurately.
 
+The Flutter customer app (`apps/main`) and driver app (`apps/driver`) share common foundations through `apps/shared` (`bizrush_shared`).
+
 ## Getting Started
 
 1. Install [Flutter](https://docs.flutter.dev/get-started/install), [Docker](https://docs.docker.com/get-docker/), and [`just`](https://github.com/casey/just).

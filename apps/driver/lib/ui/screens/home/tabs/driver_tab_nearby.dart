@@ -44,9 +44,7 @@ class DriverTabNearby extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         if (availableJobs.isEmpty)
-          const SurfaceCard(
-            child: Text('No available demo offers'),
-          )
+          const SurfaceCard(child: Text('No available demo offers'))
         else
           for (final job in availableJobs) ...[
             _OfferCard(
@@ -106,8 +104,10 @@ class _OfferCard extends StatelessWidget {
               children: [
                 Text(job.title, style: textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text('${job.pickup} → ${job.dropoff}',
-                    style: textTheme.bodySmall),
+                Text(
+                  '${job.pickup} → ${job.dropoff}',
+                  style: textTheme.bodySmall,
+                ),
                 const SizedBox(height: 10),
                 MetaInfoRow(
                   items: [
@@ -119,10 +119,7 @@ class _OfferCard extends StatelessWidget {
                       icon: Icons.straighten_rounded,
                       text: job.distanceText,
                     ),
-                    MetaInfo(
-                      icon: Icons.schedule_rounded,
-                      text: job.etaText,
-                    ),
+                    MetaInfo(icon: Icons.schedule_rounded, text: job.etaText),
                   ],
                 ),
                 const SizedBox(height: 12),

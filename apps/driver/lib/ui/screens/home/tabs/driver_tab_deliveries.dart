@@ -135,9 +135,7 @@ class _DeliveryCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(job.title, style: textTheme.titleMedium),
-              ),
+              Expanded(child: Text(job.title, style: textTheme.titleMedium)),
               StatusBadge(label: stageLabel, tone: stageTone),
             ],
           ),

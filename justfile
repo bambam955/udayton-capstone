@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 ROOT_DC := "docker compose --project-name bizrush -f docker-compose.yml"
-ALL_COMPONENTS := "main driver admin mocks"
+ALL_COMPONENTS := "main driver apps_shared admin mocks"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
 # ---------- Main commands ---------- #
@@ -21,15 +21,15 @@ default:
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
     @echo ""
-    @echo "For admin/db/mocks recipes:"
+    @echo "For admin/mocks recipes:"
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
-run *services:
+up *services:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "{{services}}" ]; then
-        echo "Usage: just run <service>..."
+        echo "Usage: just up <service>..."
         echo "Services: {{ ALL_UP_SERVICE_HELP }}"
         exit 2
     fi
@@ -116,7 +116,7 @@ run *services:
 
 # Stop backend services
 down:
-    {{ ROOT_DC }} --profile admin down --remove-orphans
+    {{ ROOT_DC }} --profile admin down
 
 # ---------- Dev commands (default to all components) ---------- #
 
@@ -181,7 +181,7 @@ setup:
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
     command -v flutter >/dev/null || { echo "❌ Flutter not installed"; exit 1; }
     command -v npm >/dev/null || { echo "❌ npm not installed"; exit 1; }
-    COMPOSE_PROJECT_NAME=bizrush {{ ROOT_DC }} build admin
+    {{ ROOT_DC }} --profile admin build
     just deps
 
 # ---------- Internal ---------- #
