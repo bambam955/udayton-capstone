@@ -26,7 +26,7 @@ cd bizrush
 just setup
 
 # Start web dev server (http://localhost:8080)
-just up main-web
+just run main-web
 ```
 
 If `pre-commit` is installed, `just setup` will automatically run `pre-commit install` to set up the Git hooks.
@@ -35,7 +35,7 @@ If `pre-commit` is installed, `just setup` will automatically run `pre-commit in
 
 | Command | Description |
 |---------|-------------|
-| `just up <services>` | Start backend services, run local Flutter apps, or run `admin` containerized |
+| `just run <services>` | Start backend services, run local Flutter apps, or run `admin` containerized |
 | `just down` | Stop backend services |
 | `just test <components>` | Run tests |
 | `just check <components>` | Static source code analysis and linting |
@@ -55,8 +55,8 @@ The emulator and connected devices run on the host.
 ```bash
 just --justfile apps/justfile emulator
 
-just up main-android
-just up driver-android
+just run main-android
+just run driver-android
 ```
 
 ### Windows
@@ -65,7 +65,7 @@ just up driver-android
 2. Start the emulator
 3. Run the app:
    ```bash
-   just up main-android
+   just run main-android
    ```
 
 ## Testing

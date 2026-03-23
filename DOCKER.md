@@ -30,16 +30,16 @@ Frontend orchestration for Flutter lives in local tooling:
 just setup
 
 # Start services
-just up main-web
-just up driver-web
-just up admin
-just up main-android
+just run main-web
+just run driver-web
+just run admin
+just run main-android
 
 # Stop backend services
 just down
 ```
 
-`just up` starts backend services first (for app/API dependencies), then:
+`just run` starts backend services first (for app/API dependencies), then:
 - starts the mock APIs in the same root compose project
 - runs Flutter app targets locally, or
 - runs `admin` in Docker.
@@ -61,7 +61,7 @@ just db/seed
 ### Example
 
 ```bash
-MAIN_WEB_PORT=3000 just up main-web
-DRIVER_WEB_PORT=3002 just up driver-web
-ADMIN_PORT=3010 just up admin
+MAIN_WEB_PORT=3000 just run main-web
+DRIVER_WEB_PORT=3002 just run driver-web
+ADMIN_PORT=3010 just run admin
 ```

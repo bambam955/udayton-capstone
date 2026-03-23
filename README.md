@@ -14,19 +14,19 @@ A platform for small businesses to rush-deliver supplies quickly and accurately.
 3. Run the main BizRush web app:
 
     ```bash
-    just up main-web
+    just run main-web
     ```
 
 4. Run the admin dashboard:
 
     ```bash
-    just up admin
+    just run admin
     ```
 
 5. Run a Flutter app in Android:
 
     ```bash
-    just up main-android
+    just run main-android
     ```
 
 > Flutter apps run locally; admin is run via Docker (`admin` Compose profile) for local development.
