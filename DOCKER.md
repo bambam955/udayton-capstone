@@ -47,27 +47,8 @@ just down
 To load just the database seed workflow directly:
 
 ```bash
-just db-seed
+just db/seed
 ```
-
-## `just` command mapping for local execution
-
-From the repo root `justfile`:
-
-- `just up <service>` -> runs one root `docker compose up -d` with explicit services, then local app run:
-  - `main-web` / `main` -> `cd apps/main && flutter run -d web-server`
-  - `driver-web` / `driver` -> `cd apps/driver && flutter run -d web-server`
-  - `main-android` -> `cd apps/main && flutter run`
-  - `driver-android` -> `cd apps/driver && flutter run`
-  - `admin` -> includes the `admin` service in the same compose project
-- `just db-seed` -> runs `docker compose -f docker-compose.yml up -d db-seed`
-- `just down` -> runs one root `docker compose down --remove-orphans`
-- `just test/check/format/deps/clean main|driver` -> `just --justfile apps/justfile ...`
-- `just test/check/format/deps/clean admin` -> `just --justfile admin-base/justfile ...`
-- `just build main|driver` -> `just --justfile apps/justfile build`
-- `just build admin` -> `docker buildx build -f admin-base/Dockerfile`
-- `just doctor` -> `just --justfile apps/justfile doctor`
-- `just shell` -> local shell
 
 ## Environment Variables
 

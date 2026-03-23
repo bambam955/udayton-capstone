@@ -5,7 +5,7 @@
 
 set shell := ["bash", "-cu"]
 
-ROOT_DC := "COMPOSE_PROJECT_NAME=bizrush docker compose -f docker-compose.yml"
+ROOT_DC := "docker compose --project-name bizrush -f docker-compose.yml"
 ALL_COMPONENTS := "main driver admin mocks"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
@@ -21,8 +21,7 @@ default:
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
     @echo ""
-    @echo "For db seeding and admin/mocks recipes:"
-    @echo "    just db-seed"
+    @echo "For admin/db/mocks recipes:"
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
@@ -117,12 +116,7 @@ up *services:
 
 # Stop backend services
 down:
-    COMPOSE_PROFILES=admin {{ ROOT_DC }} down --remove-orphans
-
-# Seed the database with local sample data.
-# This command only starts the db stack and leaves mocks/admin untouched.
-db-seed:
-    {{ ROOT_DC }} up db-seed
+    {{ ROOT_DC }} --profile admin down --remove-orphans
 
 # ---------- Dev commands (default to all components) ---------- #
 
