@@ -1,47 +1,19 @@
 import request from 'supertest';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { createApp } from '../../../app/createApp.js';
-import { allResourceDefinitions } from '../../../modules/shared/resource-core/all-definitions.js';
-import { ResourceService } from '../../../modules/shared/resource-core/service.js';
-import type { ResourceRepository } from '../../../modules/shared/resource-core/types.js';
-import { signAccessToken } from '../../../platform/auth/jwt.js';
-
-function makeRepository(): ResourceRepository {
-  return {
-    canCreate: vi.fn().mockResolvedValue(true),
-    list: vi.fn().mockResolvedValue([]),
-    get: vi.fn().mockResolvedValue({ id: 'row-1' }),
-    create: vi.fn().mockImplementation(async (_definition, _access, _principal, values) => values),
-    update: vi.fn().mockImplementation(async (_definition, _access, _principal, _id, values) => values),
-    delete: vi.fn().mockResolvedValue(true)
-  };
-}
-
-function makeBearer(userId: string, role: 'customer' | 'driver' | 'admin'): string {
-  const token = signAccessToken({
-    sub: userId,
-    role,
-    sessionId: `session-${role}-1`
-  });
-
-  return `Bearer ${token}`;
-}
-
-function makeAuthService(isSessionActive = true): object {
-  return {
-    login: vi.fn(),
-    logout: vi.fn(),
-    isSessionActive: vi.fn().mockResolvedValue(isSessionActive)
-  };
-}
+import {
+  makeAuthService,
+  makeBearer,
+  makeRepository,
+  makeTestApp
+} from '../../support/resource-test-helpers.js';
 
 describe('customer routes', () => {
   it('injects the authenticated customer id on address creation', async () => {
     const repository = makeRepository();
-    const app = createApp({
-      authService: makeAuthService(true) as never,
-      resourceService: new ResourceService(repository, allResourceDefinitions)
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
     });
 
     const response = await request(app)
@@ -62,9 +34,9 @@ describe('customer routes', () => {
 
   it('blocks customers from admin-only customer session endpoints', async () => {
     const repository = makeRepository();
-    const app = createApp({
-      authService: makeAuthService(true) as never,
-      resourceService: new ResourceService(repository, allResourceDefinitions)
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
     });
 
     const response = await request(app)
@@ -77,9 +49,9 @@ describe('customer routes', () => {
 
   it('allows admins to list customer sessions', async () => {
     const repository = makeRepository();
-    const app = createApp({
-      authService: makeAuthService(true) as never,
-      resourceService: new ResourceService(repository, allResourceDefinitions)
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
     });
 
     const response = await request(app)
@@ -88,5 +60,37 @@ describe('customer routes', () => {
 
     expect(response.status).toBe(200);
     expect(repository.list).toHaveBeenCalled();
+  });
+
+  it('rejects invalid address query filters', async () => {
+    const app = makeTestApp({
+      repository: makeRepository(),
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .get('/v1/addresses')
+      .query({ is_default: 'sometimes' })
+      .set('authorization', makeBearer('cust-1', 'customer'));
+
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({ error: 'INVALID_REQUEST' });
+  });
+
+  it('rejects customer attempts to patch protected customer fields', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .patch('/v1/customers/cust-1')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({ is_active: false });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });
