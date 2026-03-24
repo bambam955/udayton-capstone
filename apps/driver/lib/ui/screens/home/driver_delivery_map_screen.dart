@@ -204,7 +204,7 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     if (!hasMapboxAccessToken) {
       return const _MapUnavailableCard(
         message:
-            'Mapbox token is missing. Run with --dart-define ACCESS_TOKEN=YOUR_PUBLIC_MAPBOX_ACCESS_TOKEN.',
+            'Mapbox token is missing. Please add ACCESS_TOKEN to .env file.',
       );
     }
 

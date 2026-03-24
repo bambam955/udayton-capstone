@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-const String mapboxAccessToken = String.fromEnvironment('ACCESS_TOKEN');
+String get mapboxAccessToken => dotenv.env['ACCESS_TOKEN'] ?? '';
 
 bool get hasMapboxAccessToken => mapboxAccessToken.trim().isNotEmpty;
 
