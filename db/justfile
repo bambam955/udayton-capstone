@@ -1,0 +1,7 @@
+# List available recipes.
+default:
+    @just --list --unsorted
+
+# Seed the database with local sample data.
+seed:
+    docker compose --project-name bizrush --profile dbseed -f ../docker-compose.yml up db-seed

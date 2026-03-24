@@ -1,11 +1,11 @@
 # BizRush — project orchestration
 # Backend services run in Docker; Flutter apps run locally; admin runs in Docker.
-# Usage: just up <service>... where service is main-web, driver-web,
+# Usage: just run <service>... where service is main-web, driver-web,
 #        main-android, driver-android, or admin
 
 set shell := ["bash", "-cu"]
 
-DC := "docker compose"
+ROOT_DC := "docker compose --project-name bizrush -f docker-compose.yml"
 ALL_COMPONENTS := "main driver apps_shared admin mocks"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
@@ -25,11 +25,11 @@ default:
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
-up *services:
+run *services:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "{{services}}" ]; then
-        echo "Usage: just up <service>..."
+        echo "Usage: just run <service>..."
         echo "Services: {{ ALL_UP_SERVICE_HELP }}"
         exit 2
     fi
@@ -83,16 +83,16 @@ up *services:
     done
 
     echo "Starting backend services with docker compose..."
-    {{ DC }} up -d
+    {{ ROOT_DC }} up -d
 
     if $has_admin; then
         if [ "${#local_services[@]}" -eq 0 ]; then
             echo "Starting admin dashboard in Docker"
-            {{ DC }} --profile admin up admin
+            {{ ROOT_DC }} --profile admin up admin
             exit 0
         fi
 
-        {{ DC }} --profile admin up -d admin
+        {{ ROOT_DC }} --profile admin up -d admin
     fi
 
     if [ "${#local_services[@]}" -eq 0 ]; then
@@ -116,7 +116,7 @@ up *services:
 
 # Stop backend services
 down:
-    COMPOSE_PROFILES=admin {{ DC }} down
+    {{ ROOT_DC }} --profile admin down
 
 # ---------- Dev commands (default to all components) ---------- #
 
@@ -154,9 +154,6 @@ build component *args:
         main|driver)
             just apps/build "{{component}}" {{args}}
             ;;
-        apps_shared)
-            echo "Nothing to build"
-            ;;
         admin)
             docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/
             ;;
@@ -184,7 +181,7 @@ setup:
     command -v docker >/dev/null || { echo "❌ Docker not installed"; exit 1; }
     command -v flutter >/dev/null || { echo "❌ Flutter not installed"; exit 1; }
     command -v npm >/dev/null || { echo "❌ npm not installed"; exit 1; }
-    COMPOSE_PROFILES=admin {{ DC }} build
+    {{ ROOT_DC }} --profile admin build
     just deps
 
 # ---------- Internal ---------- #
@@ -210,9 +207,6 @@ _run-for recipe component:
     case "{{component}}" in
         main|driver)
             just --justfile apps/justfile "{{recipe}}" "{{component}}"
-            ;;
-        apps_shared)
-            just --justfile apps/justfile "{{recipe}}" "shared"
             ;;
         admin)
             just --justfile admin-base/justfile "{{recipe}}"

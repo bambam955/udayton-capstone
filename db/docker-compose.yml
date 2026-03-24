@@ -1,0 +1,55 @@
+# Database stack used by local development and production migrations.
+# Seed data is loaded separately through a plain psql client container.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: bizrush
+      POSTGRES_USER: bizrush
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_local}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bizrush -d bizrush"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Flyway applies schema migrations only.
+  flyway:
+    image: flyway/flyway:12.1.0
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - -url=jdbc:postgresql://db:5432/bizrush
+      - -user=bizrush
+      - -password=${POSTGRES_PASSWORD:-change_me_local}
+      - -connectRetries=60
+      - migrate
+    volumes:
+      - ./migrations:/flyway/sql
+
+  # Local-only sample data loader. This is not part of Flyway history.
+  db-seed:
+    image: postgres:16
+    profiles: [dbseed]
+    depends_on:
+      db:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      PGDATABASE: bizrush
+      PGHOST: db
+      PGUSER: bizrush
+      PGPASSWORD: ${POSTGRES_PASSWORD:-change_me_local}
+    command: ["psql", "-v", "ON_ERROR_STOP=1", "-f", "/seed/R__local_seed_data.sql"]
+    volumes:
+      - ./seed:/seed:ro
+
+volumes:
+  pgdata:

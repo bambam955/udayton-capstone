@@ -1,9 +1,9 @@
-# BizRush backend and admin services
+# BizRush backend, mocks, and admin services
 # Frontend Flutter apps are run locally.
 
 include:
+  - ./db/docker-compose.yml
   - ./mocks/docker-compose.yml
-
 services:
   # Admin dashboard (containerized)
   admin:
@@ -22,8 +22,7 @@ services:
     command: npm run dev -- --port ${ADMIN_PORT:-3001}
     tty: true
 
+
 volumes:
-  # Persists Node dependencies for admin dashboard between runs
   admin-node-modules:
-  # Persists npm download cache between runs
   npm-cache:
