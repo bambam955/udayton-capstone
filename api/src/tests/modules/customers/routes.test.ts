@@ -36,31 +36,57 @@ function makeAuthService(isSessionActive = true): object {
   };
 }
 
-describe('order routes', () => {
-  it('returns 401 without a bearer token', async () => {
+describe('customer routes', () => {
+  it('injects the authenticated customer id on address creation', async () => {
     const repository = makeRepository();
     const app = createApp({
       authService: makeAuthService(true) as never,
       resourceService: new ResourceService(repository, allResourceDefinitions)
     });
 
-    const response = await request(app).get('/v1/orders');
+    const response = await request(app)
+      .post('/v1/addresses')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        label: 'Warehouse',
+        line1: '99 Water St'
+      });
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      customer_id: 'cust-1',
+      label: 'Warehouse',
+      line1: '99 Water St'
+    });
   });
 
-  it('returns 401 when a session has been revoked', async () => {
+  it('blocks customers from admin-only customer session endpoints', async () => {
     const repository = makeRepository();
     const app = createApp({
-      authService: makeAuthService(false) as never,
+      authService: makeAuthService(true) as never,
       resourceService: new ResourceService(repository, allResourceDefinitions)
     });
 
     const response = await request(app)
-      .get('/v1/orders')
+      .get('/v1/customer-sessions')
       .set('authorization', makeBearer('cust-1', 'customer'));
 
-    expect(response.status).toBe(401);
-    expect(repository.list).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+  });
+
+  it('allows admins to list customer sessions', async () => {
+    const repository = makeRepository();
+    const app = createApp({
+      authService: makeAuthService(true) as never,
+      resourceService: new ResourceService(repository, allResourceDefinitions)
+    });
+
+    const response = await request(app)
+      .get('/v1/customer-sessions')
+      .set('authorization', makeBearer('admin-1', 'admin'));
+
+    expect(response.status).toBe(200);
+    expect(repository.list).toHaveBeenCalled();
   });
 });

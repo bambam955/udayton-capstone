@@ -9,8 +9,12 @@ const app = createApp({
     logout: vi.fn(),
     isSessionActive: vi.fn().mockResolvedValue(true)
   } as never,
-  ordersService: {
-    listOrders: vi.fn().mockResolvedValue([])
+  resourceService: {
+    list: vi.fn().mockResolvedValue({ data: [] }),
+    get: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn()
   } as never
 });
 

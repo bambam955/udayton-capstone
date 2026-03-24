@@ -1,0 +1,51 @@
+import type { ResourceFieldDefinition } from '../shared/resource-core/types.js';
+import {
+  adminOnly,
+  booleanField,
+  resource,
+  stringField,
+  timestampField
+} from '../shared/resource-core/definition-helpers.js';
+
+const sessionFields = {
+  session_id: stringField({ filterable: true }),
+  access_token: stringField({ readable: false, createable: true, updateable: true }),
+  expires_at: timestampField({ createable: true, updateable: true }),
+  created_at: timestampField({ createable: true, updateable: true })
+} satisfies Record<string, ResourceFieldDefinition>;
+
+export const adminResourceDefinitions = [
+  resource({
+    name: 'admins',
+    path: 'admins',
+    table: 'admins',
+    idColumn: 'admin_id',
+    fields: {
+      admin_id: stringField({ filterable: true }),
+      email: stringField({ filterable: true, createable: true, updateable: true }),
+      full_name: stringField({ createable: true, updateable: true }),
+      password_hash: stringField({ readable: false, createable: true, updateable: true }),
+      is_active: booleanField({ filterable: true, createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true }),
+      updated_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: adminOnly(),
+    getAccess: adminOnly(),
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
+  }),
+  resource({
+    name: 'admin_sessions',
+    path: 'admin-sessions',
+    table: 'admin_sessions',
+    idColumn: 'session_id',
+    fields: {
+      ...sessionFields,
+      admin_id: stringField({ filterable: true, createable: true })
+    },
+    listAccess: adminOnly(),
+    getAccess: adminOnly(),
+    deleteAccess: adminOnly()
+  })
+];

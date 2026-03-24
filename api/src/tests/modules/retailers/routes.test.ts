@@ -36,31 +36,23 @@ function makeAuthService(isSessionActive = true): object {
   };
 }
 
-describe('order routes', () => {
-  it('returns 401 without a bearer token', async () => {
+describe('retailer routes', () => {
+  it('rejects protected retailer account fields for customer patch requests', async () => {
     const repository = makeRepository();
     const app = createApp({
       authService: makeAuthService(true) as never,
       resourceService: new ResourceService(repository, allResourceDefinitions)
     });
 
-    const response = await request(app).get('/v1/orders');
-
-    expect(response.status).toBe(401);
-  });
-
-  it('returns 401 when a session has been revoked', async () => {
-    const repository = makeRepository();
-    const app = createApp({
-      authService: makeAuthService(false) as never,
-      resourceService: new ResourceService(repository, allResourceDefinitions)
-    });
-
     const response = await request(app)
-      .get('/v1/orders')
-      .set('authorization', makeBearer('cust-1', 'customer'));
+      .patch('/v1/retailer-accounts/account-1')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        access_token: 'secret-token'
+      });
 
-    expect(response.status).toBe(401);
-    expect(repository.list).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });
