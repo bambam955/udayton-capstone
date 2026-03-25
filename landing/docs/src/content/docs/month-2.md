@@ -42,3 +42,7 @@ Alex:
 Tidiane:
 
 Bennett:
+
+- Finish developing backend Express API, including DB connections
+- Implement Flutter frontend interface for the backend
+- Any other system integration needs that come up
