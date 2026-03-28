@@ -72,6 +72,12 @@ export class PgResourceRepository implements ResourceRepository {
     }
 
     const localValue = values[access.scope.localColumn];
+    if (localValue === undefined || localValue === null) {
+      // Some create-time ownership checks are conditional, such as support
+      // tickets that may or may not reference an order.
+      return true;
+    }
+
     if (typeof localValue !== 'string' || localValue.length === 0) {
       return false;
     }

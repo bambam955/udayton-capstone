@@ -129,6 +129,40 @@ describe('ResourceService', () => {
     expect(repository.create).not.toHaveBeenCalled();
   });
 
+  it('scopes customer support ticket creates through their own orders when order_id is present', async () => {
+    const repository = makeRepository();
+    const service = new ResourceService(repository, allResourceDefinitions);
+
+    await service.create(
+      definition('support-tickets'),
+      { userId: 'cust-1', role: 'customer', sessionId: 's1' },
+      {
+        order_id: 'order-1',
+        issue_type: 'LATE_DELIVERY',
+        message: 'The order arrived late.'
+      }
+    );
+
+    expect(repository.canCreate).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        injectPrincipalColumn: 'customer_id',
+        scope: {
+          kind: 'related',
+          table: 'orders',
+          localColumn: 'order_id',
+          relatedColumn: 'order_id',
+          ownerColumn: 'customer_id'
+        }
+      }),
+      expect.objectContaining({ userId: 'cust-1' }),
+      expect.objectContaining({
+        customer_id: 'cust-1',
+        order_id: 'order-1'
+      })
+    );
+  });
+
   it('rejects writes to protected retailer account token columns for customers', async () => {
     const repository = makeRepository();
     const service = new ResourceService(repository, allResourceDefinitions);

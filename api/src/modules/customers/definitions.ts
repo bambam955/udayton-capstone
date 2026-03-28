@@ -390,6 +390,15 @@ export const customerResourceDefinitions = [
     createAccess: {
       admin: {},
       customer: {
+        // Support tickets may be general account issues, but when an order is
+        // attached it must belong to the authenticated customer.
+        scope: {
+          kind: 'related',
+          table: 'orders',
+          localColumn: 'order_id',
+          relatedColumn: 'order_id',
+          ownerColumn: 'customer_id'
+        },
         injectPrincipalColumn: 'customer_id',
         writeColumns: ['order_id', 'issue_type', 'message']
       }

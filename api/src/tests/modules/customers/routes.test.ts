@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   makeAuthService,
@@ -118,6 +118,28 @@ describe('customer routes', () => {
       order_id: 'order-1',
       issue_type: 'LATE_DELIVERY'
     });
+  });
+
+  it('rejects support tickets that reference another customer order', async () => {
+    const repository = makeRepository();
+    repository.canCreate = vi.fn().mockResolvedValue(false);
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/support-tickets')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        order_id: 'order-2',
+        issue_type: 'LATE_DELIVERY',
+        message: 'This should be rejected.'
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+    expect(repository.create).not.toHaveBeenCalled();
   });
 
   it('lets customers create support tickets without an order id for general support', async () => {
