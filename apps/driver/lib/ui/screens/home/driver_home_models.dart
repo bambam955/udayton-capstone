@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 /// Owns data types used by the driver home shell and tab sections.
 enum DeliveryStage { available, assigned, outForDelivery, delivered }
 
+enum DriverRoutePhase { toPickup, toDropoff }
+
 class DriverJob {
   const DriverJob({
     required this.id,
     required this.title,
+    required this.driverStartLat,
+    required this.driverStartLng,
     required this.pickup,
+    required this.pickupStoreId,
     required this.dropoff,
+    required this.dropoffLat,
+    required this.dropoffLng,
     required this.zone,
     required this.payEstimateText,
     required this.distanceText,
@@ -22,8 +29,13 @@ class DriverJob {
 
   final String id;
   final String title;
+  final double driverStartLat;
+  final double driverStartLng;
   final String pickup;
+  final String pickupStoreId;
   final String dropoff;
+  final double dropoffLat;
+  final double dropoffLng;
   final String zone;
   final String payEstimateText;
   final String distanceText;
@@ -38,8 +50,13 @@ class DriverJob {
     return DriverJob(
       id: id,
       title: title,
+      driverStartLat: driverStartLat,
+      driverStartLng: driverStartLng,
       pickup: pickup,
+      pickupStoreId: pickupStoreId,
       dropoff: dropoff,
+      dropoffLat: dropoffLat,
+      dropoffLng: dropoffLng,
       zone: zone,
       payEstimateText: payEstimateText,
       distanceText: distanceText,
