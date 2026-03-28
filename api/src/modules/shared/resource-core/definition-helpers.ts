@@ -1,6 +1,10 @@
 import type { AuthRole } from '../../../platform/auth/jwt.js';
 
-import type { ResourceDefinition, ResourceFieldDefinition, ResourceOperationAccess } from './types.js';
+import type {
+  ResourceDefinition,
+  ResourceFieldDefinition,
+  ResourceOperationAccess
+} from './types.js';
 
 export function stringField(
   overrides: Partial<ResourceFieldDefinition> = {}
@@ -58,7 +62,9 @@ export function adminOnly(): Partial<Record<AuthRole, ResourceOperationAccess>> 
   };
 }
 
-export function resource(definition: Omit<ResourceDefinition, 'defaultOrderBy'>): ResourceDefinition {
+export function resource(
+  definition: Omit<ResourceDefinition, 'defaultOrderBy'>
+): ResourceDefinition {
   return {
     ...definition,
     defaultOrderBy: defaultOrderBy(definition.fields, definition.idColumn)

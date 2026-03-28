@@ -15,24 +15,22 @@ function fieldValueSchema(field: ResourceFieldDefinition) {
   if (field.kind === 'boolean') {
     return z.union([
       z.boolean(),
-      z
-        .string()
-        .transform((value, ctx) => {
-          if (value === 'true') {
-            return true;
-          }
+      z.string().transform((value, ctx) => {
+        if (value === 'true') {
+          return true;
+        }
 
-          if (value === 'false') {
-            return false;
-          }
+        if (value === 'false') {
+          return false;
+        }
 
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Expected boolean.'
-          });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Expected boolean.'
+        });
 
-          return z.NEVER;
-        }),
+        return z.NEVER;
+      }),
       z.null()
     ]);
   }

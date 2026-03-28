@@ -92,7 +92,9 @@ export class ResourceService {
     principal: AuthPrincipal
   ): Record<string, unknown> {
     const allowedColumns = new Set(writableColumns(definition, access, operation));
-    const disallowedColumns = Object.keys(rawValues).filter((column) => !allowedColumns.has(column));
+    const disallowedColumns = Object.keys(rawValues).filter(
+      (column) => !allowedColumns.has(column)
+    );
 
     if (disallowedColumns.length > 0) {
       throw new HttpError(403, 'FORBIDDEN', 'The request contains fields you cannot modify.');
@@ -185,7 +187,13 @@ export class ResourceService {
       );
     }
 
-    const values = this.normalizeMutationValues(definition, access, 'create', parsed.data, principal);
+    const values = this.normalizeMutationValues(
+      definition,
+      access,
+      'create',
+      parsed.data,
+      principal
+    );
     const allowed = await this.repository.canCreate(definition, access, principal, values);
 
     if (!allowed) {
@@ -217,7 +225,13 @@ export class ResourceService {
       throw new HttpError(400, 'INVALID_REQUEST', 'At least one field must be provided.');
     }
 
-    const values = this.normalizeMutationValues(definition, access, 'update', parsed.data, principal);
+    const values = this.normalizeMutationValues(
+      definition,
+      access,
+      'update',
+      parsed.data,
+      principal
+    );
     const data = await this.repository.update(definition, access, principal, id, values);
 
     if (!data) {
@@ -227,7 +241,11 @@ export class ResourceService {
     return { data };
   }
 
-  async delete(definition: ResourceDefinition, principal: AuthPrincipal, id: string): Promise<void> {
+  async delete(
+    definition: ResourceDefinition,
+    principal: AuthPrincipal,
+    id: string
+  ): Promise<void> {
     const access = this.resolveAccess(definition, 'delete', principal);
     const deleted = await this.repository.delete(definition, access, principal, id);
 

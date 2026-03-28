@@ -11,7 +11,9 @@ export function makeRepository(): ResourceRepository {
     list: vi.fn().mockResolvedValue([]),
     get: vi.fn().mockResolvedValue({ id: 'row-1' }),
     create: vi.fn().mockImplementation(async (_definition, _access, _principal, values) => values),
-    update: vi.fn().mockImplementation(async (_definition, _access, _principal, _id, values) => values),
+    update: vi
+      .fn()
+      .mockImplementation(async (_definition, _access, _principal, _id, values) => values),
     delete: vi.fn().mockResolvedValue(true)
   };
 }
@@ -39,10 +41,7 @@ export function makeAuthService(isSessionActive = true): object {
   };
 }
 
-export function makeTestApp(options?: {
-  repository?: ResourceRepository;
-  authService?: object;
-}) {
+export function makeTestApp(options?: { repository?: ResourceRepository; authService?: object }) {
   const repository = options?.repository ?? makeRepository();
   const authService = options?.authService ?? makeAuthService(true);
 

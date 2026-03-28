@@ -130,7 +130,11 @@ describe('ResourceService', () => {
     const service = new ResourceService(repository, allResourceDefinitions);
 
     await expect(
-      service.get(definition('payments'), { userId: 'admin-1', role: 'admin', sessionId: 's1' }, 'pay-1')
+      service.get(
+        definition('payments'),
+        { userId: 'admin-1', role: 'admin', sessionId: 's1' },
+        'pay-1'
+      )
     ).rejects.toMatchObject({
       statusCode: 404,
       code: 'NOT_FOUND'

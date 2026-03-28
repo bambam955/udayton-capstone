@@ -160,11 +160,15 @@ export class PgResourceRepository implements ResourceRepository {
     const placeholders = entries.map((_, index) => `$${index + 1}`);
     const params = entries.map(([, value]) => value);
     const valueSql =
-      entries.length > 0 ? `(${columns.join(', ')}) values (${placeholders.join(', ')})` : 'default values';
+      entries.length > 0
+        ? `(${columns.join(', ')}) values (${placeholders.join(', ')})`
+        : 'default values';
     const query = `
       insert into ${quoteIdentifier(definition.table)}
       ${valueSql}
-      returning ${readableColumns(definition).map((column) => quoteIdentifier(column)).join(', ')}
+      returning ${readableColumns(definition)
+        .map((column) => quoteIdentifier(column))
+        .join(', ')}
     `;
     const result = await this.pool.query(query, params);
 
@@ -201,7 +205,9 @@ export class PgResourceRepository implements ResourceRepository {
       update ${quoteIdentifier(definition.table)}
       set ${sets.join(', ')}
       where ${whereClauses.join(' and ')}
-      returning ${readableColumns(definition).map((column) => quoteIdentifier(column)).join(', ')}
+      returning ${readableColumns(definition)
+        .map((column) => quoteIdentifier(column))
+        .join(', ')}
     `;
     const result = await this.pool.query(query, params);
 
