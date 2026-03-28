@@ -35,7 +35,7 @@ describe('order routes', () => {
     expect(repository.list).not.toHaveBeenCalled();
   });
 
-  it('allows customers to create orders and injects the authenticated customer id', async () => {
+  it('allows customers to create orders with safe fields and injects the authenticated customer id', async () => {
     const repository = makeRepository();
     const app = makeTestApp({
       repository,
@@ -48,18 +48,61 @@ describe('order routes', () => {
       .send({
         retailer_id: 'ret-1',
         address_id: 'addr-1',
-        status: 'PLACED',
         currency: 'USD',
-        total_cents: 4599
+        delivery_notes: 'Leave at the side door'
       });
 
     expect(response.status).toBe(201);
     expect(response.body.data).toMatchObject({
       customer_id: 'cust-1',
-      retailer_id: 'ret-1',
-      address_id: 'addr-1'
+      retailer_id: 'ret-1'
     });
+    expect(response.body.data).not.toHaveProperty('status');
+    expect(response.body.data).not.toHaveProperty('total_cents');
     expect(repository.create).toHaveBeenCalled();
+  });
+
+  it('rejects customer order creates that try to set protected status and pricing fields', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/orders')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        retailer_id: 'ret-1',
+        address_id: 'addr-1',
+        status: 'DELIVERED',
+        total_cents: 4599
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects customer order item writes after checkout', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/order-items')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        order_id: 'order-1',
+        product_id: 'prod-1',
+        quantity: 2
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+    expect(repository.create).not.toHaveBeenCalled();
   });
 
   it('blocks drivers from listing order collections they do not own through the customer surface', async () => {

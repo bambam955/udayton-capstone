@@ -52,6 +52,83 @@ describe('ResourceService', () => {
     );
   });
 
+  it('scopes customer order creates through the selected address and injects customer_id', async () => {
+    const repository = makeRepository();
+    const service = new ResourceService(repository, allResourceDefinitions);
+
+    await service.create(
+      definition('orders'),
+      { userId: 'cust-1', role: 'customer', sessionId: 's1' },
+      {
+        retailer_id: 'ret-1',
+        address_id: 'addr-1',
+        currency: 'USD'
+      }
+    );
+
+    expect(repository.canCreate).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        injectPrincipalColumn: 'customer_id',
+        scope: {
+          kind: 'related',
+          table: 'addresses',
+          localColumn: 'address_id',
+          relatedColumn: 'address_id',
+          ownerColumn: 'customer_id'
+        }
+      }),
+      expect.objectContaining({ userId: 'cust-1' }),
+      expect.objectContaining({
+        customer_id: 'cust-1',
+        address_id: 'addr-1'
+      })
+    );
+  });
+
+  it('rejects customer-supplied order aggregate fields during order creation', async () => {
+    const repository = makeRepository();
+    const service = new ResourceService(repository, allResourceDefinitions);
+
+    await expect(
+      service.create(
+        definition('orders'),
+        { userId: 'cust-1', role: 'customer', sessionId: 's1' },
+        {
+          retailer_id: 'ret-1',
+          address_id: 'addr-1',
+          status: 'DELIVERED',
+          total_cents: 4599
+        }
+      )
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'FORBIDDEN'
+    } satisfies Partial<HttpError>);
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('blocks customers from mutating order items through the generic resource surface', async () => {
+    const repository = makeRepository();
+    const service = new ResourceService(repository, allResourceDefinitions);
+
+    await expect(
+      service.create(
+        definition('order-items'),
+        { userId: 'cust-1', role: 'customer', sessionId: 's1' },
+        {
+          order_id: 'order-1',
+          product_id: 'prod-1',
+          quantity: 2
+        }
+      )
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'FORBIDDEN'
+    } satisfies Partial<HttpError>);
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
   it('rejects writes to protected retailer account token columns for customers', async () => {
     const repository = makeRepository();
     const service = new ResourceService(repository, allResourceDefinitions);

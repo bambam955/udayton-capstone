@@ -69,18 +69,20 @@ export const orderResourceDefinitions = [
     createAccess: {
       admin: {},
       customer: {
+        // Customer order creation is scoped through the selected saved address so
+        // the generic create path rejects cross-account address references.
+        scope: {
+          kind: 'related',
+          table: 'addresses',
+          localColumn: 'address_id',
+          relatedColumn: 'address_id',
+          ownerColumn: 'customer_id'
+        },
         injectPrincipalColumn: 'customer_id',
         writeColumns: [
           'retailer_id',
           'address_id',
           'external_order_id',
-          'status',
-          'placed_at',
-          'subtotal_cents',
-          'fees_cents',
-          'tip_cents',
-          'discount_cents',
-          'total_cents',
           'currency',
           'delivery_notes'
         ]
@@ -147,59 +149,11 @@ export const orderResourceDefinitions = [
         }
       }
     },
-    createAccess: {
-      admin: {},
-      customer: {
-        scope: {
-          kind: 'related',
-          table: 'orders',
-          localColumn: 'order_id',
-          relatedColumn: 'order_id',
-          ownerColumn: 'customer_id'
-        },
-        writeColumns: [
-          'order_id',
-          'product_id',
-          'external_sku',
-          'name_snapshot',
-          'unit_price_cents',
-          'quantity',
-          'substituted_for_sku'
-        ]
-      }
-    },
-    updateAccess: {
-      admin: {},
-      customer: {
-        scope: {
-          kind: 'related',
-          table: 'orders',
-          localColumn: 'order_id',
-          relatedColumn: 'order_id',
-          ownerColumn: 'customer_id'
-        },
-        writeColumns: [
-          'product_id',
-          'external_sku',
-          'name_snapshot',
-          'unit_price_cents',
-          'quantity',
-          'substituted_for_sku'
-        ]
-      }
-    },
-    deleteAccess: {
-      admin: {},
-      customer: {
-        scope: {
-          kind: 'related',
-          table: 'orders',
-          localColumn: 'order_id',
-          relatedColumn: 'order_id',
-          ownerColumn: 'customer_id'
-        }
-      }
-    }
+    // Order items become part of an order aggregate once checkout is complete,
+    // so only trusted server-side/admin flows may mutate them here.
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
   }),
   resource({
     name: 'order_status_history',
