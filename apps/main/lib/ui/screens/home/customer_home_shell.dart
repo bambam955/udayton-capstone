@@ -294,7 +294,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
           supportStatusTone: _supportStatusTone,
           onQuickAction: _showDemoMessage,
         ),
-      _ => const CustomerTabAccount(
+      _ => CustomerTabAccount(
           stores: stores,
           orders: orders,
         ),

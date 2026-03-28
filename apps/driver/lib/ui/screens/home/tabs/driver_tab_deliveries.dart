@@ -17,6 +17,7 @@ class DriverTabDeliveries extends StatelessWidget {
     required this.onFilterChanged,
     required this.onConfirmPickup,
     required this.onCompleteDelivery,
+    required this.onOpenMap,
     required this.onViewDetails,
   });
 
@@ -28,6 +29,7 @@ class DriverTabDeliveries extends StatelessWidget {
   final ValueChanged<int> onFilterChanged;
   final ValueChanged<String> onConfirmPickup;
   final ValueChanged<String> onCompleteDelivery;
+  final ValueChanged<String> onOpenMap;
   final ValueChanged<DriverJob> onViewDetails;
 
   @override
@@ -83,6 +85,7 @@ class DriverTabDeliveries extends StatelessWidget {
               stageTone: stageTone(job.stage),
               onConfirmPickup: () => onConfirmPickup(job.id),
               onCompleteDelivery: () => onCompleteDelivery(job.id),
+              onOpenMap: () => onOpenMap(job.id),
               onViewDetails: () => onViewDetails(job),
             ),
             const SizedBox(height: 12),
@@ -100,6 +103,7 @@ class _DeliveryCard extends StatelessWidget {
     required this.stageTone,
     required this.onConfirmPickup,
     required this.onCompleteDelivery,
+    required this.onOpenMap,
     required this.onViewDetails,
   });
 
@@ -108,6 +112,7 @@ class _DeliveryCard extends StatelessWidget {
   final StatusBadgeTone stageTone;
   final VoidCallback onConfirmPickup;
   final VoidCallback onCompleteDelivery;
+  final VoidCallback onOpenMap;
   final VoidCallback onViewDetails;
 
   @override
@@ -162,6 +167,13 @@ class _DeliveryCard extends StatelessWidget {
                   key: primaryAction.key,
                   onPressed: primaryAction.onPressed,
                   child: Text(primaryAction.label),
+                ),
+              if (job.stage == DeliveryStage.assigned ||
+                  job.stage == DeliveryStage.outForDelivery)
+                OutlinedButton(
+                  key: Key('driver-open-map-${job.id}'),
+                  onPressed: onOpenMap,
+                  child: const Text('Open map'),
                 ),
               OutlinedButton(
                 key: Key('driver-view-details-${job.id}'),
