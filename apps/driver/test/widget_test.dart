@@ -35,6 +35,10 @@ void main() {
 
     await tester.tap(find.byKey(const Key('driver-accept-drv_job_101')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('driver-map-unavailable')), findsOneWidget);
+    expect(find.byKey(const Key('driver-map-close')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('driver-map-close')));
+    await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('driver-nearby-card-drv_job_101')),
       findsNothing,
@@ -46,10 +50,21 @@ void main() {
       find.byKey(const Key('driver-delivery-card-drv_job_101')),
       findsOneWidget,
     );
+    expect(
+        find.byKey(const Key('driver-open-map-drv_job_101')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('driver-open-map-drv_job_101')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('driver-map-unavailable')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('driver-map-close')));
+    await tester.pumpAndSettle();
 
     await tester.tap(
       find.byKey(const Key('driver-confirm-pickup-drv_job_101')),
     );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('driver-map-unavailable')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('driver-map-close')));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('driver-complete-delivery-drv_job_101')),
@@ -69,6 +84,7 @@ void main() {
       find.byKey(const Key('driver-delivery-card-drv_job_101')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('driver-open-map-drv_job_101')), findsNothing);
     expect(find.text('COMPLETED'), findsWidgets);
 
     await selectDriverTab(3);

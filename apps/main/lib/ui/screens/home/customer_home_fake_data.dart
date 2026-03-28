@@ -1,3 +1,4 @@
+import 'package:bizrush_shared/bizrush_shared.dart';
 import 'package:flutter/material.dart';
 
 import 'customer_home_models.dart';
@@ -19,25 +20,24 @@ const customerBottomNavItems = [
   CustomerNavItem(icon: Icons.person_outline_rounded, label: 'Account'),
 ];
 
-const stores = [
-  StoreOption(
-    id: 'target_midtown',
-    name: 'Target Midtown',
-    etaText: 'Ready in ~22 min',
-    ratingText: '4.9',
-  ),
-  StoreOption(
-    id: 'walmart_eastgate',
-    name: 'Walmart Eastgate',
-    etaText: 'Ready in ~28 min',
-    ratingText: '4.8',
-  ),
-  StoreOption(
-    id: 'target_harbor',
-    name: 'Target Harbor',
-    etaText: 'Ready in ~19 min',
-    ratingText: '4.7',
-  ),
+final stores = [
+  for (final store in storeLocations)
+    StoreOption(
+      id: store.id,
+      name: store.name,
+      etaText: switch (store.id) {
+        'target_midtown' => 'Ready in ~24 min',
+        'walmart_eastgate' => 'Ready in ~21 min',
+        'target_harbor' => 'Ready in ~18 min',
+        _ => 'Ready soon',
+      },
+      ratingText: switch (store.id) {
+        'target_midtown' => '4.9',
+        'walmart_eastgate' => '4.8',
+        'target_harbor' => '4.7',
+        _ => '4.8',
+      },
+    ),
 ];
 
 const catalog = [
@@ -137,7 +137,7 @@ const orders = [
   OrderPreview(
     id: 'ord_1001',
     businessName: 'Northside Deli',
-    storeName: 'Target Midtown',
+    storeName: 'Target Beavercreek',
     status: 'READY_FOR_PICKUP',
     etaText: 'Driver assignment in ~6 min',
     total: 128.40,
@@ -146,7 +146,7 @@ const orders = [
   OrderPreview(
     id: 'ord_1002',
     businessName: 'Elm Street Cafe',
-    storeName: 'Walmart Eastgate',
+    storeName: 'Walmart Moraine',
     status: 'PICKING',
     etaText: 'Expected ready in ~14 min',
     total: 92.10,
@@ -154,12 +154,84 @@ const orders = [
   ),
   OrderPreview(
     id: 'ord_1003',
-    businessName: 'Harbor Print Shop',
-    storeName: 'Target Harbor',
+    businessName: 'Riverfront Print Lab',
+    storeName: 'Target Huber Heights',
     status: 'OUT_FOR_DELIVERY',
-    etaText: 'ETA 24 min',
+    etaText: 'ETA 21 min',
     total: 64.80,
     itemCount: 8,
+  ),
+  OrderPreview(
+    id: 'ord_1004',
+    businessName: 'Oakwood Bakery',
+    storeName: 'Target Beavercreek',
+    status: 'SUBMITTED',
+    etaText: 'Store confirmation in ~4 min',
+    total: 74.25,
+    itemCount: 9,
+  ),
+  OrderPreview(
+    id: 'ord_1005',
+    businessName: 'Dayton Makers Lab',
+    storeName: 'Walmart Moraine',
+    status: 'READY_FOR_PICKUP',
+    etaText: 'Driver assignment in ~8 min',
+    total: 142.30,
+    itemCount: 17,
+  ),
+  OrderPreview(
+    id: 'ord_1006',
+    businessName: 'Kettering Med Supply',
+    storeName: 'Walmart Moraine',
+    status: 'OUT_FOR_DELIVERY',
+    etaText: 'ETA 18 min',
+    total: 108.65,
+    itemCount: 13,
+  ),
+  OrderPreview(
+    id: 'ord_1007',
+    businessName: 'Wright Tech Hub',
+    storeName: 'Target Beavercreek',
+    status: 'PICKING',
+    etaText: 'Expected ready in ~10 min',
+    total: 85.15,
+    itemCount: 10,
+  ),
+  OrderPreview(
+    id: 'ord_1008',
+    businessName: 'Vandalia Coffee House',
+    storeName: 'Target Huber Heights',
+    status: 'DELIVERED',
+    etaText: 'Delivered 32 min ago',
+    total: 59.70,
+    itemCount: 7,
+  ),
+  OrderPreview(
+    id: 'ord_1009',
+    businessName: 'Oregon Street Books',
+    storeName: 'Target Huber Heights',
+    status: 'READY_FOR_PICKUP',
+    etaText: 'Driver assignment in ~5 min',
+    total: 47.90,
+    itemCount: 6,
+  ),
+  OrderPreview(
+    id: 'ord_1010',
+    businessName: 'Belmont Grocer',
+    storeName: 'Walmart Moraine',
+    status: 'SUBMITTED',
+    etaText: 'Store confirmation in ~3 min',
+    total: 133.45,
+    itemCount: 16,
+  ),
+  OrderPreview(
+    id: 'ord_1011',
+    businessName: 'Gem City Catering',
+    storeName: 'Target Beavercreek',
+    status: 'OUT_FOR_DELIVERY',
+    etaText: 'ETA 27 min',
+    total: 168.90,
+    itemCount: 21,
   ),
 ];
 
@@ -174,7 +246,7 @@ const supportTickets = [
     id: 'tk_782',
     title: 'Late delivery inquiry',
     status: 'In review',
-    summary: 'Driver delay reported for Harbor corridor due to traffic.',
+    summary: 'Driver delay reported for I-675 corridor due to traffic.',
   ),
   SupportTicket(
     id: 'tk_790',
