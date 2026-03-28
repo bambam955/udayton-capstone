@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { Kysely } from 'kysely';
 
 import { HttpError } from '../../app/errors.js';
@@ -79,6 +81,7 @@ export class KyselyAuthRepository implements AuthRepository {
       const row = await this.db
         .insertInto('customers')
         .values({
+          customer_id: randomUUID(),
           email: input.email.toLowerCase(),
           phone: input.phone ?? null,
           full_name: input.fullName ?? null,

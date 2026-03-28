@@ -68,7 +68,11 @@ export const driverResourceDefinitions = [
       license_number: stringField({ createable: true, updateable: true }),
       license_state: stringField({ createable: true, updateable: true }),
       license_expires_at: timestampField({ createable: true, updateable: true }),
-      background_check_status: stringField({ filterable: true, createable: true, updateable: true }),
+      background_check_status: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true
+      }),
       background_check_completed_at: timestampField({ createable: true, updateable: true }),
       updated_at: timestampField({ createable: true, updateable: true })
     },
@@ -134,14 +138,30 @@ export const driverResourceDefinitions = [
       admin: {},
       driver: {
         injectPrincipalColumn: 'driver_id',
-        writeColumns: ['make', 'model', 'year', 'color', 'plate_number', 'plate_state', 'is_primary']
+        writeColumns: [
+          'make',
+          'model',
+          'year',
+          'color',
+          'plate_number',
+          'plate_state',
+          'is_primary'
+        ]
       }
     },
     updateAccess: {
       admin: {},
       driver: {
         scope: driverDirectScope,
-        writeColumns: ['make', 'model', 'year', 'color', 'plate_number', 'plate_state', 'is_primary']
+        writeColumns: [
+          'make',
+          'model',
+          'year',
+          'color',
+          'plate_number',
+          'plate_state',
+          'is_primary'
+        ]
       }
     },
     deleteAccess: {
