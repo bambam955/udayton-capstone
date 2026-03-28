@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 ROOT_DC := "docker compose --project-name bizrush -f docker-compose.yml"
-ALL_COMPONENTS := "main driver apps_shared admin mocks"
+ALL_COMPONENTS := "main driver apps_shared admin mocks api"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
 # ---------- Main commands ---------- #
@@ -21,7 +21,7 @@ default:
     @echo "Apps recipes:"
     @just --justfile apps/justfile --list-heading "" --list-prefix "    apps/" --list --unsorted
     @echo ""
-    @echo "For admin/mocks recipes:"
+    @echo "For admin/mocks/api recipes:"
     @echo "    just --justfile <component>/justfile"
 
 # Start backend services in Docker, then run selected app(s) locally
@@ -29,9 +29,9 @@ run *services:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "{{services}}" ]; then
-        echo "Usage: just run <service>..."
-        echo "Services: {{ ALL_UP_SERVICE_HELP }}"
-        exit 2
+        echo "Starting backend services with docker compose..."
+        {{ ROOT_DC }} up -d
+        exit 0
     fi
 
     launch_local() {
@@ -157,6 +157,9 @@ build component *args:
         admin)
             docker buildx build --tag bizrush/admin:latest --target prod -f admin-base/Dockerfile admin-base/
             ;;
+        api)
+            docker buildx build --tag bizrush/api:latest --target prod -f api/Dockerfile api/
+            ;;
         mocks)
             echo "Nothing to build"
             ;;
@@ -208,11 +211,17 @@ _run-for recipe component:
         main|driver)
             just --justfile apps/justfile "{{recipe}}" "{{component}}"
             ;;
+        apps_shared)
+            just --justfile apps/justfile "{{recipe}}" "shared"
+            ;;
         admin)
             just --justfile admin-base/justfile "{{recipe}}"
             ;;
         mocks)
             just --justfile mocks/justfile "{{recipe}}"
+            ;;
+        api)
+            just --justfile api/justfile "{{recipe}}"
             ;;
         *)
             echo "❌ Unknown component: {{component}}"

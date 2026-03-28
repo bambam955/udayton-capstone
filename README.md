@@ -19,13 +19,19 @@ The Flutter customer app (`apps/main`) and driver app (`apps/driver`) share comm
     just run main-web
     ```
 
-4. Run the admin dashboard:
+4. Run the backend API + database:
+
+    ```bash
+    just up
+    ```
+
+5. Run the admin dashboard:
 
     ```bash
     just run admin
     ```
 
-5. Run a Flutter app in Android:
+6. Run a Flutter app in Android:
 
     ```bash
     just run main-android

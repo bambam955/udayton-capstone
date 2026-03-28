@@ -1,0 +1,29 @@
+set shell := ["bash", "-cu"]
+
+# List available recipes
+default:
+    @just --list
+
+# Install dependencies for local development.
+deps:
+    npm install --no-fund
+
+# Run unit tests.
+test:
+    npm test
+
+# Static checks for this service.
+check:
+    npm run check
+
+# Apply code formatting.
+format:
+    npm run format
+
+# Build production JS output.
+build:
+    npm run build
+
+# Remove local artifacts.
+clean:
+    rm -rf dist node_modules
