@@ -4,6 +4,7 @@ import type {
   ResourceDefinition,
   ResourceFieldDefinition,
   ResourceListInput,
+  ResourceOperationAccess,
   ResourceSchemaSet
 } from './types.js';
 
@@ -67,6 +68,46 @@ function listFilterSchema(field: ResourceFieldDefinition) {
   }
 
   return z.string().min(1);
+}
+
+function writableCreateColumns(
+  definition: ResourceDefinition,
+  access: ResourceOperationAccess
+): Set<string> {
+  if (access.writeColumns) {
+    return new Set(access.writeColumns);
+  }
+
+  return new Set(
+    Object.entries(definition.fields)
+      .filter(([, field]) => field.createable)
+      .map(([column]) => column)
+  );
+}
+
+export function buildResourceCreateSchema(
+  definition: ResourceDefinition,
+  access: ResourceOperationAccess
+): z.ZodType<Record<string, unknown>> {
+  const createShape: Record<string, z.ZodTypeAny> = {};
+  const writableColumns = writableCreateColumns(definition, access);
+
+  for (const [column, field] of Object.entries(definition.fields)) {
+    if (!field.createable) {
+      continue;
+    }
+
+    const requiredFromRequest =
+      field.requiredOnCreate === true &&
+      writableColumns.has(column) &&
+      access.injectPrincipalColumn !== column;
+
+    createShape[column] = requiredFromRequest
+      ? fieldValueSchema(field)
+      : fieldValueSchema(field).optional();
+  }
+
+  return z.object(createShape).strict();
 }
 
 export function buildResourceSchemas(definition: ResourceDefinition): ResourceSchemaSet {

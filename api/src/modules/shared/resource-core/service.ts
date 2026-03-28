@@ -1,6 +1,6 @@
 import { HttpError } from '../../../app/errors.js';
 import type { AuthPrincipal } from '../../../app/types.js';
-import { buildResourceSchemas } from './schema.js';
+import { buildResourceCreateSchema, buildResourceSchemas } from './schema.js';
 import type {
   ResourceDefinition,
   ResourceListResult,
@@ -177,7 +177,7 @@ export class ResourceService {
     rawBody: unknown
   ): Promise<ResourceMutationResult> {
     const access = this.resolveAccess(definition, 'create', principal);
-    const parsed = this.getSchemas(definition).create.safeParse(rawBody);
+    const parsed = buildResourceCreateSchema(definition, access).safeParse(rawBody);
 
     if (!parsed.success) {
       throw new HttpError(

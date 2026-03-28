@@ -84,6 +84,26 @@ describe('order routes', () => {
     expect(repository.create).not.toHaveBeenCalled();
   });
 
+  it('rejects customer order creates that omit required foreign keys', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/orders')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        retailer_id: 'ret-1',
+        currency: 'USD'
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({ error: 'INVALID_REQUEST' });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
   it('rejects customer order item writes after checkout', async () => {
     const repository = makeRepository();
     const app = makeTestApp({

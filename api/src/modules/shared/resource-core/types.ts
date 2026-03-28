@@ -12,6 +12,7 @@ export interface ResourceFieldDefinition {
   filterable?: boolean;
   createable?: boolean;
   updateable?: boolean;
+  requiredOnCreate?: boolean;
 }
 
 export interface ResourceOrderBy {

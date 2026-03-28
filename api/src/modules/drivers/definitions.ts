@@ -63,7 +63,7 @@ export const driverResourceDefinitions = [
     idColumn: 'driver_profile_id',
     fields: {
       driver_profile_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       date_of_birth: dateField({ createable: true, updateable: true }),
       license_number: stringField({ createable: true, updateable: true }),
       license_state: stringField({ createable: true, updateable: true }),
@@ -112,7 +112,7 @@ export const driverResourceDefinitions = [
     idColumn: 'vehicle_id',
     fields: {
       vehicle_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       make: stringField({ createable: true, updateable: true }),
       model: stringField({ createable: true, updateable: true }),
       year: integerField({ createable: true, updateable: true }),
@@ -178,7 +178,7 @@ export const driverResourceDefinitions = [
     idColumn: 'document_id',
     fields: {
       document_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       doc_type: stringField({ filterable: true, createable: true, updateable: true }),
       file_url: stringField({ createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
@@ -221,7 +221,7 @@ export const driverResourceDefinitions = [
     idColumn: 'availability_id',
     fields: {
       availability_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       is_available: booleanField({ filterable: true, createable: true, updateable: true }),
       reason: stringField({ createable: true, updateable: true }),
       started_at: timestampField({ createable: true, updateable: true }),
@@ -267,7 +267,7 @@ export const driverResourceDefinitions = [
     idColumn: 'service_area_id',
     fields: {
       service_area_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       label: stringField({ createable: true, updateable: true }),
       city: stringField({ createable: true, updateable: true }),
       state: stringField({ createable: true, updateable: true }),
@@ -316,7 +316,7 @@ export const driverResourceDefinitions = [
     idColumn: 'session_id',
     fields: {
       ...sessionFields,
-      driver_id: stringField({ filterable: true, createable: true })
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true })
     },
     listAccess: adminOnly(),
     getAccess: adminOnly(),
@@ -329,7 +329,7 @@ export const driverResourceDefinitions = [
     idColumn: 'device_id',
     fields: {
       device_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       platform: stringField({ createable: true, updateable: true }),
       push_token: stringField({ createable: true, updateable: true }),
       app_version: stringField({ createable: true, updateable: true }),
@@ -376,7 +376,7 @@ export const driverResourceDefinitions = [
     idColumn: 'location_id',
     fields: {
       location_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       lat: decimalField({ createable: true, updateable: true }),
       lng: decimalField({ createable: true, updateable: true }),
       accuracy_m: decimalField({ createable: true, updateable: true }),
@@ -425,7 +425,12 @@ export const driverResourceDefinitions = [
     idColumn: 'notification_id',
     fields: {
       notification_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true, updateable: true }),
+      driver_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       type: stringField({ filterable: true, createable: true, updateable: true }),
       title: stringField({ createable: true, updateable: true }),
       body: stringField({ createable: true, updateable: true }),
@@ -468,8 +473,18 @@ export const driverResourceDefinitions = [
     idColumn: 'earning_id',
     fields: {
       earning_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true, updateable: true }),
-      delivery_id: stringField({ filterable: true, createable: true, updateable: true }),
+      driver_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      delivery_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       base_pay_cents: integerField({ createable: true, updateable: true }),
       bonus_cents: integerField({ createable: true, updateable: true }),
       tip_cents: integerField({ createable: true, updateable: true }),
@@ -502,7 +517,12 @@ export const driverResourceDefinitions = [
     idColumn: 'payout_id',
     fields: {
       payout_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true, updateable: true }),
+      driver_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       amount_cents: integerField({ createable: true, updateable: true }),
       currency: stringField({ createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
@@ -533,7 +553,7 @@ export const driverResourceDefinitions = [
     idColumn: 'ticket_id',
     fields: {
       ticket_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true }),
+      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       delivery_id: stringField({ filterable: true, createable: true, updateable: true }),
       order_id: stringField({ filterable: true, createable: true, updateable: true }),
       issue_type: stringField({ filterable: true, createable: true, updateable: true }),
@@ -571,8 +591,18 @@ export const driverResourceDefinitions = [
     idColumn: 'task_id',
     fields: {
       task_id: stringField({ filterable: true }),
-      delivery_id: stringField({ filterable: true, createable: true, updateable: true }),
-      driver_id: stringField({ filterable: true, createable: true, updateable: true }),
+      delivery_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      driver_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       task_type: stringField({ filterable: true, createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       due_at: timestampField({ createable: true, updateable: true }),

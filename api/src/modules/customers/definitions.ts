@@ -60,7 +60,7 @@ export const customerResourceDefinitions = [
     idColumn: 'address_id',
     fields: {
       address_id: stringField({ filterable: true }),
-      customer_id: stringField({ filterable: true, createable: true }),
+      customer_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       label: stringField({ createable: true, updateable: true }),
       line1: stringField({ createable: true, updateable: true }),
       line2: stringField({ createable: true, updateable: true }),
@@ -132,7 +132,7 @@ export const customerResourceDefinitions = [
     idColumn: 'device_id',
     fields: {
       device_id: stringField({ filterable: true }),
-      customer_id: stringField({ filterable: true, createable: true }),
+      customer_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       platform: stringField({ createable: true, updateable: true }),
       push_token: stringField({ createable: true, updateable: true }),
       app_version: stringField({ createable: true, updateable: true }),
@@ -179,8 +179,13 @@ export const customerResourceDefinitions = [
     idColumn: 'cart_id',
     fields: {
       cart_id: stringField({ filterable: true }),
-      customer_id: stringField({ filterable: true, createable: true }),
-      retailer_id: stringField({ filterable: true, createable: true, updateable: true }),
+      customer_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
+      retailer_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       created_at: timestampField({ createable: true, updateable: true }),
       updated_at: timestampField({ createable: true, updateable: true })
@@ -225,8 +230,18 @@ export const customerResourceDefinitions = [
     idColumn: 'cart_item_id',
     fields: {
       cart_item_id: stringField({ filterable: true }),
-      cart_id: stringField({ filterable: true, createable: true, updateable: true }),
-      product_id: stringField({ filterable: true, createable: true, updateable: true }),
+      cart_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      product_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       external_sku: stringField({ filterable: true, createable: true, updateable: true }),
       name_snapshot: stringField({ createable: true, updateable: true }),
       unit_price_cents: integerField({ createable: true, updateable: true }),
@@ -324,7 +339,12 @@ export const customerResourceDefinitions = [
     idColumn: 'notification_id',
     fields: {
       notification_id: stringField({ filterable: true }),
-      customer_id: stringField({ filterable: true, createable: true, updateable: true }),
+      customer_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       type: stringField({ filterable: true, createable: true, updateable: true }),
       title: stringField({ createable: true, updateable: true }),
       body: stringField({ createable: true, updateable: true }),
@@ -367,7 +387,7 @@ export const customerResourceDefinitions = [
     idColumn: 'ticket_id',
     fields: {
       ticket_id: stringField({ filterable: true }),
-      customer_id: stringField({ filterable: true, createable: true }),
+      customer_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       order_id: stringField({ filterable: true, createable: true, updateable: true }),
       issue_type: stringField({ filterable: true, createable: true, updateable: true }),
       message: stringField({ createable: true, updateable: true }),

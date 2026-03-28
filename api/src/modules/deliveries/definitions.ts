@@ -15,7 +15,12 @@ export const deliveryResourceDefinitions = [
     idColumn: 'delivery_id',
     fields: {
       delivery_id: stringField({ filterable: true }),
-      order_id: stringField({ filterable: true, createable: true, updateable: true }),
+      order_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       driver_id: stringField({ filterable: true, createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       pickup_location: stringField({ createable: true, updateable: true }),
@@ -79,9 +84,24 @@ export const deliveryResourceDefinitions = [
     idColumn: 'offer_id',
     fields: {
       offer_id: stringField({ filterable: true }),
-      order_id: stringField({ filterable: true, createable: true, updateable: true }),
-      delivery_id: stringField({ filterable: true, createable: true, updateable: true }),
-      driver_id: stringField({ filterable: true, createable: true, updateable: true }),
+      order_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      delivery_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      driver_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       offered_at: timestampField({ createable: true, updateable: true }),
       responded_at: timestampField({ createable: true, updateable: true }),
@@ -126,7 +146,12 @@ export const deliveryResourceDefinitions = [
     idColumn: 'proof_id',
     fields: {
       proof_id: stringField({ filterable: true }),
-      delivery_id: stringField({ filterable: true, createable: true, updateable: true }),
+      delivery_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       proof_type: stringField({ filterable: true, createable: true, updateable: true }),
       proof_url: stringField({ createable: true, updateable: true }),
       metadata_json: stringField({ createable: true, updateable: true }),
@@ -202,7 +227,12 @@ export const deliveryResourceDefinitions = [
     idColumn: 'event_id',
     fields: {
       event_id: stringField({ filterable: true }),
-      delivery_id: stringField({ filterable: true, createable: true, updateable: true }),
+      delivery_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       driver_id: stringField({ filterable: true, createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       event_time: timestampField({ createable: true, updateable: true }),

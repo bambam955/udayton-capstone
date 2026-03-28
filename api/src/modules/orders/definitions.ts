@@ -14,9 +14,19 @@ export const orderResourceDefinitions = [
     idColumn: 'order_id',
     fields: {
       order_id: stringField({ filterable: true }),
-      customer_id: stringField({ filterable: true, createable: true }),
-      retailer_id: stringField({ filterable: true, createable: true, updateable: true }),
-      address_id: stringField({ filterable: true, createable: true, updateable: true }),
+      customer_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
+      retailer_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      address_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       external_order_id: stringField({ filterable: true, createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       placed_at: timestampField({ createable: true, updateable: true }),
@@ -98,8 +108,18 @@ export const orderResourceDefinitions = [
     idColumn: 'order_item_id',
     fields: {
       order_item_id: stringField({ filterable: true }),
-      order_id: stringField({ filterable: true, createable: true, updateable: true }),
-      product_id: stringField({ filterable: true, createable: true, updateable: true }),
+      order_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      product_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       external_sku: stringField({ filterable: true, createable: true, updateable: true }),
       name_snapshot: stringField({ createable: true, updateable: true }),
       unit_price_cents: integerField({ createable: true, updateable: true }),
@@ -162,7 +182,12 @@ export const orderResourceDefinitions = [
     idColumn: 'order_status_history_id',
     fields: {
       order_status_history_id: stringField({ filterable: true }),
-      order_id: stringField({ filterable: true, createable: true, updateable: true }),
+      order_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       status_time: timestampField({ createable: true, updateable: true }),
       note: stringField({ createable: true, updateable: true })

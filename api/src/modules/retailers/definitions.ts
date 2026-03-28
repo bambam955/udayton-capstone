@@ -41,8 +41,8 @@ export const retailerResourceDefinitions = [
     idColumn: 'retailer_account_id',
     fields: {
       retailer_account_id: stringField({ filterable: true }),
-      customer_id: stringField({ filterable: true, createable: true }),
-      retailer_id: stringField({ filterable: true, createable: true }),
+      customer_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
+      retailer_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
       is_connected: booleanField({ filterable: true, createable: true, updateable: true }),
       access_token: stringField({ readable: false, createable: true, updateable: true }),
       refresh_token: stringField({ readable: false, createable: true, updateable: true }),
@@ -102,7 +102,12 @@ export const retailerResourceDefinitions = [
     idColumn: 'category_id',
     fields: {
       category_id: stringField({ filterable: true }),
-      retailer_id: stringField({ filterable: true, createable: true, updateable: true }),
+      retailer_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       name: stringField({ filterable: true, createable: true, updateable: true }),
       external_category_id: stringField({ createable: true, updateable: true }),
       updated_at: timestampField({ createable: true, updateable: true })
@@ -128,8 +133,18 @@ export const retailerResourceDefinitions = [
     idColumn: 'product_id',
     fields: {
       product_id: stringField({ filterable: true }),
-      retailer_id: stringField({ filterable: true, createable: true, updateable: true }),
-      category_id: stringField({ filterable: true, createable: true, updateable: true }),
+      retailer_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      category_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       external_sku: stringField({ filterable: true, createable: true, updateable: true }),
       name: stringField({ filterable: true, createable: true, updateable: true }),
       description: stringField({ createable: true, updateable: true }),

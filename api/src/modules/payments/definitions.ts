@@ -14,8 +14,18 @@ export const paymentResourceDefinitions = [
     idColumn: 'payment_id',
     fields: {
       payment_id: stringField({ filterable: true }),
-      order_id: stringField({ filterable: true, createable: true, updateable: true }),
-      customer_id: stringField({ filterable: true, createable: true, updateable: true }),
+      order_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      customer_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       provider: stringField({ filterable: true, createable: true, updateable: true }),
       provider_ref: stringField({ createable: true, updateable: true }),
       amount_cents: integerField({ createable: true, updateable: true }),
@@ -52,8 +62,18 @@ export const paymentResourceDefinitions = [
     idColumn: 'refund_id',
     fields: {
       refund_id: stringField({ filterable: true }),
-      payment_id: stringField({ filterable: true, createable: true, updateable: true }),
-      order_id: stringField({ filterable: true, createable: true, updateable: true }),
+      payment_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      order_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
       amount_cents: integerField({ createable: true, updateable: true }),
       reason: stringField({ createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
