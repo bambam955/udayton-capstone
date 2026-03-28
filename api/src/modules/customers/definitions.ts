@@ -2,6 +2,7 @@ import type { ResourceFieldDefinition } from '../shared/resource-core/types.js';
 import {
   adminOnly,
   booleanField,
+  integerField,
   resource,
   stringField,
   timestampField
@@ -13,6 +14,11 @@ const sessionFields = {
   expires_at: timestampField({ createable: true, updateable: true }),
   created_at: timestampField({ createable: true, updateable: true })
 } satisfies Record<string, ResourceFieldDefinition>;
+
+const customerDirectScope = {
+  kind: 'direct' as const,
+  column: 'customer_id'
+};
 
 export const customerResourceDefinitions = [
   resource({
@@ -34,20 +40,14 @@ export const customerResourceDefinitions = [
     getAccess: {
       admin: {},
       customer: {
-        scope: {
-          kind: 'direct',
-          column: 'customer_id'
-        }
+        scope: customerDirectScope
       }
     },
     createAccess: adminOnly(),
     updateAccess: {
       admin: {},
       customer: {
-        scope: {
-          kind: 'direct',
-          column: 'customer_id'
-        },
+        scope: customerDirectScope,
         writeColumns: ['phone', 'full_name']
       }
     },
@@ -75,19 +75,13 @@ export const customerResourceDefinitions = [
     listAccess: {
       admin: {},
       customer: {
-        scope: {
-          kind: 'direct',
-          column: 'customer_id'
-        }
+        scope: customerDirectScope
       }
     },
     getAccess: {
       admin: {},
       customer: {
-        scope: {
-          kind: 'direct',
-          column: 'customer_id'
-        }
+        scope: customerDirectScope
       }
     },
     createAccess: {
@@ -110,10 +104,7 @@ export const customerResourceDefinitions = [
     updateAccess: {
       admin: {},
       customer: {
-        scope: {
-          kind: 'direct',
-          column: 'customer_id'
-        },
+        scope: customerDirectScope,
         writeColumns: [
           'label',
           'line1',
@@ -130,12 +121,281 @@ export const customerResourceDefinitions = [
     deleteAccess: {
       admin: {},
       customer: {
+        scope: customerDirectScope
+      }
+    }
+  }),
+  resource({
+    name: 'customer_devices',
+    path: 'customer-devices',
+    table: 'customer_devices',
+    idColumn: 'device_id',
+    fields: {
+      device_id: stringField({ filterable: true }),
+      customer_id: stringField({ filterable: true, createable: true }),
+      platform: stringField({ createable: true, updateable: true }),
+      push_token: stringField({ createable: true, updateable: true }),
+      app_version: stringField({ createable: true, updateable: true }),
+      last_seen_at: timestampField({ createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    getAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    createAccess: {
+      admin: {},
+      customer: {
+        injectPrincipalColumn: 'customer_id',
+        writeColumns: ['platform', 'push_token', 'app_version', 'last_seen_at']
+      }
+    },
+    updateAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope,
+        writeColumns: ['platform', 'push_token', 'app_version', 'last_seen_at']
+      }
+    },
+    deleteAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    }
+  }),
+  resource({
+    name: 'carts',
+    path: 'carts',
+    table: 'carts',
+    idColumn: 'cart_id',
+    fields: {
+      cart_id: stringField({ filterable: true }),
+      customer_id: stringField({ filterable: true, createable: true }),
+      retailer_id: stringField({ filterable: true, createable: true, updateable: true }),
+      status: stringField({ filterable: true, createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true }),
+      updated_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    getAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    createAccess: {
+      admin: {},
+      customer: {
+        injectPrincipalColumn: 'customer_id',
+        writeColumns: ['retailer_id', 'status']
+      }
+    },
+    updateAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope,
+        writeColumns: ['retailer_id', 'status']
+      }
+    },
+    deleteAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    }
+  }),
+  resource({
+    name: 'cart_items',
+    path: 'cart-items',
+    table: 'cart_items',
+    idColumn: 'cart_item_id',
+    fields: {
+      cart_item_id: stringField({ filterable: true }),
+      cart_id: stringField({ filterable: true, createable: true, updateable: true }),
+      product_id: stringField({ filterable: true, createable: true, updateable: true }),
+      external_sku: stringField({ filterable: true, createable: true, updateable: true }),
+      name_snapshot: stringField({ createable: true, updateable: true }),
+      unit_price_cents: integerField({ createable: true, updateable: true }),
+      quantity: integerField({ createable: true, updateable: true }),
+      substitution_allowed: booleanField({ createable: true, updateable: true }),
+      notes: stringField({ createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: {
+      admin: {},
+      customer: {
         scope: {
-          kind: 'direct',
-          column: 'customer_id'
+          kind: 'related',
+          table: 'carts',
+          localColumn: 'cart_id',
+          relatedColumn: 'cart_id',
+          ownerColumn: 'customer_id'
+        }
+      }
+    },
+    getAccess: {
+      admin: {},
+      customer: {
+        scope: {
+          kind: 'related',
+          table: 'carts',
+          localColumn: 'cart_id',
+          relatedColumn: 'cart_id',
+          ownerColumn: 'customer_id'
+        }
+      }
+    },
+    // Cart item writes stay customer-owned through the parent cart relation so
+    // the mobile app can persist cart contents and substitution preferences.
+    createAccess: {
+      admin: {},
+      customer: {
+        scope: {
+          kind: 'related',
+          table: 'carts',
+          localColumn: 'cart_id',
+          relatedColumn: 'cart_id',
+          ownerColumn: 'customer_id'
+        },
+        writeColumns: [
+          'cart_id',
+          'product_id',
+          'external_sku',
+          'name_snapshot',
+          'unit_price_cents',
+          'quantity',
+          'substitution_allowed',
+          'notes'
+        ]
+      }
+    },
+    updateAccess: {
+      admin: {},
+      customer: {
+        scope: {
+          kind: 'related',
+          table: 'carts',
+          localColumn: 'cart_id',
+          relatedColumn: 'cart_id',
+          ownerColumn: 'customer_id'
+        },
+        writeColumns: [
+          'product_id',
+          'external_sku',
+          'name_snapshot',
+          'unit_price_cents',
+          'quantity',
+          'substitution_allowed',
+          'notes'
+        ]
+      }
+    },
+    deleteAccess: {
+      admin: {},
+      customer: {
+        scope: {
+          kind: 'related',
+          table: 'carts',
+          localColumn: 'cart_id',
+          relatedColumn: 'cart_id',
+          ownerColumn: 'customer_id'
         }
       }
     }
+  }),
+  resource({
+    name: 'notifications',
+    path: 'notifications',
+    table: 'notifications',
+    idColumn: 'notification_id',
+    fields: {
+      notification_id: stringField({ filterable: true }),
+      customer_id: stringField({ filterable: true, createable: true, updateable: true }),
+      type: stringField({ filterable: true, createable: true, updateable: true }),
+      title: stringField({ createable: true, updateable: true }),
+      body: stringField({ createable: true, updateable: true }),
+      deep_link: stringField({ createable: true, updateable: true }),
+      is_read: booleanField({ filterable: true, createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true }),
+      read_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    getAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    createAccess: adminOnly(),
+    updateAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope,
+        writeColumns: ['is_read', 'read_at']
+      }
+    },
+    deleteAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    }
+  }),
+  resource({
+    name: 'support_tickets',
+    path: 'support-tickets',
+    table: 'support_tickets',
+    idColumn: 'ticket_id',
+    fields: {
+      ticket_id: stringField({ filterable: true }),
+      customer_id: stringField({ filterable: true, createable: true }),
+      order_id: stringField({ filterable: true, createable: true, updateable: true }),
+      issue_type: stringField({ filterable: true, createable: true, updateable: true }),
+      message: stringField({ createable: true, updateable: true }),
+      status: stringField({ filterable: true, createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true }),
+      updated_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    getAccess: {
+      admin: {},
+      customer: {
+        scope: customerDirectScope
+      }
+    },
+    createAccess: {
+      admin: {},
+      customer: {
+        injectPrincipalColumn: 'customer_id',
+        writeColumns: ['order_id', 'issue_type', 'message']
+      }
+    },
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
   }),
   resource({
     name: 'customer_sessions',

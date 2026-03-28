@@ -7,6 +7,15 @@ import { makeBearer } from '../../support/resource-test-helpers.js';
 function makeApp() {
   return createApp({
     authService: {
+      signup: async (input: unknown) => ({
+        accessToken: 'signed-signup-token',
+        expiresAt: new Date('2026-03-24T12:00:00.000Z'),
+        user: {
+          id: 'cust-2',
+          role: 'customer',
+          email: (input as { email: string }).email
+        }
+      }),
       login: async (input: unknown) => ({
         accessToken: 'signed-token',
         expiresAt: new Date('2026-03-24T12:00:00.000Z'),
@@ -30,6 +39,23 @@ function makeApp() {
 }
 
 describe('auth routes', () => {
+  it('returns signup results for valid payloads', async () => {
+    const response = await request(makeApp()).post('/v1/auth/signup').send({
+      email: 'newcustomer@example.com',
+      password: 'secret',
+      fullName: 'New Customer'
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      accessToken: 'signed-signup-token',
+      user: {
+        email: 'newcustomer@example.com',
+        role: 'customer'
+      }
+    });
+  });
+
   it('returns 400 for invalid login payloads', async () => {
     const response = await request(makeApp()).post('/v1/auth/login').send({
       role: 'customer',

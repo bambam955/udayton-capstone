@@ -47,5 +47,25 @@ export const adminResourceDefinitions = [
     listAccess: adminOnly(),
     getAccess: adminOnly(),
     deleteAccess: adminOnly()
+  }),
+  resource({
+    name: 'integration_health',
+    path: 'integration-health',
+    table: 'integration_health',
+    idColumn: 'health_id',
+    fields: {
+      health_id: stringField({ filterable: true }),
+      integration: stringField({ filterable: true, createable: true, updateable: true }),
+      status: stringField({ filterable: true, createable: true, updateable: true }),
+      last_checked_at: timestampField({ createable: true, updateable: true }),
+      error: stringField({ createable: true, updateable: true }),
+      details_json: stringField({ createable: true, updateable: true })
+    },
+    // Admins use this surface to monitor Mockoon/retailer integration readiness.
+    listAccess: adminOnly(),
+    getAccess: adminOnly(),
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
   })
 ];

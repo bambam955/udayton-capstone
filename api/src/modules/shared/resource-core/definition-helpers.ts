@@ -46,6 +46,16 @@ export function timestampField(
   };
 }
 
+export function dateField(
+  overrides: Partial<ResourceFieldDefinition> = {}
+): ResourceFieldDefinition {
+  return {
+    kind: 'date',
+    readable: true,
+    ...overrides
+  };
+}
+
 export function decimalField(
   overrides: Partial<ResourceFieldDefinition> = {}
 ): ResourceFieldDefinition {

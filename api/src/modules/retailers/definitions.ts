@@ -152,5 +152,33 @@ export const retailerResourceDefinitions = [
     createAccess: adminOnly(),
     updateAccess: adminOnly(),
     deleteAccess: adminOnly()
+  }),
+  resource({
+    name: 'service_regions',
+    path: 'service-regions',
+    table: 'service_regions',
+    idColumn: 'region_id',
+    fields: {
+      region_id: stringField({ filterable: true }),
+      name: stringField({ filterable: true, createable: true, updateable: true }),
+      state: stringField({ filterable: true, createable: true, updateable: true }),
+      geofence_json: stringField({ createable: true, updateable: true }),
+      is_active: booleanField({ filterable: true, createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true })
+    },
+    // Region lookup supports the customer location-selection step in the MVP flow.
+    listAccess: {
+      admin: {},
+      customer: {},
+      driver: {}
+    },
+    getAccess: {
+      admin: {},
+      customer: {},
+      driver: {}
+    },
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
   })
 ];

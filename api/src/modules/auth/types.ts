@@ -26,6 +26,15 @@ export interface LoginInput {
   deviceInfo?: string;
 }
 
+// Customer self-service registration input for MVP account creation.
+export interface SignupInput {
+  email: string;
+  password: string;
+  fullName?: string;
+  phone?: string;
+  deviceInfo?: string;
+}
+
 // Response payload returned to API clients after login.
 export interface LoginResult {
   accessToken: string;
@@ -36,3 +45,7 @@ export interface LoginResult {
     email: string;
   };
 }
+
+// Sign-up returns the same session payload shape so clients can continue
+// directly into authenticated customer flows after registration.
+export type SignupResult = LoginResult;

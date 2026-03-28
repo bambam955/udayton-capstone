@@ -66,4 +66,19 @@ describe('retailer routes', () => {
       is_connected: true
     });
   });
+
+  it('allows customers to list service regions for location selection', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .get('/v1/service-regions')
+      .set('authorization', makeBearer('cust-1', 'customer'));
+
+    expect(response.status).toBe(200);
+    expect(repository.list).toHaveBeenCalled();
+  });
 });

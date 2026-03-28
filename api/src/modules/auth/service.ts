@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { HttpError } from '../../app/errors.js';
 import { signAccessToken } from '../../platform/auth/jwt.js';
 import type { AuthRepository } from './repository.js';
-import type { LoginInput, LoginResult } from './types.js';
+import type { AuthUser, LoginInput, LoginResult, SignupInput, SignupResult } from './types.js';
 
 function constantTimeEquals(expected: string, given: string): boolean {
   // TODO: replace with secure hash verification once password hashing is wired.
@@ -13,14 +13,7 @@ function constantTimeEquals(expected: string, given: string): boolean {
 export class AuthService {
   constructor(private readonly repo: AuthRepository) {}
 
-  async login(input: LoginInput): Promise<LoginResult> {
-    // Email lookup is normalized to avoid duplicate identities by casing.
-    const user = await this.repo.findUserByEmail(input.role, input.email.toLowerCase());
-
-    if (!user || !constantTimeEquals(user.passwordHash, input.password)) {
-      throw new HttpError(401, 'INVALID_CREDENTIALS', 'Email or password is invalid.');
-    }
-
+  private async createSessionResult(user: AuthUser): Promise<LoginResult> {
     const sessionId = randomUUID();
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
     // JWT carries both role and session id so logout/revocation can key off session.
@@ -47,6 +40,31 @@ export class AuthService {
         email: user.email
       }
     };
+  }
+
+  async login(input: LoginInput): Promise<LoginResult> {
+    // Email lookup is normalized to avoid duplicate identities by casing.
+    const user = await this.repo.findUserByEmail(input.role, input.email.toLowerCase());
+
+    if (!user || !constantTimeEquals(user.passwordHash, input.password)) {
+      throw new HttpError(401, 'INVALID_CREDENTIALS', 'Email or password is invalid.');
+    }
+
+    return this.createSessionResult(user);
+  }
+
+  async signup(input: SignupInput): Promise<SignupResult> {
+    const existing = await this.repo.findUserByEmail('customer', input.email.toLowerCase());
+    if (existing) {
+      throw new HttpError(409, 'CONFLICT', 'An account with that email already exists.');
+    }
+
+    const user = await this.repo.createCustomer({
+      ...input,
+      email: input.email.toLowerCase()
+    });
+
+    return this.createSessionResult(user);
   }
 
   async logout(role: LoginInput['role'], sessionId: string): Promise<void> {

@@ -222,7 +222,7 @@ export interface NotificationsTable {
 export interface SupportTicketsTable {
   ticket_id: string;
   customer_id: string;
-  order_id: string;
+  order_id: string | null;
   issue_type: string | null;
   message: string | null;
   status: string | null;

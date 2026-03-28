@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE TABLE IF NOT EXISTS support_tickets (
   ticket_id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id  UUID NOT NULL,
-  order_id     UUID NOT NULL,
+  order_id     UUID,
   issue_type   TEXT,
   message      TEXT,
   status       TEXT,

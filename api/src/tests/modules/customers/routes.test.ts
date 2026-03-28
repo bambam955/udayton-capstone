@@ -9,6 +9,55 @@ import {
 } from '../../support/resource-test-helpers.js';
 
 describe('customer routes', () => {
+  it('creates carts for the authenticated customer', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/carts')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        retailer_id: 'ret-1',
+        status: 'ACTIVE'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      customer_id: 'cust-1',
+      retailer_id: 'ret-1',
+      status: 'ACTIVE'
+    });
+  });
+
+  it('allows customers to manage cart items for their carts', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/cart-items')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        cart_id: 'cart-1',
+        product_id: 'prod-1',
+        quantity: 2,
+        substitution_allowed: true
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      cart_id: 'cart-1',
+      product_id: 'prod-1',
+      quantity: 2,
+      substitution_allowed: true
+    });
+  });
+
   it('injects the authenticated customer id on address creation', async () => {
     const repository = makeRepository();
     const app = makeTestApp({
@@ -45,6 +94,72 @@ describe('customer routes', () => {
 
     expect(response.status).toBe(403);
     expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+  });
+
+  it('lets customers create support tickets tied to their account', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/support-tickets')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        order_id: 'order-1',
+        issue_type: 'LATE_DELIVERY',
+        message: 'The order arrived late.'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      customer_id: 'cust-1',
+      order_id: 'order-1',
+      issue_type: 'LATE_DELIVERY'
+    });
+  });
+
+  it('lets customers create support tickets without an order id for general support', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/support-tickets')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        issue_type: 'ACCOUNT_HELP',
+        message: 'I need help updating my account.'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      customer_id: 'cust-1',
+      issue_type: 'ACCOUNT_HELP'
+    });
+  });
+
+  it('lets customers mark notifications as read', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .patch('/v1/notifications/notification-1')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        is_read: true
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({
+      is_read: true
+    });
   });
 
   it('allows admins to list customer sessions', async () => {
