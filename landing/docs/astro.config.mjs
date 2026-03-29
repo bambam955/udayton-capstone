@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightThemeRapide from 'starlight-theme-rapide';
 import icon from 'astro-icon';
 
 // https://astro.build/config
@@ -12,6 +13,7 @@ export default defineConfig({
     base: process.env.ASTRO_BASE || '',
     integrations: [
         starlight({
+            plugins: [starlightThemeRapide()],
             title: 'BizRush',
             customCss: ['./src/styles/custom.css'],
             social: [
