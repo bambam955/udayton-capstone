@@ -22,7 +22,7 @@ The Flutter customer app (`apps/main`) and driver app (`apps/driver`) share comm
 4. Run the backend API + database:
 
     ```bash
-    just up
+    just run
     ```
 
 5. Run the admin dashboard:
