@@ -8,12 +8,16 @@ import '../customer_home_models.dart';
 class CustomerTabAccount extends StatelessWidget {
   const CustomerTabAccount({
     super.key,
-    required this.stores,
-    required this.orders,
+    required this.overview,
+    required this.onToggleStoreConnection,
+    required this.onAddAddress,
+    required this.isBusy,
   });
 
-  final List<StoreOption> stores;
-  final List<OrderPreview> orders;
+  final CustomerAccountOverview overview;
+  final ValueChanged<StoreOption> onToggleStoreConnection;
+  final VoidCallback onAddAddress;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +30,7 @@ class CustomerTabAccount extends StatelessWidget {
         Text('Account', style: textTheme.headlineSmall),
         const SizedBox(height: 6),
         Text(
-          'Business profile, payment setup, and connected stores.',
+          'Business profile, connected stores, and saved delivery addresses.',
           style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
@@ -41,21 +45,21 @@ class CustomerTabAccount extends StatelessWidget {
             StatTile(
               icon: Icons.storefront_rounded,
               label: 'Stores linked',
-              value: '${stores.length}',
+              value: '${overview.connectedStoreCount}',
             ),
             StatTile(
               icon: Icons.receipt_long_rounded,
               label: 'Tracked orders',
-              value: '${orders.length}',
+              value: '${overview.trackedOrderCount}',
             ),
           ],
         ),
         const SizedBox(height: 12),
-        const SurfaceCard(
+        SurfaceCard(
           child: ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text('Northside Deli'),
-            subtitle: Text('owner@northsidedeli.co • Profile completeness 92%'),
+            title: Text(overview.customerName),
+            subtitle: Text(overview.customerEmail),
           ),
         ),
         const SizedBox(height: 8),
@@ -63,22 +67,67 @@ class CustomerTabAccount extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Connected stores', style: textTheme.titleMedium),
+              Text('Stores', style: textTheme.titleMedium),
               const SizedBox(height: 8),
-              for (final store in stores)
+              for (final store in overview.stores)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('• ${store.name} (${store.ratingText})'),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(store.name),
+                            Text(
+                              store.subtitle,
+                              style: textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: isBusy
+                            ? null
+                            : () => onToggleStoreConnection(store),
+                        child:
+                            Text(store.isConnected ? 'Disconnect' : 'Connect'),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
         ),
         const SizedBox(height: 8),
-        const SurfaceCard(
-          child: ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('Payment methods'),
-            subtitle: Text('Visa •••• 2481, Business ACH ****9012'),
+        SurfaceCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Delivery addresses',
+                        style: textTheme.titleMedium),
+                  ),
+                  TextButton(
+                    onPressed: isBusy ? null : onAddAddress,
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (overview.addresses.isEmpty)
+                const Text('No saved addresses yet.')
+              else
+                for (final address in overview.addresses)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${address.isDefault ? 'Default • ' : ''}${address.label}: ${address.addressLine}',
+                    ),
+                  ),
+            ],
           ),
         ),
       ],

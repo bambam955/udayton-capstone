@@ -1,0 +1,220 @@
+import 'package:bizrush_shared/api.dart';
+import 'package:flutter/material.dart';
+
+import '../../widgets/surface_card.dart';
+
+enum _AuthMode { login, signup }
+
+class CustomerAuthScreen extends StatefulWidget {
+  const CustomerAuthScreen({
+    super.key,
+    required this.authApi,
+    required this.onAuthenticated,
+  });
+
+  final AuthApi authApi;
+  final ValueChanged<ApiSession> onAuthenticated;
+
+  @override
+  State<CustomerAuthScreen> createState() => _CustomerAuthScreenState();
+}
+
+class _CustomerAuthScreenState extends State<CustomerAuthScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _fullNameController = TextEditingController();
+  bool _isSubmitting = false;
+  _AuthMode _mode = _AuthMode.login;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _fullNameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final session = switch (_mode) {
+        _AuthMode.login => await widget.authApi.login(
+            role: ApiUserRole.customer,
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            deviceInfo: 'main-app',
+          ),
+        _AuthMode.signup => await widget.authApi.signup(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            fullName: _fullNameController.text.trim(),
+            deviceInfo: 'main-app',
+          ),
+      };
+
+      if (!mounted) {
+        return;
+      }
+
+      widget.onAuthenticated(session);
+    } on ApiError catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('BizRush', style: textTheme.displaySmall),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sign in to manage orders, stores, and support from live API data.',
+                      style: textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 20),
+                    SurfaceCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SegmentedButton<_AuthMode>(
+                            segments: const <ButtonSegment<_AuthMode>>[
+                              ButtonSegment<_AuthMode>(
+                                value: _AuthMode.login,
+                                label: Text('Login'),
+                              ),
+                              ButtonSegment<_AuthMode>(
+                                value: _AuthMode.signup,
+                                label: Text('Sign up'),
+                              ),
+                            ],
+                            selected: <_AuthMode>{_mode},
+                            onSelectionChanged: (selection) {
+                              setState(() {
+                                _mode = selection.first;
+                                _errorMessage = null;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          if (_mode == _AuthMode.signup) ...[
+                            TextFormField(
+                              controller: _fullNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Full name',
+                              ),
+                              validator: (value) {
+                                if (_mode == _AuthMode.signup &&
+                                    (value == null || value.trim().isEmpty)) {
+                                  return 'Enter your full name.';
+                                }
+
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          TextFormField(
+                            key: const Key('customer-auth-email'),
+                            controller: _emailController,
+                            decoration:
+                                const InputDecoration(labelText: 'Email'),
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              final email = value?.trim() ?? '';
+                              if (email.isEmpty || !email.contains('@')) {
+                                return 'Enter a valid email.';
+                              }
+
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            key: const Key('customer-auth-password'),
+                            controller: _passwordController,
+                            decoration:
+                                const InputDecoration(labelText: 'Password'),
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Enter a password.';
+                              }
+
+                              return null;
+                            },
+                          ),
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _errorMessage!,
+                              key: const Key('customer-auth-error'),
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              key: const Key('customer-auth-submit'),
+                              onPressed: _isSubmitting ? null : _submit,
+                              child: Text(
+                                _isSubmitting
+                                    ? 'Please wait...'
+                                    : (_mode == _AuthMode.login
+                                        ? 'Login'
+                                        : 'Create account'),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

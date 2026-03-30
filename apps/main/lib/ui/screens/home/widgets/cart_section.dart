@@ -18,21 +18,23 @@ class CartSection extends StatelessWidget {
     required this.onRemoveLine,
     required this.onClearCart,
     required this.onCheckout,
+    required this.isBusy,
     required this.formatPrice,
   });
 
   final List<CartLine> cartLines;
-  final double subtotal;
-  final double serviceFee;
-  final double deliveryFee;
-  final double estimatedTax;
-  final double total;
-  final ValueChanged<String> onIncreaseQty;
-  final ValueChanged<String> onDecreaseQty;
-  final ValueChanged<String> onRemoveLine;
+  final int subtotal;
+  final int serviceFee;
+  final int deliveryFee;
+  final int estimatedTax;
+  final int total;
+  final ValueChanged<CartLine> onIncreaseQty;
+  final ValueChanged<CartLine> onDecreaseQty;
+  final ValueChanged<CartLine> onRemoveLine;
   final VoidCallback onClearCart;
   final VoidCallback onCheckout;
-  final String Function(double value) formatPrice;
+  final bool isBusy;
+  final String Function(int cents) formatPrice;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +49,7 @@ class CartSection extends StatelessWidget {
             Text('Cart', style: textTheme.headlineSmall),
             TextButton(
               key: const Key('clear-cart-button'),
-              onPressed: cartLines.isEmpty ? null : onClearCart,
+              onPressed: cartLines.isEmpty || isBusy ? null : onClearCart,
               child: const Text('Clear'),
             ),
           ],
@@ -61,9 +63,9 @@ class CartSection extends StatelessWidget {
             _CartLineTile(
               line: line,
               formatPrice: formatPrice,
-              onIncrease: () => onIncreaseQty(line.itemId),
-              onDecrease: () => onDecreaseQty(line.itemId),
-              onRemove: () => onRemoveLine(line.itemId),
+              onIncrease: () => onIncreaseQty(line),
+              onDecrease: () => onDecreaseQty(line),
+              onRemove: () => onRemoveLine(line),
             ),
             const SizedBox(height: 8),
           ],
@@ -90,9 +92,9 @@ class CartSection extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              key: const Key('checkout-demo-button'),
-              onPressed: cartLines.isEmpty ? null : onCheckout,
-              child: const Text('Checkout (demo)'),
+              key: const Key('checkout-button'),
+              onPressed: cartLines.isEmpty || isBusy ? null : onCheckout,
+              child: Text(isBusy ? 'Working...' : 'Checkout'),
             ),
           ),
         ],
@@ -114,14 +116,14 @@ class _CartLineTile extends StatelessWidget {
   final VoidCallback onIncrease;
   final VoidCallback onDecrease;
   final VoidCallback onRemove;
-  final String Function(double value) formatPrice;
+  final String Function(int cents) formatPrice;
 
   @override
   Widget build(BuildContext context) {
-    final lineTotal = line.unitPrice * line.quantity;
+    final lineTotal = line.unitPriceCents * line.quantity;
 
     return SurfaceCard(
-      key: Key('cart-line-${line.itemId}'),
+      key: Key('cart-line-${line.productId}'),
       child: Row(
         children: [
           Expanded(
@@ -135,18 +137,18 @@ class _CartLineTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            key: Key('decrease-${line.itemId}'),
+            key: Key('decrease-${line.productId}'),
             onPressed: onDecrease,
             icon: const Icon(Icons.remove_circle_outline),
           ),
-          Text('${line.quantity}', key: Key('qty-${line.itemId}')),
+          Text('${line.quantity}', key: Key('qty-${line.productId}')),
           IconButton(
-            key: Key('increase-${line.itemId}'),
+            key: Key('increase-${line.productId}'),
             onPressed: onIncrease,
             icon: const Icon(Icons.add_circle_outline),
           ),
           IconButton(
-            key: Key('remove-${line.itemId}'),
+            key: Key('remove-${line.productId}'),
             onPressed: onRemove,
             icon: const Icon(Icons.delete_outline),
           ),

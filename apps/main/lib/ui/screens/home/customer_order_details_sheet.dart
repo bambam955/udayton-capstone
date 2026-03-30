@@ -11,7 +11,7 @@ void showCustomerOrderDetailsSheet({
   required BuildContext context,
   required OrderPreview order,
   required StatusBadgeTone Function(String status) orderStatusTone,
-  required String Function(double value) formatPrice,
+  required String Function(int cents) formatPrice,
 }) {
   showModalBottomSheet<void>(
     context: context,
@@ -24,7 +24,7 @@ void showCustomerOrderDetailsSheet({
     ),
     builder: (context) {
       return DetailsSheetScaffold(
-        title: 'Order demo details',
+        title: 'Order details',
         subtitle: order.id,
         badge: StatusBadge(
           label: order.status,
@@ -35,10 +35,12 @@ void showCustomerOrderDetailsSheet({
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(order.businessName,
+                Text(order.retailerName,
                     style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text('Store: ${order.storeName}'),
+                if (order.storeName != null) ...[
+                  const SizedBox(height: 4),
+                  Text('Store: ${order.storeName}'),
+                ],
               ],
             ),
           ),
@@ -57,7 +59,7 @@ void showCustomerOrderDetailsSheet({
                     ),
                     MetaInfo(
                       icon: Icons.attach_money_rounded,
-                      text: formatPrice(order.total),
+                      text: formatPrice(order.totalCents),
                     ),
                     MetaInfo(
                       icon: Icons.schedule_rounded,
@@ -77,7 +79,8 @@ void showCustomerOrderDetailsSheet({
                 const SizedBox(height: 8),
                 const Text('• Order submitted'),
                 const SizedBox(height: 4),
-                const Text('• Store fulfillment in progress'),
+                const Text(
+                    '• Backend status history is available through the API'),
                 const SizedBox(height: 4),
                 Text('• Current: ${order.status}'),
               ],

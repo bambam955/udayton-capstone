@@ -17,7 +17,7 @@ class CatalogItemCard extends StatelessWidget {
   final CatalogItem item;
   final int quantityInCart;
   final VoidCallback onAdd;
-  final String Function(double value) formatPrice;
+  final String Function(int cents) formatPrice;
 
   @override
   Widget build(BuildContext context) {
@@ -52,15 +52,24 @@ class CatalogItemCard extends StatelessWidget {
               children: [
                 Text(item.name, style: textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text('${item.category} • ${item.unit}',
-                    style: textTheme.bodySmall),
+                Text(item.category, style: textTheme.bodySmall),
+                if (item.description != null &&
+                    item.description!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    item.description!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall,
+                  ),
+                ],
                 const SizedBox(height: 8),
                 MetaInfoRow(
                   items: [
                     MetaInfo(icon: Icons.sell_outlined, text: item.badgeText),
                     MetaInfo(
                       icon: Icons.attach_money_rounded,
-                      text: formatPrice(item.price),
+                      text: formatPrice(item.unitPriceCents),
                     ),
                   ],
                 ),
@@ -73,8 +82,8 @@ class CatalogItemCard extends StatelessWidget {
             children: [
               FilledButton(
                 key: Key('add-to-cart-${item.id}'),
-                onPressed: onAdd,
-                child: const Text('Add'),
+                onPressed: item.isAvailable ? onAdd : null,
+                child: Text(item.isAvailable ? 'Add' : 'Unavailable'),
               ),
               const SizedBox(height: 6),
               Text(

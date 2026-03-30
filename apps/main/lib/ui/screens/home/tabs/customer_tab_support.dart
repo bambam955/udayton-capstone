@@ -10,12 +10,14 @@ class CustomerTabSupport extends StatelessWidget {
     super.key,
     required this.supportTickets,
     required this.supportStatusTone,
-    required this.onQuickAction,
+    required this.onCreateTicket,
+    required this.isSubmitting,
   });
 
   final List<SupportTicket> supportTickets;
   final StatusBadgeTone Function(String status) supportStatusTone;
-  final ValueChanged<String> onQuickAction;
+  final ValueChanged<String> onCreateTicket;
+  final bool isSubmitting;
 
   @override
   Widget build(BuildContext context) {
@@ -36,22 +38,22 @@ class CustomerTabSupport extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             children: [
               OutlinedButton(
-                onPressed: () =>
-                    onQuickAction('Created: Missing item ticket (demo)'),
+                onPressed:
+                    isSubmitting ? null : () => onCreateTicket('MISSING_ITEM'),
                 style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Missing item'),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
-                onPressed: () =>
-                    onQuickAction('Created: Late delivery ticket (demo)'),
+                onPressed:
+                    isSubmitting ? null : () => onCreateTicket('LATE_DELIVERY'),
                 style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Late delivery'),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
-                onPressed: () =>
-                    onQuickAction('Created: Damaged item ticket (demo)'),
+                onPressed:
+                    isSubmitting ? null : () => onCreateTicket('DAMAGED_ITEM'),
                 style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Damaged item'),
               ),
@@ -59,6 +61,10 @@ class CustomerTabSupport extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        if (supportTickets.isEmpty)
+          const SurfaceCard(
+            child: Text('No active support tickets.'),
+          ),
         for (final ticket in supportTickets) ...[
           SurfaceCard(
             key: Key('support-ticket-${ticket.id}'),

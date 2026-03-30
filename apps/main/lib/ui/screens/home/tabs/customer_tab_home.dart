@@ -26,27 +26,29 @@ class CustomerTabHome extends StatelessWidget {
     required this.onRemoveLine,
     required this.onClearCart,
     required this.onCheckout,
+    required this.isBusy,
     required this.formatPrice,
   });
 
   final List<StoreOption> stores;
-  final String selectedStoreId;
+  final String? selectedStoreId;
   final List<CatalogItem> previewItems;
   final List<CartLine> cartLines;
-  final double subtotal;
-  final double serviceFee;
-  final double deliveryFee;
-  final double estimatedTax;
-  final double total;
+  final int subtotal;
+  final int serviceFee;
+  final int deliveryFee;
+  final int estimatedTax;
+  final int total;
   final ValueChanged<String> onStoreSelected;
   final ValueChanged<CatalogItem> onAddToCart;
   final int Function(String itemId) quantityInCartForItem;
-  final ValueChanged<String> onIncreaseQty;
-  final ValueChanged<String> onDecreaseQty;
-  final ValueChanged<String> onRemoveLine;
+  final ValueChanged<CartLine> onIncreaseQty;
+  final ValueChanged<CartLine> onDecreaseQty;
+  final ValueChanged<CartLine> onRemoveLine;
   final VoidCallback onClearCart;
   final VoidCallback onCheckout;
-  final String Function(double value) formatPrice;
+  final bool isBusy;
+  final String Function(int cents) formatPrice;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +61,7 @@ class CustomerTabHome extends StatelessWidget {
         Text('Home', style: textTheme.headlineSmall),
         const SizedBox(height: 6),
         Text(
-          'Choose your store, add items, and review cart totals.',
+          'Choose a connected store, add items, and review live cart totals.',
           style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
@@ -71,15 +73,18 @@ class CustomerTabHome extends StatelessWidget {
         const SizedBox(height: 18),
         Text('Recommended items', style: textTheme.titleMedium),
         const SizedBox(height: 10),
-        for (final item in previewItems) ...[
-          CatalogItemCard(
-            item: item,
-            quantityInCart: quantityInCartForItem(item.id),
-            onAdd: () => onAddToCart(item),
-            formatPrice: formatPrice,
-          ),
-          const SizedBox(height: 10),
-        ],
+        if (previewItems.isEmpty)
+          const Text('No catalog items available for this store yet.')
+        else
+          for (final item in previewItems) ...[
+            CatalogItemCard(
+              item: item,
+              quantityInCart: quantityInCartForItem(item.id),
+              onAdd: () => onAddToCart(item),
+              formatPrice: formatPrice,
+            ),
+            const SizedBox(height: 10),
+          ],
         const SizedBox(height: 14),
         CartSection(
           cartLines: cartLines,
@@ -93,6 +98,7 @@ class CustomerTabHome extends StatelessWidget {
           onRemoveLine: onRemoveLine,
           onClearCart: onClearCart,
           onCheckout: onCheckout,
+          isBusy: isBusy,
           formatPrice: formatPrice,
         ),
       ],

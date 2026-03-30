@@ -16,7 +16,7 @@ class CustomerTabOrders extends StatelessWidget {
   });
 
   final List<OrderPreview> orders;
-  final String Function(double value) formatPrice;
+  final String Function(int cents) formatPrice;
   final StatusBadgeTone Function(String status) orderStatusTone;
   final ValueChanged<OrderPreview> onViewOrder;
 
@@ -31,10 +31,14 @@ class CustomerTabOrders extends StatelessWidget {
         Text('Orders', style: textTheme.headlineSmall),
         const SizedBox(height: 6),
         Text(
-          'Track order progress and handoff status.',
+          'Track order progress and current fulfillment status.',
           style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 14),
+        if (orders.isEmpty)
+          const SurfaceCard(
+            child: Text('No orders yet. Completed checkouts will appear here.'),
+          ),
         for (final order in orders) ...[
           SurfaceCard(
             key: Key('order-card-${order.id}'),
@@ -54,9 +58,11 @@ class CustomerTabOrders extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(order.businessName, style: textTheme.titleSmall),
-                const SizedBox(height: 2),
-                Text(order.storeName, style: textTheme.bodySmall),
+                Text(order.retailerName, style: textTheme.titleSmall),
+                if (order.storeName != null) ...[
+                  const SizedBox(height: 2),
+                  Text(order.storeName!, style: textTheme.bodySmall),
+                ],
                 const SizedBox(height: 10),
                 MetaInfoRow(
                   items: [
@@ -66,7 +72,7 @@ class CustomerTabOrders extends StatelessWidget {
                     ),
                     MetaInfo(
                       icon: Icons.attach_money_rounded,
-                      text: formatPrice(order.total),
+                      text: formatPrice(order.totalCents),
                     ),
                     MetaInfo(
                       icon: Icons.schedule_rounded,
