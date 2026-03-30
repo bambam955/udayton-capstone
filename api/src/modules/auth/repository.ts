@@ -1,12 +1,16 @@
+import { randomUUID } from 'node:crypto';
+
 import type { Kysely } from 'kysely';
 
+import { HttpError } from '../../app/errors.js';
 import type { Database } from '../../platform/db/types.js';
 import type { AuthRole } from '../../platform/auth/jwt.js';
-import type { AuthUser, SessionRecord } from './types.js';
+import type { AuthUser, SessionRecord, SignupInput } from './types.js';
 
 // Contract used by AuthService so business logic is decoupled from SQL details.
 export interface AuthRepository {
   findUserByEmail(role: AuthRole, email: string): Promise<AuthUser | null>;
+  createCustomer(input: SignupInput): Promise<AuthUser>;
   createSession(session: SessionRecord): Promise<void>;
   revokeSession(role: AuthRole, sessionId: string): Promise<void>;
   hasActiveSession(role: AuthRole, sessionId: string): Promise<boolean>;
@@ -69,6 +73,46 @@ export class KyselyAuthRepository implements AuthRepository {
       passwordHash: row.password_hash,
       isActive: true
     };
+  }
+
+  async createCustomer(input: SignupInput): Promise<AuthUser> {
+    try {
+      // Registration still stores the raw password until hashing is wired in.
+      const row = await this.db
+        .insertInto('customers')
+        .values({
+          customer_id: randomUUID(),
+          email: input.email.toLowerCase(),
+          phone: input.phone ?? null,
+          full_name: input.fullName ?? null,
+          password_hash: input.password,
+          is_active: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+        .returning(['customer_id', 'email', 'password_hash'])
+        .executeTakeFirstOrThrow();
+
+      return {
+        userId: row.customer_id,
+        role: 'customer',
+        email: row.email ?? input.email.toLowerCase(),
+        passwordHash: row.password_hash ?? input.password,
+        isActive: true
+      };
+    } catch (error) {
+      // The MVP schema enforces unique customer emails, so surface a stable API error.
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === '23505'
+      ) {
+        throw new HttpError(409, 'CONFLICT', 'An account with that email already exists.');
+      }
+
+      throw error;
+    }
   }
 
   async createSession(session: SessionRecord): Promise<void> {

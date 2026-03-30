@@ -5,3 +5,10 @@ default:
 # Seed the database with local sample data.
 seed:
     docker compose --project-name bizrush --profile dbseed -f ../docker-compose.yml up db-seed
+
+# Delete the local DB.
+clear:
+    docker volume rm -f bizrush_db-data
+
+# Reset the local DB by clearing it and seeding it again.
+reset: clear seed

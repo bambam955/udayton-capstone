@@ -13,9 +13,36 @@ const loginSchema = z.object({
   deviceInfo: z.string().optional()
 });
 
+const signupSchema = z.object({
+  email: z.email(),
+  password: z.string().min(1),
+  fullName: z.string().min(1).optional(),
+  phone: z.string().min(1).optional(),
+  deviceInfo: z.string().optional()
+});
+
 export function createAuthRouter(service: AuthService): Router {
   const isSessionActive = service.isSessionActive.bind(service);
   const router = Router();
+
+  router.post('/signup', async (req, res, next) => {
+    try {
+      // Customer sign-up is kept explicit so admin/driver creation remains controlled.
+      const parsed = signupSchema.safeParse(req.body);
+      if (!parsed.success) {
+        throw new HttpError(
+          400,
+          'INVALID_REQUEST',
+          parsed.error.issues[0]?.message ?? 'Invalid payload.'
+        );
+      }
+
+      const result = await service.signup(parsed.data);
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
 
   router.post('/login', async (req, res, next) => {
     try {

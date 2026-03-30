@@ -7,6 +7,7 @@ import { AuthService } from '../../../modules/auth/service.js';
 function makeRepo(): AuthRepository {
   return {
     findUserByEmail: vi.fn(),
+    createCustomer: vi.fn(),
     createSession: vi.fn().mockResolvedValue(undefined),
     revokeSession: vi.fn().mockResolvedValue(undefined),
     hasActiveSession: vi.fn().mockResolvedValue(true)
@@ -59,5 +60,34 @@ describe('AuthService', () => {
     expect(isActive).toBe(false);
     expect(repo.hasActiveSession).toHaveBeenCalledOnce();
     expect(repo.hasActiveSession).toHaveBeenCalledWith('admin', 'session-1');
+  });
+
+  it('creates a customer session as part of signup', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(null);
+    vi.mocked(repo.createCustomer).mockResolvedValue({
+      userId: 'cust-2',
+      role: 'customer',
+      email: 'new@example.com',
+      passwordHash: 'secret123',
+      isActive: true
+    });
+    const service = new AuthService(repo);
+
+    const result = await service.signup({
+      email: 'new@example.com',
+      password: 'secret123',
+      fullName: 'New Customer'
+    });
+
+    expect(result.user.id).toBe('cust-2');
+    expect(result.user.role).toBe('customer');
+    expect(repo.createCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'new@example.com',
+        fullName: 'New Customer'
+      })
+    );
+    expect(repo.createSession).toHaveBeenCalledOnce();
   });
 });
