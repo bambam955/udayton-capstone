@@ -8,6 +8,8 @@ import { createCustomersRouter } from '../modules/customers/routes.js';
 import { createDeliveriesRouter } from '../modules/deliveries/routes.js';
 import { createDriversRouter } from '../modules/drivers/routes.js';
 import { healthRouter } from '../modules/health/routes.js';
+import { createMobileRouter } from '../modules/mobile/routes.js';
+import type { MobileServiceContract } from '../modules/mobile/types.js';
 import { createOrdersRouter } from '../modules/orders/routes.js';
 import { createPaymentsRouter } from '../modules/payments/routes.js';
 import { createRetailersRouter } from '../modules/retailers/routes.js';
@@ -16,6 +18,7 @@ import type { ResourceService } from '../modules/shared/resource-core/service.js
 export interface AppServices {
   authService: AuthService;
   resourceService: ResourceService;
+  mobileService?: MobileServiceContract;
 }
 
 export function createApp(services: AppServices) {
@@ -27,6 +30,9 @@ export function createApp(services: AppServices) {
 
   // Versioned API surface for mobile apps and admin dashboard.
   app.use('/v1/auth', createAuthRouter(services.authService));
+  if (services.mobileService) {
+    app.use('/v1/mobile', createMobileRouter(services.mobileService, services.authService));
+  }
   app.use('/v1', createAdminsRouter(services.resourceService, services.authService));
   app.use('/v1', createCustomersRouter(services.resourceService, services.authService));
   app.use('/v1', createDriversRouter(services.resourceService, services.authService));

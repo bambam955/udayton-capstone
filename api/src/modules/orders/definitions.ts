@@ -21,6 +21,7 @@ export const orderResourceDefinitions = [
         updateable: true,
         requiredOnCreate: true
       }),
+      retailer_location_id: stringField({ filterable: true, createable: true, updateable: true }),
       address_id: stringField({
         filterable: true,
         createable: true,
@@ -91,6 +92,7 @@ export const orderResourceDefinitions = [
         injectPrincipalColumn: 'customer_id',
         writeColumns: [
           'retailer_id',
+          'retailer_location_id',
           'address_id',
           'external_order_id',
           'currency',

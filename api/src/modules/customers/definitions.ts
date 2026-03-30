@@ -186,6 +186,7 @@ export const customerResourceDefinitions = [
         updateable: true,
         requiredOnCreate: true
       }),
+      retailer_location_id: stringField({ filterable: true, createable: true, updateable: true }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       created_at: timestampField({ createable: true, updateable: true }),
       updated_at: timestampField({ createable: true, updateable: true })
@@ -206,14 +207,14 @@ export const customerResourceDefinitions = [
       admin: {},
       customer: {
         injectPrincipalColumn: 'customer_id',
-        writeColumns: ['retailer_id', 'status']
+        writeColumns: ['retailer_id', 'retailer_location_id', 'status']
       }
     },
     updateAccess: {
       admin: {},
       customer: {
         scope: customerDirectScope,
-        writeColumns: ['retailer_id', 'status']
+        writeColumns: ['retailer_id', 'retailer_location_id', 'status']
       }
     },
     deleteAccess: {

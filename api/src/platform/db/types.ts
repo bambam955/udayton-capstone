@@ -74,6 +74,24 @@ export interface RetailerAccountsTable {
   updated_at: DBTimestamp | null;
 }
 
+export interface RetailerLocationsTable {
+  retailer_location_id: string;
+  retailer_id: string;
+  external_store_id: string | null;
+  name: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string | null;
+  lat: DBNumeric | null;
+  lng: DBNumeric | null;
+  is_active: boolean | null;
+  created_at: DBTimestamp | null;
+  updated_at: DBTimestamp | null;
+}
+
 export interface ProductCategoriesTable {
   category_id: string;
   retailer_id: string;
@@ -108,6 +126,7 @@ export interface CartsTable {
   cart_id: string;
   customer_id: string;
   retailer_id: string;
+  retailer_location_id: string | null;
   status: string | null;
   created_at: DBTimestamp | null;
   updated_at: DBTimestamp | null;
@@ -130,6 +149,7 @@ export interface OrdersTable {
   order_id: string;
   customer_id: string;
   retailer_id: string;
+  retailer_location_id: string | null;
   address_id: string;
   external_order_id: string | null;
   status: string | null;
@@ -657,6 +677,7 @@ export interface Database {
   customer_sessions: CustomerSessionsTable;
   retailers: RetailersTable;
   retailer_accounts: RetailerAccountsTable;
+  retailer_locations: RetailerLocationsTable;
   product_categories: ProductCategoriesTable;
   products: ProductsTable;
   favorites: FavoritesTable;
