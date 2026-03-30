@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:bizrush_shared/bizrush_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -57,8 +56,6 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
   List<Position> _simulationRoute = const [];
   Timer? _simulationTimer;
   Timer? _simulationStartTimer;
-  late final StoreLocation _pickupStore =
-      storeLocationById(widget.job.pickupStoreId);
 
   @override
   void initState() {
@@ -78,11 +75,12 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     final phaseLabel = _phaseLabel(widget.phase);
     final destination = _navigationDestination;
     final destinationLabel = widget.phase == DriverRoutePhase.toPickup
-        ? _pickupStore.name
+        ? widget.job.pickup
         : widget.job.dropoff;
     final destinationDetail = widget.phase == DriverRoutePhase.toPickup
-        ? _pickupStore.addressLine
-        : _formatCoordinateSubtitle(destination);
+        ? widget.job.pickupAddressLine
+        : _formatDestinationSubtitle(
+            destination, widget.job.dropoffAddressLine);
     final navigateLabel = widget.phase == DriverRoutePhase.toPickup
         ? 'Navigate to store'
         : 'Navigate to dropoff';
@@ -244,6 +242,25 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
       _routeError = null;
     });
 
+    if (widget.phase == DriverRoutePhase.toDropoff &&
+        _dropoffPosition == null) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _routeGeometry = <Position>[_routeOrigin];
+        _simulationRoute = <Position>[_routeOrigin];
+        _simulationIndex = 0;
+        _isSimulationRunning = false;
+        _isSimulationCompleted = false;
+        _routeError =
+            'Precise dropoff coordinates are unavailable. External navigation can still open.';
+        _loadingRoute = false;
+      });
+      return;
+    }
+
     final origin = _routeOrigin;
     final destination = _routeDestination;
     var routeWarning = '';
@@ -308,11 +325,9 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     }
 
     final pickupPoint = Point(
-      coordinates: Position(_pickupStore.lng, _pickupStore.lat),
+      coordinates: Position(widget.job.pickupLng, widget.job.pickupLat),
     );
-    final dropoffPoint = Point(
-      coordinates: Position(widget.job.dropoffLng, widget.job.dropoffLat),
-    );
+    final dropoffPosition = _dropoffPosition;
 
     await circles.deleteAll();
     await polylines.deleteAll();
@@ -328,7 +343,7 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
       );
     }
 
-    await circles.createMulti([
+    final markerOptions = <CircleAnnotationOptions>[
       CircleAnnotationOptions(
         geometry: pickupPoint,
         circleColor: const Color(0xFFFF9800).toARGB32(),
@@ -336,14 +351,20 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
         circleStrokeColor: Colors.white.toARGB32(),
         circleStrokeWidth: 2,
       ),
-      CircleAnnotationOptions(
-        geometry: dropoffPoint,
-        circleColor: const Color(0xFF2E7D32).toARGB32(),
-        circleRadius: widget.phase == DriverRoutePhase.toDropoff ? 8 : 6,
-        circleStrokeColor: Colors.white.toARGB32(),
-        circleStrokeWidth: 2,
-      ),
-    ]);
+    ];
+    if (dropoffPosition != null) {
+      markerOptions.add(
+        CircleAnnotationOptions(
+          geometry: Point(coordinates: dropoffPosition),
+          circleColor: const Color(0xFF2E7D32).toARGB32(),
+          circleRadius: widget.phase == DriverRoutePhase.toDropoff ? 8 : 6,
+          circleStrokeColor: Colors.white.toARGB32(),
+          circleStrokeWidth: 2,
+        ),
+      );
+    }
+
+    await circles.createMulti(markerOptions);
 
     final initialDriverPosition =
         _simulationRoute.isEmpty ? _routeOrigin : _simulationRoute.first;
@@ -604,19 +625,32 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
           widget.job.driverStartLng,
           widget.job.driverStartLat,
         ),
-      DriverRoutePhase.toDropoff =>
-        Position(_pickupStore.lng, _pickupStore.lat),
+      DriverRoutePhase.toDropoff => Position(
+          widget.job.pickupLng,
+          widget.job.pickupLat,
+        ),
     };
   }
 
   Position get _routeDestination {
     return switch (widget.phase) {
-      DriverRoutePhase.toPickup => Position(_pickupStore.lng, _pickupStore.lat),
+      DriverRoutePhase.toPickup =>
+        Position(widget.job.pickupLng, widget.job.pickupLat),
       DriverRoutePhase.toDropoff => Position(
-          widget.job.dropoffLng,
-          widget.job.dropoffLat,
+          widget.job.dropoffLng ?? widget.job.pickupLng,
+          widget.job.dropoffLat ?? widget.job.pickupLat,
         ),
     };
+  }
+
+  Position? get _dropoffPosition {
+    final lat = widget.job.dropoffLat;
+    final lng = widget.job.dropoffLng;
+    if (lat == null || lng == null) {
+      return null;
+    }
+
+    return Position(lng, lat);
   }
 
   String get _simulationStatusLabel {
@@ -640,14 +674,16 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
   DriverNavigationDestination get _navigationDestination {
     return switch (widget.phase) {
       DriverRoutePhase.toPickup => DriverNavigationDestination(
-          label: _pickupStore.name,
-          lat: _pickupStore.lat,
-          lng: _pickupStore.lng,
+          label: widget.job.pickup,
+          lat: widget.job.pickupLat,
+          lng: widget.job.pickupLng,
+          query: widget.job.pickupAddressLine,
         ),
       DriverRoutePhase.toDropoff => DriverNavigationDestination(
           label: widget.job.dropoff,
           lat: widget.job.dropoffLat,
           lng: widget.job.dropoffLng,
+          query: widget.job.dropoffAddressLine,
         ),
     };
   }
@@ -679,11 +715,16 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     };
   }
 
-  static String _formatCoordinateSubtitle(
+  static String _formatDestinationSubtitle(
     DriverNavigationDestination destination,
+    String addressLine,
   ) {
-    return '${destination.label} (${destination.lat.toStringAsFixed(4)}, '
-        '${destination.lng.toStringAsFixed(4)})';
+    if (destination.lat == null || destination.lng == null) {
+      return addressLine;
+    }
+
+    return '${destination.label} (${destination.lat!.toStringAsFixed(4)}, '
+        '${destination.lng!.toStringAsFixed(4)})';
   }
 }
 

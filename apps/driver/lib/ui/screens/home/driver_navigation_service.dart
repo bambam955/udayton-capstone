@@ -10,13 +10,15 @@ Future<bool> _defaultLaunchUrl(Uri url, LaunchMode launchMode) {
 class DriverNavigationDestination {
   const DriverNavigationDestination({
     required this.label,
-    required this.lat,
-    required this.lng,
+    this.lat,
+    this.lng,
+    this.query,
   });
 
   final String label;
-  final double lat;
-  final double lng;
+  final double? lat;
+  final double? lng;
+  final String? query;
 }
 
 class DriverNavigationService {
@@ -37,38 +39,49 @@ class DriverNavigationService {
 
   List<Uri> candidateUris(DriverNavigationDestination destination) {
     if (kIsWeb) {
-      return [buildGoogleMapsWebUri(destination)];
+      return <Uri>[buildGoogleMapsWebUri(destination)];
     }
 
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => [
+      TargetPlatform.android => <Uri>[
           buildGoogleNavigationUri(destination),
           buildGoogleMapsWebUri(destination),
         ],
-      TargetPlatform.iOS => [
+      TargetPlatform.iOS => <Uri>[
           buildAppleMapsUri(destination),
           buildGoogleMapsWebUri(destination),
         ],
-      _ => [buildGoogleMapsWebUri(destination)],
+      _ => <Uri>[buildGoogleMapsWebUri(destination)],
     };
   }
 
   static Uri buildGoogleNavigationUri(DriverNavigationDestination destination) {
-    return Uri.parse(
-      'google.navigation:q=${destination.lat},${destination.lng}',
-    );
+    final target = _targetValue(destination, encodeForNavigation: true);
+    return Uri.parse('google.navigation:q=$target');
   }
 
   static Uri buildAppleMapsUri(DriverNavigationDestination destination) {
-    return Uri.https('maps.apple.com', '/', {
-      'daddr': '${destination.lat},${destination.lng}',
+    return Uri.https('maps.apple.com', '/', <String, String>{
+      'daddr': _targetValue(destination),
     });
   }
 
   static Uri buildGoogleMapsWebUri(DriverNavigationDestination destination) {
-    return Uri.https('www.google.com', '/maps/dir/', {
+    return Uri.https('www.google.com', '/maps/dir/', <String, String>{
       'api': '1',
-      'destination': '${destination.lat},${destination.lng}',
+      'destination': _targetValue(destination),
     });
+  }
+
+  static String _targetValue(
+    DriverNavigationDestination destination, {
+    bool encodeForNavigation = false,
+  }) {
+    if (destination.lat != null && destination.lng != null) {
+      return '${destination.lat},${destination.lng}';
+    }
+
+    final value = destination.query ?? destination.label;
+    return encodeForNavigation ? Uri.encodeComponent(value) : value;
   }
 }

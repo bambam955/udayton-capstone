@@ -1,12 +1,11 @@
 import 'package:bizrush_driver/ui/screens/home/driver_delivery_map_screen.dart';
-import 'package:bizrush_driver/ui/screens/home/driver_home_fake_data.dart';
 import 'package:bizrush_driver/ui/screens/home/driver_home_models.dart';
 import 'package:bizrush_driver/ui/screens/home/driver_navigation_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('shows store address and fallback message when navigation fails',
+  testWidgets('shows pickup address and fallback message when navigation fails',
       (
     WidgetTester tester,
   ) async {
@@ -17,7 +16,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: DriverDeliveryMapScreen(
-          job: initialDriverJobs.first,
+          job: _testJob(),
           phase: DriverRoutePhase.toPickup,
           navigationService: service,
         ),
@@ -25,10 +24,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('2490 N Fairfield Rd, Beavercreek, OH 45431'),
-      findsOneWidget,
-    );
+    expect(find.text('100 Main St'), findsOneWidget);
     expect(find.byKey(const Key('driver-map-navigate')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('driver-map-navigate')));
@@ -39,4 +35,32 @@ void main() {
       findsOneWidget,
     );
   });
+}
+
+DriverJob _testJob() {
+  return const DriverJob(
+    id: 'del-1',
+    title: 'Downtown Pantry Run',
+    driverStartLat: 35.2471,
+    driverStartLng: -80.8631,
+    pickup: 'Downtown Market',
+    pickupAddressLine: '100 Main St',
+    pickupStoreId: 'loc-1',
+    pickupLat: 35.2271,
+    pickupLng: -80.8431,
+    dropoff: 'Northside Deli',
+    dropoffAddressLine: '1 Elm St',
+    dropoffLat: null,
+    dropoffLng: null,
+    zone: 'Uptown',
+    payEstimateText: r'$14.50 est.',
+    distanceText: '4.2 mi total',
+    etaText: '18 min route',
+    stage: DeliveryStage.assigned,
+    detailLines: <String>['Pickup window: ASAP'],
+    gradient: <Color>[Color(0xFF7FD5CC), Color(0xFFB6E0AE)],
+    basePay: 8,
+    tipAmount: 4.5,
+    orderId: 'ord-1',
+  );
 }

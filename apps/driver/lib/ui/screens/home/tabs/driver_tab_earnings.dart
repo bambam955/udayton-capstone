@@ -1,3 +1,4 @@
+import 'package:bizrush_shared/api.dart';
 import 'package:flutter/material.dart';
 
 import '../../../widgets/stat_tile.dart';
@@ -10,11 +11,15 @@ class DriverTabEarnings extends StatelessWidget {
     super.key,
     required this.payout,
     required this.completedJobs,
+    required this.payouts,
+    required this.earnings,
     required this.formatMoney,
   });
 
   final DriverPayoutSummary payout;
   final List<DriverJob> completedJobs;
+  final List<DriverPayoutRecord> payouts;
+  final List<ResourceDriverEarning> earnings;
   final String Function(double value) formatMoney;
 
   @override
@@ -84,14 +89,86 @@ class DriverTabEarnings extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        Text('Recent completed deliveries', style: textTheme.titleMedium),
+        Text('Recent earnings', style: textTheme.titleMedium),
         const SizedBox(height: 10),
-        if (completedJobs.isEmpty)
-          const SurfaceCard(child: Text('No completed deliveries yet'))
+        if (earnings.isEmpty)
+          const SurfaceCard(child: Text('No earnings recorded yet.'))
         else
+          for (final earning in earnings) ...[
+            SurfaceCard(
+              key: Key('driver-earnings-row-${earning.deliveryId}'),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Delivery ${earning.deliveryId}',
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Status: ${earning.status ?? 'UNKNOWN'}',
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    formatMoney(earning.totalPayCents / 100),
+                    style: textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        const SizedBox(height: 16),
+        Text('Recent payouts', style: textTheme.titleMedium),
+        const SizedBox(height: 10),
+        if (payouts.isEmpty)
+          const SurfaceCard(child: Text('No payouts recorded yet.'))
+        else
+          for (final payoutRecord in payouts) ...[
+            SurfaceCard(
+              key: Key('driver-payout-row-${payoutRecord.id}'),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          payoutRecord.provider,
+                          style: textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          payoutRecord.status,
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    formatMoney(payoutRecord.amount),
+                    style: textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        if (completedJobs.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text('Completed deliveries', style: textTheme.titleMedium),
+          const SizedBox(height: 10),
           for (final job in completedJobs) ...[
             SurfaceCard(
-              key: Key('driver-earnings-row-${job.id}'),
+              key: Key('driver-completed-row-${job.id}'),
               child: Row(
                 children: [
                   Expanded(
@@ -121,6 +198,7 @@ class DriverTabEarnings extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
+        ],
       ],
     );
   }

@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 
 class DriverTopBar extends StatelessWidget {
-  const DriverTopBar({super.key, required this.onProfileAction});
+  const DriverTopBar({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.onProfileAction,
+  });
 
+  final String title;
+  final String subtitle;
   final ValueChanged<String> onProfileAction;
 
   @override
@@ -12,27 +19,46 @@ class DriverTopBar extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Image.asset(
-              'assets/images/bizrushdriverlogo.png',
-              key: const Key('driver-logo'),
-              height: 34,
-              fit: BoxFit.contain,
-              alignment: Alignment.centerLeft,
-              errorBuilder: (_, __, ___) => const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'BizRush Driver',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/images/bizrushdriverlogo.png',
+                  key: const Key('driver-logo'),
+                  height: 34,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.centerLeft,
+                  errorBuilder: (_, __, ___) => const Text(
+                    'BizRush Driver',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           PopupMenuButton<String>(
             key: const Key('driver-profile-menu'),
             onSelected: onProfileAction,
             itemBuilder: (context) => const [
-              PopupMenuItem(value: 'view_profile', child: Text('View profile')),
-              PopupMenuItem(value: 'switch_role', child: Text('Switch role')),
               PopupMenuItem(value: 'sign_out', child: Text('Sign out')),
             ],
             icon: const Icon(Icons.person_outline_rounded),

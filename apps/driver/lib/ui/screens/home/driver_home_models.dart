@@ -12,8 +12,12 @@ class DriverJob {
     required this.driverStartLat,
     required this.driverStartLng,
     required this.pickup,
+    required this.pickupAddressLine,
     required this.pickupStoreId,
+    required this.pickupLat,
+    required this.pickupLng,
     required this.dropoff,
+    required this.dropoffAddressLine,
     required this.dropoffLat,
     required this.dropoffLng,
     required this.zone,
@@ -25,6 +29,7 @@ class DriverJob {
     required this.gradient,
     required this.basePay,
     required this.tipAmount,
+    required this.orderId,
   });
 
   final String id;
@@ -32,10 +37,14 @@ class DriverJob {
   final double driverStartLat;
   final double driverStartLng;
   final String pickup;
+  final String pickupAddressLine;
   final String pickupStoreId;
+  final double pickupLat;
+  final double pickupLng;
   final String dropoff;
-  final double dropoffLat;
-  final double dropoffLng;
+  final String dropoffAddressLine;
+  final double? dropoffLat;
+  final double? dropoffLng;
   final String zone;
   final String payEstimateText;
   final String distanceText;
@@ -45,29 +54,7 @@ class DriverJob {
   final List<Color> gradient;
   final double basePay;
   final double tipAmount;
-
-  DriverJob copyWith({DeliveryStage? stage, List<String>? detailLines}) {
-    return DriverJob(
-      id: id,
-      title: title,
-      driverStartLat: driverStartLat,
-      driverStartLng: driverStartLng,
-      pickup: pickup,
-      pickupStoreId: pickupStoreId,
-      dropoff: dropoff,
-      dropoffLat: dropoffLat,
-      dropoffLng: dropoffLng,
-      zone: zone,
-      payEstimateText: payEstimateText,
-      distanceText: distanceText,
-      etaText: etaText,
-      stage: stage ?? this.stage,
-      detailLines: detailLines ?? this.detailLines,
-      gradient: gradient,
-      basePay: basePay,
-      tipAmount: tipAmount,
-    );
-  }
+  final String orderId;
 }
 
 class DriverSupportCase {
@@ -100,9 +87,31 @@ class DriverPayoutSummary {
   final String nextPayoutText;
 }
 
+class DriverPayoutRecord {
+  const DriverPayoutRecord({
+    required this.id,
+    required this.amount,
+    required this.status,
+    required this.provider,
+  });
+
+  final String id;
+  final double amount;
+  final String status;
+  final String provider;
+}
+
 class DriverNavItem {
   const DriverNavItem({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
 }
+
+const driverBottomNavItems = <DriverNavItem>[
+  DriverNavItem(icon: Icons.home_rounded, label: 'Home'),
+  DriverNavItem(icon: Icons.place_rounded, label: 'Nearby'),
+  DriverNavItem(icon: Icons.local_shipping_rounded, label: 'Deliveries'),
+  DriverNavItem(icon: Icons.payments_rounded, label: 'Earnings'),
+  DriverNavItem(icon: Icons.headset_mic_rounded, label: 'Support'),
+];

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import 'config/driver_app_dependencies.dart';
 import 'config/mapbox_config.dart';
-import 'ui/screens/home/driver_home_shell.dart';
+import 'ui/screens/driver_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,11 +13,16 @@ void main() async {
   if (isMapboxPlatformSupported && hasMapboxAccessToken) {
     MapboxOptions.setAccessToken(mapboxAccessToken);
   }
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({
+    super.key,
+    DriverAppDependencies? dependencies,
+  }) : dependencies = dependencies ?? DriverAppDependencies.production();
+
+  final DriverAppDependencies dependencies;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +31,7 @@ class MyApp extends StatelessWidget {
       title: 'BizRush Driver',
       theme: AppTheme.light(),
       scrollBehavior: const NoStretchScrollBehavior(),
-      home: const DriverHomeShell(),
+      home: DriverApp(dependencies: dependencies),
     );
   }
 }

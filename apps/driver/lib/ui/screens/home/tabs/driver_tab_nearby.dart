@@ -12,12 +12,14 @@ class DriverTabNearby extends StatelessWidget {
     required this.onSearchChanged,
     required this.onAccept,
     required this.onViewDetails,
+    required this.isBusy,
   });
 
   final List<DriverJob> availableJobs;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onAccept;
   final ValueChanged<DriverJob> onViewDetails;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +46,7 @@ class DriverTabNearby extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         if (availableJobs.isEmpty)
-          const SurfaceCard(child: Text('No available demo offers'))
+          const SurfaceCard(child: Text('No available offers right now.'))
         else
           for (final job in availableJobs) ...[
             _OfferCard(
@@ -52,6 +54,7 @@ class DriverTabNearby extends StatelessWidget {
               job: job,
               onAccept: () => onAccept(job.id),
               onViewDetails: () => onViewDetails(job),
+              isBusy: isBusy,
             ),
             const SizedBox(height: 12),
           ],
@@ -66,11 +69,13 @@ class _OfferCard extends StatelessWidget {
     required this.job,
     required this.onAccept,
     required this.onViewDetails,
+    required this.isBusy,
   });
 
   final DriverJob job;
   final VoidCallback onAccept;
   final VoidCallback onViewDetails;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +134,7 @@ class _OfferCard extends StatelessWidget {
                   children: [
                     FilledButton(
                       key: Key('driver-accept-${job.id}'),
-                      onPressed: onAccept,
+                      onPressed: isBusy ? null : onAccept,
                       child: const Text('Accept'),
                     ),
                     OutlinedButton(
