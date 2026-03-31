@@ -60,6 +60,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
   @override
   void initState() {
     super.initState();
+    // Route loading begins immediately so the screen can show progress while
+    // the native map view finishes creating itself.
     _loadRouteGeometry();
   }
 
@@ -214,6 +216,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
 
     final missingCoordinatesMessage = _missingCoordinatesMessage;
     if (missingCoordinatesMessage != null) {
+      // Missing coordinates should not crash the route UI; the screen still
+      // exposes external navigation when precise map rendering is impossible.
       return _MapUnavailableCard(message: missingCoordinatesMessage);
     }
 
@@ -227,6 +231,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
       onMapCreated: _onMapCreated,
       onStyleLoadedListener: (_) {
         _styleLoaded = true;
+        // The style must be ready before annotations can be drawn, so retry the
+        // route render when the callback fires.
         _drawRouteThenStartSimulation();
       },
     );
@@ -276,6 +282,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
               origin: origin, destination: destination)
           : _buildDirectRoute(origin: origin, destination: destination);
     } catch (_) {
+      // Fall back to a direct line so the screen can still animate a rough
+      // route preview when live directions are unavailable.
       routeGeometry =
           _buildDirectRoute(origin: origin, destination: destination);
       routeWarning = 'Live route unavailable. Using direct-path simulation.';
@@ -283,6 +291,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
 
     var simulationRoute = sampleRouteGeometry(routeGeometry, stepMeters: 160);
     if (simulationRoute.isEmpty) {
+      // Sampling can collapse very short routes; use a minimal fallback path so
+      // the simulation UI always has something to animate.
       simulationRoute =
           _buildDirectRoute(origin: origin, destination: destination);
     }
@@ -309,6 +319,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
       return;
     }
 
+    // Any route refresh should cancel the prior timers before drawing the new
+    // geometry and starting a fresh overview/simulation cycle.
     _cancelSimulationTimers();
     await _drawRouteAndMarkers();
     await _fitRouteOverview();
@@ -335,6 +347,7 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     await polylines.deleteAll();
 
     if (_routeGeometry.length >= 2) {
+      // Draw the polyline only when the route has enough points to form a line.
       await polylines.create(
         PolylineAnnotationOptions(
           geometry: LineString(coordinates: _routeGeometry),
@@ -370,6 +383,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
 
     final initialDriverPosition =
         _simulationRoute.isEmpty ? _routeOrigin : _simulationRoute.first;
+    // Keep a handle to the driver marker so later simulation frames can update
+    // it in place instead of recreating annotations every tick.
     _driverMarker = await circles.create(
       CircleAnnotationOptions(
         geometry: Point(coordinates: initialDriverPosition),
@@ -426,6 +441,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
 
     _simulationTimer = Timer.periodic(_simulationTick, (_) async {
       if (_simulationTickInFlight) {
+        // Skip overlapping ticks when a previous frame update or camera
+        // animation has not completed yet.
         return;
       }
       _simulationTickInFlight = true;
@@ -466,6 +483,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     if (!followCamera) {
       return;
     }
+    // When following the route, update both position and bearing so the map
+    // feels closer to turn-by-turn guidance.
     await map.easeTo(
       CameraOptions(
         center: Point(coordinates: frame.position),
@@ -528,6 +547,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     required Position origin,
     required Position destination,
   }) async {
+    // Try traffic-aware driving first, then degrade to plain driving if the
+    // richer profile is unavailable for the current token or region.
     final profiles = ['mapbox/driving-traffic', 'mapbox/driving'];
     for (final profile in profiles) {
       try {
@@ -598,6 +619,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
     final samePoint =
         origin.lng == destination.lng && origin.lat == destination.lat;
     if (samePoint) {
+      // Create a tiny offset so the renderer and simulator still have a visible
+      // segment even when origin and destination collapse to the same point.
       return [
         origin,
         Position(
@@ -629,6 +652,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
   }
 
   bool get _isMapReadyForRoute {
+    // The screen waits for style, managers, and geometry before attempting any
+    // annotation work.
     return _canRenderMap &&
         _styleLoaded &&
         _mapboxMap != null &&
@@ -711,6 +736,8 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
   }
 
   DriverNavigationDestination get _navigationDestination {
+    // External navigation prefers coordinates but also includes the address so
+    // fallback apps can still search by text if needed.
     return switch (widget.phase) {
       DriverRoutePhase.toPickup => DriverNavigationDestination(
           label: widget.job.pickup,
@@ -779,6 +806,8 @@ class _MapUnavailableCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Card(
           key: const Key('driver-map-unavailable'),
+          // Keep this state visually lightweight because it is a fallback
+          // screen, not a full replacement experience.
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Text(message),

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'config/customer_app_dependencies.dart';
 import 'ui/screens/customer_app.dart';
 
+/// Entry point for the customer Flutter app.
 void main() {
   runApp(MyApp());
 }
 
+/// Root widget that wires production dependencies into the customer shell.
 class MyApp extends StatelessWidget {
   MyApp({
     super.key,

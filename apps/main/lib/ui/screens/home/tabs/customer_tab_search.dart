@@ -85,6 +85,8 @@ class CustomerTabSearch extends StatelessWidget {
               final category = categories[index];
               return ChoiceChip(
                 key: Key('customer-category-$category'),
+                // Category chips are local UI filters layered on top of the
+                // already-loaded store catalog.
                 selected: category == selectedCategory,
                 onSelected: (_) => onCategorySelected(category),
                 label: Text(category),
@@ -106,6 +108,8 @@ class CustomerTabSearch extends StatelessWidget {
             child: Text('No matching items found.'),
           )
         else
+          // Search results reuse the same catalog card component as the home
+          // tab so cart actions behave consistently.
           for (final item in visibleItems) ...[
             CatalogItemCard(
               item: item,

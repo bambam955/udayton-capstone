@@ -38,6 +38,8 @@ class DriverTabDeliveries extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final showingCompleted = filterIndex == 1;
+    // The shell pre-splits active and completed jobs, so the tab only needs a
+    // lightweight UI filter toggle.
     final jobs = showingCompleted ? completedJobs : activeJobs;
 
     return Column(
@@ -167,6 +169,8 @@ class _DeliveryCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              // The primary action changes with delivery stage so the tab can
+              // advance the workflow without exposing invalid actions.
               if (primaryAction != null)
                 OutlinedButton(
                   key: primaryAction.key,

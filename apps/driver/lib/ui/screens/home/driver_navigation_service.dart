@@ -7,6 +7,7 @@ Future<bool> _defaultLaunchUrl(Uri url, LaunchMode launchMode) {
   return launchUrl(url, mode: launchMode);
 }
 
+/// Destination descriptor used for external navigation launches.
 class DriverNavigationDestination {
   const DriverNavigationDestination({
     required this.label,
@@ -21,12 +22,15 @@ class DriverNavigationDestination {
   final String? query;
 }
 
+/// Platform-aware launcher for external turn-by-turn navigation.
 class DriverNavigationService {
   const DriverNavigationService({this.launchUrlCallback = _defaultLaunchUrl});
 
   final DriverLaunchUrl launchUrlCallback;
 
   Future<bool> navigateTo(DriverNavigationDestination destination) async {
+    // Try the most native option first, then fall back to a web URL if the
+    // platform cannot handle the preferred scheme.
     for (final uri in candidateUris(destination)) {
       final launched =
           await launchUrlCallback(uri, LaunchMode.externalApplication);
@@ -42,6 +46,8 @@ class DriverNavigationService {
       return <Uri>[buildGoogleMapsWebUri(destination)];
     }
 
+    // Candidate order matters: each platform gets its preferred deep link
+    // first, then a more portable web fallback.
     return switch (defaultTargetPlatform) {
       TargetPlatform.android => <Uri>[
           buildGoogleNavigationUri(destination),
@@ -78,6 +84,8 @@ class DriverNavigationService {
     bool encodeForNavigation = false,
   }) {
     if (destination.lat != null && destination.lng != null) {
+      // Coordinates are preferred whenever available because they avoid
+      // ambiguity in mall/storefront or apartment-address destinations.
       return '${destination.lat},${destination.lng}';
     }
 

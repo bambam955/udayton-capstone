@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Compact top bar shared across the customer's authenticated screens.
 class CustomerTopBar extends StatelessWidget {
   const CustomerTopBar({
     super.key,
@@ -28,6 +29,8 @@ class CustomerTopBar extends StatelessWidget {
                   fit: BoxFit.contain,
                   alignment: Alignment.centerLeft,
                   errorBuilder: (_, __, ___) => const Text(
+                    // Widget tests and partial builds may not bundle the image,
+                    // so keep a text fallback for branding.
                     'BizRush',
                     style: TextStyle(
                       fontSize: 20,

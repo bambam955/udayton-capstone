@@ -1,7 +1,9 @@
 import 'api_json.dart';
 
+/// Enum used across auth, session, and bootstrap payloads.
 enum ApiUserRole { customer, driver, admin }
 
+/// Decodes the wire-format role string into the app's enum.
 ApiUserRole apiUserRoleFromWire(String value) {
   return switch (value) {
     'driver' => ApiUserRole.driver,
@@ -10,6 +12,7 @@ ApiUserRole apiUserRoleFromWire(String value) {
   };
 }
 
+/// Encodes the app enum back into the backend's role string.
 String apiUserRoleToWire(ApiUserRole value) {
   return switch (value) {
     ApiUserRole.customer => 'customer',
@@ -18,6 +21,7 @@ String apiUserRoleToWire(ApiUserRole value) {
   };
 }
 
+/// Shared user identity embedded in auth/session payloads.
 class AuthUser {
   const AuthUser({
     required this.id,
@@ -29,6 +33,7 @@ class AuthUser {
   final ApiUserRole role;
   final String email;
 
+  /// Parses the compact user object returned by auth endpoints.
   factory AuthUser.fromJson(Object? raw) {
     final json = asJsonMap(raw);
     return AuthUser(
@@ -38,6 +43,7 @@ class AuthUser {
     );
   }
 
+  /// Serializes the user object for secure-session persistence.
   JsonMap toJson() {
     return {
       'id': id,
@@ -47,6 +53,7 @@ class AuthUser {
   }
 }
 
+/// Raw authentication result returned directly from signup/login endpoints.
 class AuthResult {
   const AuthResult({
     required this.accessToken,
@@ -58,6 +65,8 @@ class AuthResult {
   final DateTime expiresAt;
   final AuthUser user;
 
+  /// Leaves timestamp fallback handling local so session restoration can choose
+  /// how to behave when the backend omits `expiresAt`.
   factory AuthResult.fromJson(Object? raw) {
     final json = asJsonMap(raw);
     return AuthResult(
@@ -69,6 +78,7 @@ class AuthResult {
   }
 }
 
+/// Persisted authenticated session used by both Flutter apps.
 class ApiSession {
   const ApiSession({
     required this.accessToken,
@@ -80,8 +90,11 @@ class ApiSession {
   final DateTime expiresAt;
   final AuthUser user;
 
+  /// Treat sessions as expired on the client once the UTC expiry passes so the
+  /// transport layer can stop attaching stale bearer tokens.
   bool get isExpired => expiresAt.isBefore(DateTime.now().toUtc());
 
+  /// Converts a fresh auth response into the persisted session shape.
   factory ApiSession.fromAuthResult(AuthResult result) {
     return ApiSession(
       accessToken: result.accessToken,
@@ -90,6 +103,7 @@ class ApiSession {
     );
   }
 
+  /// Restores a previously serialized session from storage.
   factory ApiSession.fromJson(Object? raw) {
     final json = asJsonMap(raw);
     return ApiSession(
@@ -100,6 +114,7 @@ class ApiSession {
     );
   }
 
+  /// Serializes the session into secure storage.
   JsonMap toJson() {
     return {
       'accessToken': accessToken,
@@ -109,6 +124,7 @@ class ApiSession {
   }
 }
 
+/// Lightweight principal payload returned by `/v1/auth/me`.
 class ApiPrincipal {
   const ApiPrincipal({
     required this.userId,
@@ -130,6 +146,7 @@ class ApiPrincipal {
   }
 }
 
+/// Customer identity block embedded in bootstrap responses.
 class CustomerProfile {
   const CustomerProfile({
     required this.id,
@@ -151,6 +168,7 @@ class CustomerProfile {
   }
 }
 
+/// Driver identity block embedded in bootstrap responses.
 class DriverProfile {
   const DriverProfile({
     required this.id,
@@ -175,6 +193,7 @@ class DriverProfile {
   }
 }
 
+/// Store/location summary shared across catalog and bootstrap payloads.
 class RetailerLocation {
   const RetailerLocation({
     required this.retailerLocationId,
@@ -223,6 +242,8 @@ class RetailerLocation {
   }
 }
 
+/// Retailer summary used by the customer app to show connection state and
+/// available locations together.
 class CustomerRetailerSummary {
   const CustomerRetailerSummary({
     required this.retailerId,
@@ -256,6 +277,7 @@ class CustomerRetailerSummary {
   }
 }
 
+/// Delivery address summary rendered on the account tab.
 class CustomerAddressSummary {
   const CustomerAddressSummary({
     required this.addressId,
@@ -301,6 +323,7 @@ class CustomerAddressSummary {
   }
 }
 
+/// Cart aggregate used by bootstrap and catalog responses.
 class CustomerCartSummary {
   const CustomerCartSummary({
     required this.cartId,
@@ -331,6 +354,7 @@ class CustomerCartSummary {
   }
 }
 
+/// Compact order summary used by the orders tab and checkout confirmation.
 class CustomerOrderSummary {
   const CustomerOrderSummary({
     required this.orderId,
@@ -376,6 +400,7 @@ class CustomerOrderSummary {
   }
 }
 
+/// Customer-facing support ticket summary.
 class CustomerSupportTicketSummary {
   const CustomerSupportTicketSummary({
     required this.ticketId,
@@ -403,6 +428,7 @@ class CustomerSupportTicketSummary {
   }
 }
 
+/// Aggregated first-load payload for the customer shell.
 class CustomerBootstrap {
   const CustomerBootstrap({
     required this.customer,
@@ -451,6 +477,7 @@ class CustomerBootstrap {
   }
 }
 
+/// Product category used by catalog filters.
 class CustomerCatalogCategory {
   const CustomerCatalogCategory({
     required this.categoryId,
@@ -469,6 +496,7 @@ class CustomerCatalogCategory {
   }
 }
 
+/// Product card payload used by browse and search screens.
 class CustomerCatalogProduct {
   const CustomerCatalogProduct({
     required this.productId,
@@ -514,6 +542,7 @@ class CustomerCatalogProduct {
   }
 }
 
+/// Catalog payload scoped to a single retailer location.
 class CustomerCatalog {
   const CustomerCatalog({
     required this.location,
@@ -553,6 +582,7 @@ class CustomerCatalog {
   }
 }
 
+/// Result of connecting or disconnecting a customer retailer account.
 class CustomerRetailerConnection {
   const CustomerRetailerConnection({
     required this.retailerId,
@@ -575,6 +605,8 @@ class CustomerRetailerConnection {
   }
 }
 
+/// Price breakdown returned by checkout so the app can display server-authored
+/// totals instead of recomputing them from local assumptions.
 class CheckoutPricing {
   const CheckoutPricing({
     required this.subtotalCents,
@@ -608,6 +640,7 @@ class CheckoutPricing {
   }
 }
 
+/// Payment summary embedded in checkout results.
 class CheckoutPayment {
   const CheckoutPayment({
     required this.paymentId,
@@ -632,6 +665,7 @@ class CheckoutPayment {
   }
 }
 
+/// Delivery summary embedded in checkout results.
 class CheckoutDelivery {
   const CheckoutDelivery({
     required this.deliveryId,
@@ -653,6 +687,7 @@ class CheckoutDelivery {
   }
 }
 
+/// Composite checkout payload returned after the server creates the order.
 class CustomerCheckout {
   const CustomerCheckout({
     required this.order,
@@ -677,6 +712,7 @@ class CustomerCheckout {
   }
 }
 
+/// Driver job payload used across available, active, and completed deliveries.
 class DriverJobSummary {
   const DriverJobSummary({
     required this.deliveryId,
@@ -747,6 +783,7 @@ class DriverJobSummary {
   }
 }
 
+/// Driver-facing support summary.
 class DriverSupportTicketSummary {
   const DriverSupportTicketSummary({
     required this.ticketId,
@@ -774,6 +811,7 @@ class DriverSupportTicketSummary {
   }
 }
 
+/// Aggregated earnings card data for the driver home screen.
 class DriverEarningsSummary {
   const DriverEarningsSummary({
     required this.todayGrossCents,
@@ -798,6 +836,7 @@ class DriverEarningsSummary {
   }
 }
 
+/// Aggregated first-load payload for the driver shell.
 class DriverBootstrap {
   const DriverBootstrap({
     required this.driver,
@@ -840,6 +879,8 @@ class DriverBootstrap {
   }
 }
 
+/// Generic resource models below map the CRUD-style `/v1/*` endpoints used by
+/// the shells to fill in data that is not part of the opinionated mobile API.
 class ResourceAddress {
   const ResourceAddress({
     required this.addressId,

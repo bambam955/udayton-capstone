@@ -1,5 +1,9 @@
 import type { AuthPrincipal } from '../../app/types.js';
 
+// These contracts deliberately model the mobile apps' aggregated read models
+// rather than the raw relational schema. The repository shapes SQL rows into
+// these view-oriented payloads so Flutter screens can stay focused on display
+// logic instead of backend table details.
 export interface CustomerBootstrapResult {
   customer: {
     id: string;
@@ -207,6 +211,7 @@ export interface DriverEarningsSummary {
 }
 
 export interface MobileRepository {
+  // Customer-facing aggregated reads and mutations.
   getCustomerBootstrap(customerId: string): Promise<CustomerBootstrapResult>;
   getCustomerCatalog(
     customerId: string,
@@ -218,6 +223,7 @@ export interface MobileRepository {
     isConnected: boolean
   ): Promise<CustomerRetailerConnectionResult>;
   checkout(customerId: string, input: CustomerCheckoutInput): Promise<CustomerCheckoutResult>;
+  // Driver-facing aggregated reads and delivery lifecycle transitions.
   getDriverBootstrap(driverId: string): Promise<DriverBootstrapResult>;
   acceptDelivery(driverId: string, deliveryId: string): Promise<DriverJobSummary>;
   pickupDelivery(driverId: string, deliveryId: string): Promise<DriverJobSummary>;
@@ -225,6 +231,8 @@ export interface MobileRepository {
 }
 
 export interface MobileServiceContract {
+  // Service methods receive the authenticated principal so role checks happen
+  // before any repository work starts.
   getCustomerBootstrap(principal: AuthPrincipal): Promise<CustomerBootstrapResult>;
   getCustomerCatalog(
     principal: AuthPrincipal,

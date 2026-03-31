@@ -94,6 +94,8 @@ class DriverTabEarnings extends StatelessWidget {
         if (earnings.isEmpty)
           const SurfaceCard(child: Text('No earnings recorded yet.'))
         else
+          // Render raw earnings rows from the resource API so drivers can audit
+          // what the aggregate summary is composed of.
           for (final earning in earnings) ...[
             SurfaceCard(
               key: Key('driver-earnings-row-${earning.deliveryId}'),
@@ -132,6 +134,8 @@ class DriverTabEarnings extends StatelessWidget {
         if (payouts.isEmpty)
           const SurfaceCard(child: Text('No payouts recorded yet.'))
         else
+          // Payouts come from a separate ledger than per-delivery earnings, so
+          // keep them in their own section.
           for (final payoutRecord in payouts) ...[
             SurfaceCard(
               key: Key('driver-payout-row-${payoutRecord.id}'),

@@ -17,6 +17,7 @@ class StoreOption {
   final bool isConnected;
 }
 
+/// Presentation model for products displayed in home/search cards.
 class CatalogItem {
   const CatalogItem({
     required this.id,
@@ -41,6 +42,7 @@ class CatalogItem {
   final bool isAvailable;
 }
 
+/// Flattened cart item model tailored to the customer cart UI.
 class CartLine {
   const CartLine({
     required this.cartItemId,
@@ -57,6 +59,7 @@ class CartLine {
   final int quantity;
 }
 
+/// Order summary shown in the orders tab and details sheet launcher.
 class OrderPreview {
   const OrderPreview({
     required this.id,
@@ -77,6 +80,7 @@ class OrderPreview {
   final int itemCount;
 }
 
+/// Timeline row loaded lazily when opening order details.
 class OrderTimelineEntry {
   const OrderTimelineEntry({
     required this.id,
@@ -91,6 +95,7 @@ class OrderTimelineEntry {
   final String? note;
 }
 
+/// Support summary shown in the support tab.
 class SupportTicket {
   const SupportTicket({
     required this.id,
@@ -105,6 +110,7 @@ class SupportTicket {
   final String summary;
 }
 
+/// Compact address summary rendered on the account tab.
 class AddressPreview {
   const AddressPreview({
     required this.id,
@@ -119,6 +125,8 @@ class AddressPreview {
   final bool isDefault;
 }
 
+/// Account tab aggregate that combines customer identity, addresses, and store
+/// connection state into one render-friendly object.
 class CustomerAccountOverview {
   const CustomerAccountOverview({
     required this.customerName,
@@ -137,6 +145,7 @@ class CustomerAccountOverview {
   final List<StoreOption> stores;
 }
 
+/// Navigation item backing the customer's bottom navigation bar.
 class CustomerNavItem {
   const CustomerNavItem({required this.icon, required this.label});
 
@@ -144,6 +153,7 @@ class CustomerNavItem {
   final String label;
 }
 
+/// Shared nav configuration so labels/icons stay aligned across shell and tests.
 const customerBottomNavItems = <CustomerNavItem>[
   CustomerNavItem(icon: Icons.home_rounded, label: 'Home'),
   CustomerNavItem(icon: Icons.search_rounded, label: 'Search'),

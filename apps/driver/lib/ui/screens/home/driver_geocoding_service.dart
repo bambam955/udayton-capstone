@@ -10,6 +10,7 @@ Future<http.Response> _defaultHttpGet(Uri uri) {
   return http.get(uri);
 }
 
+/// Simple coordinate container returned by the geocoder.
 class DriverGeocodedPoint {
   const DriverGeocodedPoint({
     required this.lat,
@@ -20,6 +21,8 @@ class DriverGeocodedPoint {
   final double lng;
 }
 
+/// Thin wrapper around Mapbox forward geocoding used to fill in missing route
+/// coordinates for driver jobs.
 class DriverGeocodingService {
   const DriverGeocodingService({this.httpGet = _defaultHttpGet});
 
@@ -28,6 +31,8 @@ class DriverGeocodingService {
   Future<DriverGeocodedPoint?> geocodeAddress(String addressLine) async {
     final trimmedAddress = addressLine.trim();
     if (trimmedAddress.isEmpty || !hasMapboxAccessToken) {
+      // Returning `null` instead of throwing lets the caller preserve its
+      // address-based fallback behavior when geocoding is simply unavailable.
       return null;
     }
 
@@ -39,6 +44,8 @@ class DriverGeocodingService {
 
     final response = await httpGet(uri);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Network failures are exceptional because the caller already checked
+      // whether geocoding is enabled; surface the problem for snackbar/logging.
       throw StateError('Geocoding request failed: ${response.statusCode}');
     }
 
@@ -53,6 +60,8 @@ class DriverGeocodingService {
     final coordinates =
         geometry?['coordinates'] as List<dynamic>? ?? const <dynamic>[];
     if (coordinates.length < 2) {
+      // Some partial geocoder responses do not include a usable point. The map
+      // screen can still continue with external-navigation fallbacks.
       return null;
     }
 

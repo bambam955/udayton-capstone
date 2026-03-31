@@ -83,6 +83,8 @@ class CustomerTabOrders extends StatelessWidget {
                 const SizedBox(height: 12),
                 OutlinedButton(
                   key: Key('order-view-${order.id}'),
+                  // Keep the list compact and defer deeper data loading to the
+                  // order details bottom sheet.
                   onPressed: () => onViewOrder(order),
                   child: const Text('View details'),
                 ),

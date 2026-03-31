@@ -4,6 +4,7 @@ import 'api_models.dart';
 import 'api_request.dart';
 import 'session_store.dart';
 
+/// Authentication API shared by the customer and driver apps.
 class AuthApi {
   const AuthApi(this._client, this._sessionStore);
 
@@ -21,6 +22,8 @@ class AuthApi {
     String? phone,
     String? deviceInfo,
   }) async {
+    // Persist the resulting session immediately so app shells can resume from
+    // secure storage on the next launch without re-running the signup flow.
     final response = await _client.send<AuthResult>(
       ApiRequest(
         method: 'POST',
@@ -47,6 +50,8 @@ class AuthApi {
     required String password,
     String? deviceInfo,
   }) async {
+    // Role is part of the login payload because the backend allows the same
+    // auth surface to back multiple app experiences.
     final response = await _client.send<AuthResult>(
       ApiRequest(
         method: 'POST',
@@ -67,6 +72,8 @@ class AuthApi {
   }
 
   Future<ApiPrincipal> me() async {
+    // `me` validates that the restored bearer token still maps to a live
+    // server-side session before the shell trusts the cached session object.
     final response = await _client.send<ApiPrincipal>(
       const ApiRequest(method: 'GET', path: '/v1/auth/me'),
       decoder: (rawBody) {
@@ -88,17 +95,22 @@ class AuthApi {
         decoder: (_) {},
       );
     } finally {
+      // Always clear local state even if the network call fails so the app
+      // never gets stuck on a stale, half-invalid session.
       await _sessionStore.clear();
     }
   }
 }
 
+/// Customer-specific convenience wrapper around the mobile backend routes.
 class CustomerMobileApi {
   const CustomerMobileApi(this._client);
 
   final ApiClient _client;
 
   Future<CustomerBootstrap> bootstrap() async {
+    // Bootstrap intentionally returns a wide, ready-to-render payload for the
+    // shell's first load.
     final response = await _client.send<CustomerBootstrap>(
       const ApiRequest(method: 'GET', path: '/v1/mobile/customer/bootstrap'),
       decoder: CustomerBootstrap.fromJson,
@@ -111,6 +123,8 @@ class CustomerMobileApi {
     String? category,
     String? query,
   }) async {
+    // Optional filters are omitted entirely so the backend can apply its
+    // default category/search behavior without empty-string special cases.
     final response = await _client.send<CustomerCatalog>(
       ApiRequest(
         method: 'GET',
@@ -155,6 +169,8 @@ class CustomerMobileApi {
     String? deliveryNotes,
     int? tipCents,
   }) async {
+    // Checkout is a higher-level mobile action rather than a generic resource
+    // write because it creates multiple records atomically on the backend.
     final response = await _client.send<CustomerCheckout>(
       ApiRequest(
         method: 'POST',
@@ -173,6 +189,7 @@ class CustomerMobileApi {
   }
 }
 
+/// Driver-specific wrapper around the delivery lifecycle endpoints.
 class DriverMobileApi {
   const DriverMobileApi(this._client);
 
@@ -202,6 +219,8 @@ class DriverMobileApi {
     final response = await _client.send<DriverJobSummary>(
       ApiRequest(method: 'POST', path: path),
       decoder: (rawBody) {
+        // Driver mutation routes wrap the refreshed assignment under `job`, so
+        // unwrap it once here and keep the rest of the app model-centric.
         final body = rawBody as Map<Object?, Object?>;
         return DriverJobSummary.fromJson(body['job']);
       },

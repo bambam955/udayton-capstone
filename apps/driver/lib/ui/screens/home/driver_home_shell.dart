@@ -55,6 +55,8 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     _refreshData();
   }
 
+  // The Nearby tab filters only the available-offer lane, leaving active and
+  // completed work untouched.
   List<DriverJob> get _availableJobs {
     final query = _searchQueryNearby.trim().toLowerCase();
     return _mapJobs(_bootstrap?.availableJobs).where((job) {
@@ -133,6 +135,9 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   }
 
   DriverJob _mapJob(DriverJobSummary job) {
+    // The driver UI uses richer presentation fields than the API returns, so
+    // derive formatted text, synthetic colors, and an approximate starting
+    // point for map simulation here in one place.
     return DriverJob(
       id: job.deliveryId,
       title: job.title,
@@ -171,6 +176,8 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     });
 
     try {
+      // Bootstrap provides the dispatch-centric read model, while the generic
+      // resource API fills in ledger-style earnings and payout tables.
       final bootstrap = await widget.driverApi.bootstrap();
       final earnings = await widget.resourceApi.list<ResourceDriverEarning>(
         '/v1/driver-earnings',
@@ -212,6 +219,8 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
       await _refreshData();
       final updatedJob = _findJob(jobId);
       if (updatedJob != null) {
+        // Immediately launch route guidance once the backend confirms the
+        // assignment so the accept action feels like a dispatch handoff.
         await _openMap(updatedJob, DriverRoutePhase.toPickup);
       }
     } on ApiError catch (error) {
@@ -277,6 +286,8 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     });
 
     try {
+      // Attach new support requests to the most relevant recent job when
+      // possible so the admin side has delivery context immediately.
       final activeJob = _activeJobs.isNotEmpty
           ? _activeJobs.first
           : (_completedJobs.isEmpty ? null : _completedJobs.first);
@@ -346,6 +357,8 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
 
     if (resolvedJob.pickupLat == null || resolvedJob.pickupLng == null) {
       try {
+        // Bootstrap payloads may only know the pickup address. Resolve lazily
+        // right before the map opens so the shell does not block on geocoding.
         final pickupResult = await widget.geocodingService
             .geocodeAddress(resolvedJob.pickupAddressLine);
         if (pickupResult != null) {
@@ -419,6 +432,8 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     bool setLoadError = false,
   }) async {
     if (error.kind == ApiErrorKind.unauthorized) {
+      // Unauthorized means the server-side session has effectively expired, so
+      // force a full sign-out and let the auth screen restart the flow.
       await widget.authApi.logout(widget.session.user.role).catchError((_) {});
       if (mounted) {
         widget.onSignedOut();
@@ -536,6 +551,8 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     }
 
     return switch (_selectedNavIndex) {
+      // The shell owns all cross-tab state and passes each tab the narrow slice
+      // of callbacks/data it needs.
       0 => DriverTabHome(
           availableJobs: _availableJobs,
           activeJobs: _activeJobs,
@@ -651,6 +668,7 @@ class _BottomNavBar extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: onSelected,
       destinations: [
+        // Stable keys keep widget tests tied to labels instead of index order.
         for (final item in items)
           NavigationDestination(
             icon: Icon(item.icon, key: Key('driver-nav-${item.label}')),

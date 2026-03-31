@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 /// Owns data types used by the driver home shell and tab sections.
 enum DeliveryStage { available, assigned, outForDelivery, delivered }
 
+/// Identifies whether the map screen should route the driver to pickup or to
+/// the customer dropoff.
 enum DriverRoutePhase { toPickup, toDropoff }
 
+/// Presentation model consumed by the driver UI.
 class DriverJob {
   const DriverJob({
     required this.id,
@@ -89,6 +92,8 @@ class DriverJob {
     );
   }
 
+  // Pickup coordinates may arrive later than the rest of the job payload, so
+  // expose a copy helper instead of mutating the model in place.
   DriverJob withDropoffCoordinates({
     required double dropoffLat,
     required double dropoffLng,
@@ -121,6 +126,7 @@ class DriverJob {
   }
 }
 
+/// Presentation model for driver support summaries.
 class DriverSupportCase {
   const DriverSupportCase({
     required this.id,
@@ -137,6 +143,7 @@ class DriverSupportCase {
   final String? linkedDeliveryId;
 }
 
+/// Small aggregate for the driver earnings summary card.
 class DriverPayoutSummary {
   const DriverPayoutSummary({
     required this.todayGross,
@@ -151,6 +158,7 @@ class DriverPayoutSummary {
   final String nextPayoutText;
 }
 
+/// Historical payout row rendered in the earnings tab.
 class DriverPayoutRecord {
   const DriverPayoutRecord({
     required this.id,
@@ -165,6 +173,7 @@ class DriverPayoutRecord {
   final String provider;
 }
 
+/// Navigation item backing the driver's bottom navigation bar.
 class DriverNavItem {
   const DriverNavItem({required this.icon, required this.label});
 
@@ -172,6 +181,7 @@ class DriverNavItem {
   final String label;
 }
 
+/// Shared nav configuration so the shell and tests derive labels from one list.
 const driverBottomNavItems = <DriverNavItem>[
   DriverNavItem(icon: Icons.home_rounded, label: 'Home'),
   DriverNavItem(icon: Icons.place_rounded, label: 'Nearby'),

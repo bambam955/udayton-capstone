@@ -5,6 +5,7 @@ import '../../config/customer_app_dependencies.dart';
 import 'auth/customer_auth_screen.dart';
 import 'home/customer_home_shell.dart';
 
+/// Top-level customer app shell that decides between auth and home flows.
 class CustomerApp extends StatefulWidget {
   const CustomerApp({
     super.key,
@@ -52,6 +53,8 @@ class _CustomerAppState extends State<CustomerApp> {
         _isRestoring = false;
       });
     } catch (_) {
+      // A failed validation means the local session is no longer trustworthy,
+      // so clear it and render the auth screen again.
       await widget.dependencies.authApi
           .logout(restored.user.role)
           .catchError((_) {});

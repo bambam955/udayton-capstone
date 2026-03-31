@@ -72,6 +72,8 @@ export const retailerResourceDefinitions = [
     createAccess: {
       admin: {},
       customer: {
+        // Customers may only create connection rows for themselves and only for
+        // the fields involved in connection state.
         injectPrincipalColumn: 'customer_id',
         writeColumns: ['retailer_id', 'is_connected']
       }
@@ -114,6 +116,8 @@ export const retailerResourceDefinitions = [
       updated_at: timestampField({ createable: true, updateable: true })
     },
     listAccess: {
+      // Product taxonomy is read by both mobile apps when building browse and
+      // delivery context, while writes stay admin-only.
       admin: {},
       customer: {},
       driver: {}

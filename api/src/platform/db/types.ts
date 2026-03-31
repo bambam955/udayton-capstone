@@ -92,6 +92,8 @@ export interface RetailerLocationsTable {
   updated_at: DBTimestamp | null;
 }
 
+// The product/catalog tables below back the new mobile browse and checkout
+// flows added on this branch.
 export interface ProductCategoriesTable {
   category_id: string;
   retailer_id: string;
@@ -166,6 +168,8 @@ export interface OrdersTable {
   updated_at: DBTimestamp | null;
 }
 
+// Delivery and earnings tables below power the driver bootstrap and delivery
+// lifecycle endpoints.
 export interface OrderItemsTable {
   order_item_id: string;
   order_id: string;

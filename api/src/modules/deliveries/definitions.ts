@@ -31,6 +31,7 @@ export const deliveryResourceDefinitions = [
     listAccess: {
       admin: {},
       customer: {
+        // Customers can read only deliveries tied to their own orders.
         scope: {
           kind: 'related',
           table: 'orders',
@@ -40,6 +41,7 @@ export const deliveryResourceDefinitions = [
         }
       },
       driver: {
+        // Drivers can read only deliveries explicitly assigned to them.
         scope: {
           kind: 'direct',
           column: 'driver_id'
@@ -102,6 +104,7 @@ export const deliveryResourceDefinitions = [
     listAccess: {
       admin: {},
       driver: {
+        // Offers are private to the driver they were dispatched to.
         scope: {
           kind: 'direct',
           column: 'driver_id'
@@ -225,6 +228,8 @@ export const deliveryResourceDefinitions = [
     listAccess: {
       admin: {},
       driver: {
+        // Drivers read status events only for deliveries they own through the
+        // assignment table.
         scope: {
           kind: 'related',
           table: 'delivery_assignments',

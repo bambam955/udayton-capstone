@@ -13,12 +13,22 @@ import type {
   CustomerBootstrapResult
 } from './types.js';
 
+// Mobile endpoints are role-partitioned even though they live under the same
+// router tree. Centralizing the check here keeps route handlers thin and gives
+// repository methods a trusted caller contract.
 function requireRole(principal: AuthPrincipal, role: AuthPrincipal['role']): void {
   if (principal.role !== role) {
     throw new HttpError(403, 'FORBIDDEN', 'You do not have access to this resource.');
   }
 }
 
+/**
+ * Thin application-service layer for the mobile API surface.
+ *
+ * The service mostly enforces authorization boundaries and forwards to the
+ * repository, but keeping that boundary explicit makes it easy to add richer
+ * orchestration later without pushing auth logic into route handlers or SQL.
+ */
 export class MobileService implements MobileServiceContract {
   constructor(private readonly repository: MobileRepository) {}
 

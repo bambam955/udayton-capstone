@@ -11,6 +11,11 @@ import 'api_request.dart';
 import 'api_response.dart';
 import 'session_store.dart';
 
+/// Default HTTP transport used by the shared API client.
+///
+/// The class centralizes request construction, auth header injection, timeout
+/// handling, JSON decoding, and API error translation so the higher-level
+/// mobile/resource clients can stay declarative.
 class HttpApiClient implements ApiClient {
   HttpApiClient({
     required ApiConfig config,
@@ -31,6 +36,8 @@ class HttpApiClient implements ApiClient {
   }) async {
     final session = await _sessionStore?.read();
     final uri = _buildUri(request);
+    // Merge headers in increasing specificity so callers can still override
+    // defaults when a single request needs custom behavior.
     final headers = <String, String>{
       ..._config.defaultHeaders,
       ...request.headers,
@@ -42,6 +49,8 @@ class HttpApiClient implements ApiClient {
     final httpRequest = http.Request(request.method, uri);
     httpRequest.headers.addAll(headers);
     if (request.body != null) {
+      // Every current write endpoint expects JSON, so request bodies are encoded
+      // once here instead of leaving serialization to each API wrapper.
       httpRequest.body = jsonEncode(request.body);
     }
 
@@ -65,6 +74,8 @@ class HttpApiClient implements ApiClient {
     }
 
     final response = await http.Response.fromStream(streamedResponse);
+    // Treat empty bodies as `null` so `204`-style responses and mutation
+    // endpoints without a payload can share the same decoding path.
     final body =
         response.body.trim().isEmpty ? null : _decodeJson(response.body);
 
@@ -73,6 +84,8 @@ class HttpApiClient implements ApiClient {
     }
 
     try {
+      // Some callers expect the raw decoded JSON while others provide a model
+      // factory. Supporting both keeps the transport layer generic.
       final data = decoder == null ? body as T : decoder(body);
       return ApiResponse<T>(
         statusCode: response.statusCode,
@@ -132,6 +145,9 @@ class HttpApiClient implements ApiClient {
       );
     }
 
+    // The API currently exposes most non-401 failures as general request
+    // errors, so keep the classification conservative until richer kinds are
+    // needed by the UI.
     return ApiError(
       kind: ApiErrorKind.server,
       statusCode: statusCode,

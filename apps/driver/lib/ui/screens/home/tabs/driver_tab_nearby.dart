@@ -48,6 +48,8 @@ class DriverTabNearby extends StatelessWidget {
         if (availableJobs.isEmpty)
           const SurfaceCard(child: Text('No available offers right now.'))
         else
+          // Nearby offers reuse a simple repeating card because the list can
+          // refresh frequently as offers appear or expire.
           for (final job in availableJobs) ...[
             _OfferCard(
               key: Key('driver-nearby-card-${job.id}'),
@@ -134,6 +136,8 @@ class _OfferCard extends StatelessWidget {
                   children: [
                     FilledButton(
                       key: Key('driver-accept-${job.id}'),
+                      // Accept is disabled while another mutation is in flight
+                      // so the shell does not fire overlapping delivery actions.
                       onPressed: isBusy ? null : onAccept,
                       child: const Text('Accept'),
                     ),

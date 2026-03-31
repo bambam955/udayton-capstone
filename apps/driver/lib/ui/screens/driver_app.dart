@@ -5,6 +5,7 @@ import '../../config/driver_app_dependencies.dart';
 import 'auth/driver_auth_screen.dart';
 import 'home/driver_home_shell.dart';
 
+/// Top-level driver app shell that decides between auth and home flows.
 class DriverApp extends StatefulWidget {
   const DriverApp({
     super.key,
@@ -41,6 +42,9 @@ class _DriverAppState extends State<DriverApp> {
     }
 
     try {
+      // Validate the persisted session with the backend before rendering the
+      // authenticated experience. This keeps expired or revoked sessions from
+      // silently booting into a broken home screen.
       await widget.dependencies.authApi.me();
       if (!mounted) {
         return;
@@ -51,6 +55,8 @@ class _DriverAppState extends State<DriverApp> {
         _isRestoring = false;
       });
     } catch (_) {
+      // Best-effort logout clears local secure storage even if the server can
+      // no longer recognize the session.
       await widget.dependencies.authApi
           .logout(restored.user.role)
           .catchError((_) {});

@@ -15,6 +15,7 @@ const sessionFields = {
   created_at: timestampField({ createable: true, updateable: true })
 } satisfies Record<string, ResourceFieldDefinition>;
 
+// Reused customer ownership scope for customer-owned resource tables.
 const customerDirectScope = {
   kind: 'direct' as const,
   column: 'customer_id'
@@ -87,6 +88,8 @@ export const customerResourceDefinitions = [
     createAccess: {
       admin: {},
       customer: {
+        // Customers create their own address rows, so inject the principal ID
+        // and only expose the user-editable address fields.
         injectPrincipalColumn: 'customer_id',
         writeColumns: [
           'label',
@@ -206,6 +209,7 @@ export const customerResourceDefinitions = [
     createAccess: {
       admin: {},
       customer: {
+        // Cart ownership is always derived from the authenticated customer.
         injectPrincipalColumn: 'customer_id',
         writeColumns: ['retailer_id', 'retailer_location_id']
       }

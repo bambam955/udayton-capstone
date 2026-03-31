@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Compact top bar shared across the driver's authenticated screens.
 class DriverTopBar extends StatelessWidget {
   const DriverTopBar({
     super.key,
@@ -28,6 +29,8 @@ class DriverTopBar extends StatelessWidget {
                   fit: BoxFit.contain,
                   alignment: Alignment.centerLeft,
                   errorBuilder: (_, __, ___) => const Text(
+                    // Fall back to text branding when the asset is unavailable
+                    // in tests or partial builds.
                     'BizRush Driver',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),

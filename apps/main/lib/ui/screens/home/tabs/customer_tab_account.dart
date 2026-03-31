@@ -69,6 +69,8 @@ class CustomerTabAccount extends StatelessWidget {
             children: [
               Text('Stores', style: textTheme.titleMedium),
               const SizedBox(height: 8),
+              // Store connection controls live here because connection state is
+              // account-level rather than catalog-level.
               for (final store in overview.stores)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -120,6 +122,8 @@ class CustomerTabAccount extends StatelessWidget {
               if (overview.addresses.isEmpty)
                 const Text('No saved addresses yet.')
               else
+                // Addresses are rendered as plain summaries because creation
+                // and selection happen elsewhere in the shell.
                 for (final address in overview.addresses)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),

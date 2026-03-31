@@ -76,6 +76,8 @@ class CustomerTabHome extends StatelessWidget {
         if (previewItems.isEmpty)
           const Text('No catalog items available for this store yet.')
         else
+          // The home tab shows only a small preview slice; the search tab owns
+          // the full catalog-browsing experience.
           for (final item in previewItems) ...[
             CatalogItemCard(
               item: item,

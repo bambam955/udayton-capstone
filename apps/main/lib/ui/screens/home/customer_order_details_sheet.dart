@@ -133,6 +133,8 @@ Widget _buildTimelineSection({
             key: Key('order-timeline-empty'),
           ),
         ] else ...[
+          // The timeline rows are already sorted by the caller, so rendering can
+          // stay a straightforward chronological list.
           for (final entry in snapshot.data!)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -187,6 +189,7 @@ Widget _buildTimelineSection({
   );
 }
 
+// Convert enum-like backend status codes into a title-cased UI label.
 String _timelineStatusLabel(String status) {
   return status.toLowerCase().split('_').map((segment) {
     if (segment.isEmpty) {
@@ -197,6 +200,8 @@ String _timelineStatusLabel(String status) {
   }).join(' ');
 }
 
+// Use Material localizations so the bottom sheet follows the device locale
+// without adding a separate date-formatting dependency.
 String _formatTimelineTime(BuildContext context, DateTime value) {
   final local = value.toLocal();
   final localizations = MaterialLocalizations.of(context);
@@ -205,6 +210,8 @@ String _formatTimelineTime(BuildContext context, DateTime value) {
   return '$date at $time';
 }
 
+// Reuse the same badge tone mapping colors so the detail sheet visually matches
+// the rest of the order UI.
 Color _timelineToneColor(BuildContext context, StatusBadgeTone tone) {
   return switch (tone) {
     StatusBadgeTone.info => Theme.of(context).colorScheme.primary,

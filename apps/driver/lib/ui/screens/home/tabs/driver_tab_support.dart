@@ -37,6 +37,8 @@ class DriverTabSupport extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
+              // Match the quick action issue codes expected by the support
+              // resource rows created from the shell.
               OutlinedButton(
                 key: const Key('driver-support-quick-pickup'),
                 onPressed:
@@ -116,6 +118,8 @@ class DriverTabSupport extends StatelessWidget {
     if (normalized.contains('review')) {
       return StatusBadgeTone.assigned;
     }
+    // Treat any other state as completed/closed to keep the badge mapping
+    // stable even if the backend introduces more specific resolved values.
     return StatusBadgeTone.completed;
   }
 }

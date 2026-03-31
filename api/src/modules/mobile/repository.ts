@@ -26,6 +26,9 @@ import type {
 
 type DbExecutor = Kysely<Database> | Transaction<Database>;
 
+// Kysely/Postgres frequently surface numeric aggregates as strings, especially
+// around `count`/`sum` expressions. Normalize once so the rest of the mapping
+// code can work with plain numbers.
 function toNumber(value: number | string | null | undefined): number {
   if (typeof value === 'number') {
     return value;
@@ -38,10 +41,14 @@ function toNumber(value: number | string | null | undefined): number {
   return 0;
 }
 
+// Shared guard for fee/ETA heuristics so those values stay inside predictable
+// demo-friendly ranges.
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+// Turns enum-like database values into a UI-facing label without forcing the
+// clients to own string-formatting rules.
 function humanize(value: string | null | undefined, fallback: string): string {
   if (!value) {
     return fallback;
@@ -55,6 +62,8 @@ function humanize(value: string | null | undefined, fallback: string): string {
     .join(' ');
 }
 
+// Backend tables store address segments separately, but the mobile apps render
+// single-line summaries throughout cards and detail sheets.
 function formatAddress(parts: Array<string | null | undefined>): string {
   return parts
     .map((part) => part?.trim())
@@ -62,6 +71,8 @@ function formatAddress(parts: Array<string | null | undefined>): string {
     .join(', ');
 }
 
+// Serializes timestamp-like values into a consistent nullable ISO string for
+// the mobile contracts.
 function formatIso(value: Date | string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -70,6 +81,8 @@ function formatIso(value: Date | string | null | undefined): string | null {
   return typeof value === 'string' ? value : value.toISOString();
 }
 
+// Converts retailer-location rows into the API shape consumed by both customer
+// bootstrap and catalog responses.
 function buildRetailerLocationSummary(row: {
   retailerLocationId: string;
   retailerId: string;
@@ -107,6 +120,8 @@ function buildRetailerLocationSummary(row: {
   };
 }
 
+// Maps cart aggregate rows into a compact summary object used by bootstrap and
+// catalog responses.
 function buildCustomerCartSummary(row: {
   cartId: string;
   retailerId: string;
@@ -125,6 +140,8 @@ function buildCustomerCartSummary(row: {
   };
 }
 
+// Order summaries intentionally keep only the fields needed to render customer
+// history and checkout confirmation views.
 function buildCustomerOrderSummary(row: {
   orderId: string;
   externalOrderId: string | null;
@@ -153,6 +170,9 @@ function buildCustomerOrderSummary(row: {
   };
 }
 
+// These heuristics fill gaps in seed/demo data so the driver UI always has
+// reasonable payout, distance, and ETA values even before richer dispatch math
+// exists.
 function estimateBasePay(totalCents: number): number {
   return Math.max(650, Math.round(totalCents * 0.18));
 }
@@ -165,6 +185,8 @@ function estimateEtaMinutes(itemCount: number): number {
   return clamp(18 + itemCount * 4, 20, 60);
 }
 
+// Driver screens use a smaller stage vocabulary than the database does, so
+// map the assignment status into the set of UI stages expected by the app.
 function stageFromAssignment(status: string | null): DriverJobSummary['stage'] {
   const normalized = normalizeStatus(status);
 
@@ -183,6 +205,8 @@ function normalizeStatus(value: string | null | undefined): string {
   return value?.toUpperCase() ?? '';
 }
 
+// Checkout pricing is derived server-side so the order record, payment record,
+// and client confirmation screen all agree on the same totals.
 function buildCheckoutPricing(subtotalCents: number, tipCents: number) {
   const serviceFeeCents = clamp(Math.round(subtotalCents * 0.06), 199, 1200);
   const deliveryFeeCents = 499;
@@ -201,6 +225,9 @@ function buildCheckoutPricing(subtotalCents: number, tipCents: number) {
   };
 }
 
+// Reusable SQL predicate for "still-offerable" delivery offers. Keeping the
+// expiry logic in one fragment avoids subtle differences between reads and
+// updates when racing offer acceptance.
 function offerIsLiveSql(alias: string) {
   return sql<boolean>`${sql.ref(`${alias}.offered_at`)} is not null
     and (
@@ -209,6 +236,8 @@ function offerIsLiveSql(alias: string) {
     ) > now()`;
 }
 
+// Mirrors the SQL expiry rule in TypeScript so branch logic can cheaply reject
+// expired offers before attempting state transitions.
 function isOfferExpired(
   offer: {
     offeredAt: Date | string | null;
@@ -230,6 +259,8 @@ function isOfferExpired(
   return offeredAt.getTime() + expiresInMs <= now.getTime();
 }
 
+// Shapes the various delivery/offer queries into the single job model expected
+// by the driver mobile API.
 function buildDriverJobSummary(row: {
   deliveryId: string;
   orderId: string;
@@ -294,6 +325,9 @@ export class KyselyMobileRepository implements MobileRepository {
   constructor(private readonly db: Kysely<Database>) {}
 
   async getCustomerBootstrap(customerId: string): Promise<CustomerBootstrapResult> {
+    // Bootstrap is intentionally wide: the customer shell depends on customer
+    // identity, retailer connections, active carts, recent orders, and support
+    // tickets before it can render all tabs coherently.
     const customer = await this.db
       .selectFrom('customers')
       .select(['customer_id as id', 'email', 'full_name as fullName'])
@@ -341,6 +375,8 @@ export class KyselyMobileRepository implements MobileRepository {
       .execute();
 
     const locationsByRetailer = new Map<string, RetailerLocationSummary[]>();
+    // Group partner locations by retailer once so the final payload can expose
+    // a nested store structure without forcing the client to regroup rows.
     for (const location of locations) {
       const summary = buildRetailerLocationSummary(location);
       const group = locationsByRetailer.get(summary.retailerId) ?? [];
@@ -477,6 +513,9 @@ export class KyselyMobileRepository implements MobileRepository {
     customerId: string,
     input: CustomerCatalogInput
   ): Promise<CustomerCatalogResult> {
+    // Catalog data is scoped to a single retailer location because the UI uses
+    // the selected store as the boundary for categories, products, and the
+    // active cart.
     const locationRow = await this.db
       .selectFrom('retailer_locations as rl')
       .innerJoin('retailers as r', 'r.retailer_id', 'rl.retailer_id')
@@ -530,10 +569,14 @@ export class KyselyMobileRepository implements MobileRepository {
       .where('p.is_available', '=', true);
 
     if (input.category) {
+      // Category filtering is optional so the same endpoint powers both the
+      // default catalog browse and the segmented-category picker.
       productQuery = productQuery.where('c.name', '=', input.category);
     }
 
     if (input.query) {
+      // Search is broad on purpose: product name, description, and category all
+      // contribute so short queries still feel useful in the mobile UI.
       const pattern = `%${input.query.trim()}%`;
       productQuery = productQuery.where((eb) =>
         eb.or([
@@ -609,6 +652,9 @@ export class KyselyMobileRepository implements MobileRepository {
 
     const now = new Date();
 
+    // The connect/disconnect flow is modeled as an upsert so the mobile app
+    // can toggle retailer accounts idempotently without caring whether the
+    // linking row already exists.
     await this.db
       .insertInto('retailer_accounts')
       .values({
@@ -645,6 +691,8 @@ export class KyselyMobileRepository implements MobileRepository {
     input: CustomerCheckoutInput
   ): Promise<CustomerCheckoutResult> {
     return this.db.transaction().execute(async (tx) => {
+      // Lock the cart row first so two checkout attempts cannot both decide the
+      // cart is still active and create duplicate orders.
       const cart = await tx
         .selectFrom('carts')
         .select([
@@ -803,6 +851,8 @@ export class KyselyMobileRepository implements MobileRepository {
         })
         .execute();
 
+      // Snapshot the current product data into `order_items` so later catalog
+      // changes do not rewrite the customer's historical order.
       await tx
         .insertInto('order_items')
         .values(
@@ -868,6 +918,8 @@ export class KyselyMobileRepository implements MobileRepository {
         .execute();
 
       if (onlineDrivers.length > 0) {
+        // Offers are pre-created for every currently available driver so the
+        // driver bootstrap can show live work without additional dispatch jobs.
         await tx
           .insertInto('delivery_offers')
           .values(
@@ -887,6 +939,8 @@ export class KyselyMobileRepository implements MobileRepository {
       }
 
       await tx.deleteFrom('cart_items').where('cart_id', '=', input.cartId).execute();
+      // Mark the cart as checked out instead of deleting it outright so repeat
+      // checkout attempts can return the already-created order deterministically.
       await tx
         .updateTable('carts')
         .set({
@@ -932,6 +986,8 @@ export class KyselyMobileRepository implements MobileRepository {
     customerId: string,
     orderId: string
   ): Promise<CustomerCheckoutResult> {
+    // This helper makes checkout idempotent: once a cart is checked out, later
+    // retries can rebuild the same confirmation payload from persisted data.
     const row = await tx
       .selectFrom('orders as o')
       .innerJoin('retailers as r', 'r.retailer_id', 'o.retailer_id')
@@ -1013,6 +1069,9 @@ export class KyselyMobileRepository implements MobileRepository {
   }
 
   async getDriverBootstrap(driverId: string): Promise<DriverBootstrapResult> {
+    // Driver bootstrap mirrors the customer bootstrap idea, but from the
+    // courier perspective: offers, active work, recently completed work,
+    // support, and earnings all arrive together.
     const driver = await this.db
       .selectFrom('drivers')
       .select(['driver_id as id', 'email', 'full_name as fullName', 'status'])
@@ -1044,6 +1103,9 @@ export class KyselyMobileRepository implements MobileRepository {
 
   async acceptDelivery(driverId: string, deliveryId: string): Promise<DriverJobSummary> {
     return this.db.transaction().execute(async (tx) => {
+      // Delivery acceptance is the main concurrency hotspot in the mobile flow,
+      // so the method validates offer freshness and claims the assignment under
+      // row locks before returning the updated job.
       const assignment = await tx
         .selectFrom('delivery_assignments')
         .select(['delivery_id as deliveryId', 'driver_id as driverId', 'status'])
@@ -1171,6 +1233,8 @@ export class KyselyMobileRepository implements MobileRepository {
 
   async pickupDelivery(driverId: string, deliveryId: string): Promise<DriverJobSummary> {
     return this.db.transaction().execute(async (tx) => {
+      // Pickup advances both the delivery assignment and the mirrored order
+      // timeline so customer- and driver-facing views stay in sync.
       const assignment = await tx
         .selectFrom('delivery_assignments')
         .innerJoin('orders', 'orders.order_id', 'delivery_assignments.order_id')
@@ -1232,6 +1296,8 @@ export class KyselyMobileRepository implements MobileRepository {
 
   async completeDelivery(driverId: string, deliveryId: string): Promise<DriverJobSummary> {
     return this.db.transaction().execute(async (tx) => {
+      // Completion finalizes the delivery lifecycle and materializes a driver
+      // earnings row if one does not already exist for this delivery.
       const assignment = await tx
         .selectFrom('delivery_assignments as da')
         .innerJoin('orders as o', 'o.order_id', 'da.order_id')
@@ -1321,6 +1387,8 @@ export class KyselyMobileRepository implements MobileRepository {
     status: string,
     note: string
   ): Promise<void> {
+    // Driver-facing status changes also need to update customer-facing order
+    // history, so this helper fans one transition out to every relevant table.
     const assignment = await tx
       .selectFrom('delivery_assignments')
       .select('order_id')
@@ -1364,6 +1432,8 @@ export class KyselyMobileRepository implements MobileRepository {
   }
 
   private async listDriverSupportTickets(driverId: string): Promise<DriverSupportTicketSummary[]> {
+    // Limit the result set because support history is only used for a compact
+    // dashboard summary in the current mobile UI.
     const rows = await this.db
       .selectFrom('driver_support_tickets')
       .select([
@@ -1388,6 +1458,8 @@ export class KyselyMobileRepository implements MobileRepository {
   }
 
   private async getDriverEarningsSummary(driverId: string): Promise<DriverEarningsSummary> {
+    // The summary card intentionally uses cheap aggregates so the home screen
+    // can render quickly without fetching the full earnings ledger first.
     const todayRows = await this.db
       .selectFrom('driver_earnings')
       .select([
@@ -1417,6 +1489,9 @@ export class KyselyMobileRepository implements MobileRepository {
   }
 
   private async listAvailableDriverJobs(driverId: string): Promise<DriverJobSummary[]> {
+    // Available jobs come from still-live offers rather than assignments alone;
+    // once an offer expires or another driver claims it, it should disappear
+    // from the Nearby tab automatically.
     const rows = await this.db
       .selectFrom('delivery_offers as offer')
       .innerJoin('delivery_assignments as da', 'da.delivery_id', 'offer.delivery_id')
@@ -1477,6 +1552,8 @@ export class KyselyMobileRepository implements MobileRepository {
     driverId: string,
     statuses: string[]
   ): Promise<DriverJobSummary[]> {
+    // Reuse the same row-shaping logic for active and completed work by
+    // allowing the caller to choose which assignment states to include.
     const rows = await this.db
       .selectFrom('delivery_assignments as da')
       .innerJoin('orders as o', 'o.order_id', 'da.order_id')
@@ -1537,6 +1614,9 @@ export class KyselyMobileRepository implements MobileRepository {
     driverId: string,
     deliveryId: string
   ): Promise<DriverJobSummary> {
+    // Mutation endpoints return a fresh job snapshot assembled from the
+    // database, not from in-memory guesses, so the client always receives the
+    // canonical post-transition state.
     const rows = await tx
       .selectFrom('delivery_assignments as da')
       .innerJoin('orders as o', 'o.order_id', 'da.order_id')

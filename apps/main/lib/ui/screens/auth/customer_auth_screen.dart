@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/surface_card.dart';
 
+/// Customer auth can either log in an existing account or create a new one.
 enum _AuthMode { login, signup }
 
+/// Authentication screen for the customer app.
 class CustomerAuthScreen extends StatefulWidget {
   const CustomerAuthScreen({
     super.key,
@@ -48,6 +50,8 @@ class _CustomerAuthScreenState extends State<CustomerAuthScreen> {
     });
 
     try {
+      // Signup and login share validation/UI state, so switch only the API call
+      // while keeping submission flow and error handling identical.
       final session = switch (_mode) {
         _AuthMode.login => await widget.authApi.login(
             role: ApiUserRole.customer,
@@ -113,6 +117,8 @@ class _CustomerAuthScreenState extends State<CustomerAuthScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Segmenting modes in-place keeps the auth flow on a
+                          // single screen while still testing both paths.
                           SegmentedButton<_AuthMode>(
                             segments: const <ButtonSegment<_AuthMode>>[
                               ButtonSegment<_AuthMode>(

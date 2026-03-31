@@ -4,18 +4,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api_models.dart';
 
+/// Storage contract used by the auth shell to persist and restore sessions.
 abstract interface class SessionStore {
   Future<ApiSession?> read();
   Future<void> write(ApiSession session);
   Future<void> clear();
 }
 
+/// Narrow key/value abstraction so session persistence can be tested without
+/// depending directly on the platform secure-storage plugin.
 abstract interface class SecureValueStore {
   Future<String?> read(String key);
   Future<void> write(String key, String value);
   Future<void> delete(String key);
 }
 
+/// Real secure-storage adapter used in production apps.
 class FlutterSecureValueStore implements SecureValueStore {
   FlutterSecureValueStore([FlutterSecureStorage? storage])
       : _storage = storage ?? const FlutterSecureStorage();
@@ -38,6 +42,11 @@ class FlutterSecureValueStore implements SecureValueStore {
   }
 }
 
+/// Session store that serializes the shared `ApiSession` model into secure
+/// storage.
+///
+/// Clearing corrupted values is intentional: a bad payload should degrade to a
+/// signed-out experience instead of trapping the user behind startup errors.
 class SecureSessionStore implements SessionStore {
   SecureSessionStore({
     SecureValueStore? store,
@@ -88,6 +97,7 @@ class SecureSessionStore implements SessionStore {
   }
 }
 
+/// In-memory implementation used primarily by tests and lightweight previews.
 class InMemorySessionStore implements SessionStore {
   ApiSession? _session;
 

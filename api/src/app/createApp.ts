@@ -21,6 +21,15 @@ export interface AppServices {
   mobileService?: MobileServiceContract;
 }
 
+/**
+ * Builds the single Express app used by every deployment target.
+ *
+ * The branch adds mobile-specific routes, but the app still needs to boot in
+ * environments where only the resource/admin surface is present. Keeping the
+ * `mobileService` dependency optional lets tests and smaller compositions opt
+ * into the new mobile API surface deliberately instead of forcing every caller
+ * to wire it immediately.
+ */
 export function createApp(services: AppServices) {
   const app = express();
 
@@ -31,6 +40,9 @@ export function createApp(services: AppServices) {
   // Versioned API surface for mobile apps and admin dashboard.
   app.use('/v1/auth', createAuthRouter(services.authService));
   if (services.mobileService) {
+    // Register the mobile surface only when its service is wired. This keeps
+    // the application composition tolerant of older tests or tools that still
+    // exercise only the resource endpoints.
     app.use('/v1/mobile', createMobileRouter(services.mobileService, services.authService));
   }
   app.use('/v1', createAdminsRouter(services.resourceService, services.authService));

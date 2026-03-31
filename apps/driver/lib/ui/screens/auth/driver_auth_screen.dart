@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/surface_card.dart';
 
+/// Minimal authentication screen for drivers.
 class DriverAuthScreen extends StatefulWidget {
   const DriverAuthScreen({
     super.key,
@@ -43,6 +44,8 @@ class _DriverAuthScreenState extends State<DriverAuthScreen> {
     });
 
     try {
+      // The shared auth API accepts a role discriminator so the backend can
+      // apply driver-specific login rules behind the same endpoint family.
       final session = await widget.authApi.login(
         role: ApiUserRole.driver,
         email: _emailController.text.trim(),
@@ -98,6 +101,8 @@ class _DriverAuthScreenState extends State<DriverAuthScreen> {
                     SurfaceCard(
                       child: Column(
                         children: [
+                          // Tests target these fields directly, so keep the
+                          // keys stable even as the surrounding layout evolves.
                           TextFormField(
                             key: const Key('driver-auth-email'),
                             controller: _emailController,

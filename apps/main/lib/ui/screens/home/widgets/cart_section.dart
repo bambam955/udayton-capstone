@@ -59,6 +59,8 @@ class CartSection extends StatelessWidget {
             child: Text('Cart is empty'),
           )
         else ...[
+          // Keep each cart line interactive so quantity changes do not require
+          // leaving the home tab.
           for (final line in cartLines) ...[
             _CartLineTile(
               line: line,
@@ -120,6 +122,8 @@ class _CartLineTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Recompute the visible line total locally so the widget reflects quantity
+    // changes immediately after each refresh.
     final lineTotal = line.unitPriceCents * line.quantity;
 
     return SurfaceCard(
@@ -171,6 +175,8 @@ class _PriceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The totals card uses a single tiny row widget so subtotal/fees/total stay
+    // visually aligned and easy to extend later.
     final style = bold ? const TextStyle(fontWeight: FontWeight.w700) : null;
 
     return Padding(

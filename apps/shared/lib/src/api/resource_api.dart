@@ -4,6 +4,11 @@ import 'api_request.dart';
 
 typedef ResourceDecoder<T> = T Function(Object? rawBody);
 
+/// Small helper for talking to the generic `/v1/*` resource endpoints.
+///
+/// The mobile-specific APIs cover opinionated workflows, while this class is
+/// used for CRUD-style tables such as cart items, addresses, payouts, and
+/// support tickets that still follow the shared resource envelope.
 class ResourceApi {
   const ResourceApi(this._client);
 
@@ -21,6 +26,8 @@ class ResourceApi {
         queryParameters: queryParameters,
       ),
       decoder: (rawBody) {
+        // Resource endpoints always wrap records under a `data` array, so this
+        // adapter flattens the envelope before model code sees it.
         final body = asJsonMap(rawBody);
         return [
           for (final item in asJsonList(body['data'])) decoder(item),
@@ -34,6 +41,8 @@ class ResourceApi {
     final response = await _client.send<T>(
       ApiRequest(method: 'GET', path: path),
       decoder: (rawBody) {
+        // Single-resource reads still use the same `data` wrapper, just with a
+        // single object payload instead of a list.
         final body = asJsonMap(rawBody);
         return decoder(body['data']);
       },

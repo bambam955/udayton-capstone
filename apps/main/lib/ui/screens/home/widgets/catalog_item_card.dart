@@ -29,6 +29,8 @@ class CatalogItemCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
+            // The branch removed fake image assets from this flow, so use a
+            // generated gradient block to keep catalog cards visually distinct.
             width: 84,
             height: 84,
             decoration: BoxDecoration(
@@ -82,6 +84,8 @@ class CatalogItemCard extends StatelessWidget {
             children: [
               FilledButton(
                 key: Key('add-to-cart-${item.id}'),
+                // Availability is enforced server-side too, but disabling the
+                // button makes the current product state obvious immediately.
                 onPressed: item.isAvailable ? onAdd : null,
                 child: Text(item.isAvailable ? 'Add' : 'Unavailable'),
               ),

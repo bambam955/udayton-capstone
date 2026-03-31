@@ -15,6 +15,9 @@ import { getPool } from './platform/db/pool.js';
 // Composition root: wire infrastructure into domain services once at startup.
 const db = getDb();
 
+// The mobile repository shares the same database connection as the resource
+// layer so mobile-specific queries participate in the same transaction and pool
+// management strategy as the rest of the API.
 const app = createApp({
   authService: new AuthService(new KyselyAuthRepository(db)),
   resourceService: new ResourceService(new PgResourceRepository(getPool()), allResourceDefinitions),

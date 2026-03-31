@@ -30,6 +30,8 @@ class StoreSelectorSection extends StatelessWidget {
             child: Text('No partnered stores are available yet.'),
           )
         else
+          // Horizontal browsing keeps several nearby store options visible
+          // without pushing the rest of the home/search content below the fold.
           SizedBox(
             height: 148,
             child: ListView.separated(

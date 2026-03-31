@@ -37,6 +37,8 @@ class CustomerTabSupport extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
+              // Quick actions cover the issue types the branch wires through to
+              // the generic support-ticket resource.
               OutlinedButton(
                 onPressed:
                     isSubmitting ? null : () => onCreateTicket('MISSING_ITEM'),

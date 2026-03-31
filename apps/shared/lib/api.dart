@@ -1,3 +1,4 @@
+// Re-export the shared mobile/resource API client surface used by both apps.
 export 'src/api/api_client.dart';
 export 'src/api/api_config.dart';
 export 'src/api/api_environment.dart';

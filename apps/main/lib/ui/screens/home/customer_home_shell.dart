@@ -52,6 +52,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     _refreshBootstrap();
   }
 
+  // Store options are derived from the bootstrap payload so the rest of the
+  // shell can work with a compact, location-centric view model.
   List<StoreOption> get _stores => _storeOptionsFromBootstrap(_bootstrap);
 
   List<CatalogItem> get _catalogItems {
@@ -60,6 +62,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       return const <CatalogItem>[];
     }
 
+    // Product cards need display-oriented fields such as gradients and badge
+    // text that are not part of the raw API model.
     return <CatalogItem>[
       for (final product in catalog.products)
         CatalogItem(
@@ -91,6 +95,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   }
 
   List<CatalogItem> get _visibleCatalogItems {
+    // Filtering happens locally once the catalog is loaded so category and text
+    // searches feel instant while the user explores the selected store.
     final query = _catalogSearchQuery.trim().toLowerCase();
     return _catalogItems.where((item) {
       final matchesCategory = _selectedCatalogCategory == 'All' ||
@@ -167,6 +173,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   }
 
   CustomerAccountOverview get _accountOverview {
+    // The account tab needs a blended view across profile, stores, orders, and
+    // addresses, so package that once here instead of rebuilding it in widgets.
     final bootstrap = _bootstrap;
     final customerName = bootstrap?.customer.fullName?.trim();
     final customerEmail = bootstrap?.customer.email?.trim();
@@ -232,6 +240,9 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     });
 
     try {
+      // Bootstrap is the source of truth for the customer's overall account
+      // state. Catalog and cart items are then loaded for the currently chosen
+      // store so the shell can land in a fully rendered state.
       final bootstrap = await widget.customerApi.bootstrap();
       final stores = _storeOptionsFromBootstrap(bootstrap);
       final nextStoreId = _resolveSelectedStoreId(stores, preferredStoreId);
@@ -280,6 +291,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     });
 
     try {
+      // Changing stores swaps both the catalog and the active cart context.
       final catalog =
           await widget.customerApi.catalog(retailerLocationId: storeId);
       final cartItems = await _loadCartItems(_bootstrap, storeId);
@@ -314,6 +326,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       return const <ResourceCartItem>[];
     }
 
+    // Cart items are fetched from the generic resource API because the mobile
+    // bootstrap exposes only cart-level summaries.
     return widget.resourceApi.list<ResourceCartItem>(
       '/v1/cart-items',
       ResourceCartItem.fromJson,
@@ -328,6 +342,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     CustomerBootstrap bootstrap,
     String retailerLocationId,
   ) {
+    // Ignore checked-out carts so the UI only manipulates the still-editable
+    // cart tied to the current store.
     for (final cart in bootstrap.carts) {
       if (cart.retailerLocationId == retailerLocationId &&
           cart.status != 'CHECKED_OUT') {
@@ -348,6 +364,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       }
     }
 
+    // Carts are created lazily the first time the user adds an item from a
+    // store, which keeps bootstrap payloads smaller for browsing-only sessions.
     final created = await widget.resourceApi.create<ResourceCart>(
       '/v1/carts',
       <String, Object?>{
@@ -368,6 +386,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     }
 
     if (!selectedStore.isConnected) {
+      // Store connections are a prerequisite for checkout, so redirect the user
+      // toward the account tab instead of silently failing.
       setState(() {
         _selectedNavIndex = 4;
       });
@@ -391,6 +411,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       }
 
       if (existingItem == null) {
+        // Create the initial line when the item has not yet been added.
         await widget.resourceApi.create<ResourceCartItem>(
           '/v1/cart-items',
           <String, Object?>{
@@ -402,6 +423,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
           ResourceCartItem.fromJson,
         );
       } else {
+        // Otherwise update quantity in place to preserve one cart row per
+        // product and keep the cart UI stable.
         await widget.resourceApi.update<ResourceCartItem>(
           '/v1/cart-items/${existingItem.cartItemId}',
           <String, Object?>{
@@ -459,6 +482,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
 
     try {
       if (nextQuantity <= 0) {
+        // Removing the row entirely keeps the resource table aligned with the
+        // user's visible cart instead of storing zero-quantity items.
         await widget.resourceApi.delete('/v1/cart-items/${line.cartItemId}');
       } else {
         await widget.resourceApi.update<ResourceCartItem>(
@@ -522,6 +547,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
             ? null
             : bootstrap.addresses.first.addressId);
     if (addressId == null) {
+      // Checkout requires an address, so move the user to the account tab where
+      // address creation lives.
       setState(() {
         _selectedNavIndex = 4;
       });
@@ -534,6 +561,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     });
 
     try {
+      // The mobile checkout endpoint performs the multi-table transaction on
+      // the backend and returns a ready-to-display confirmation payload.
       final checkout = await widget.customerApi.checkout(
         cartId: cart.cartId,
         addressId: addressId,
@@ -566,6 +595,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     });
 
     try {
+      // Link support to the most recent order when available so the admin view
+      // has context immediately.
       final orderId = _orders.isEmpty ? null : _orders.first.id;
       await widget.resourceApi.create<ResourceSupportTicket>(
         '/v1/support-tickets',
@@ -628,6 +659,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     });
 
     try {
+      // Address creation goes through the generic resource API because the
+      // mobile backend only consumes the resulting address IDs.
       await widget.resourceApi.create<ResourceAddress>(
         '/v1/addresses',
         <String, Object?>{
@@ -662,6 +695,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
           _selectedNavIndex = 4;
         });
       case 'sign_out':
+        // Sign-out is best effort on the network side, but the local shell
+        // should always transition back to auth.
         await widget.authApi
             .logout(widget.session.user.role)
             .catchError((_) {});
@@ -705,6 +740,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   }
 
   void _showOrderDetails(OrderPreview order) {
+    // The detail sheet loads its timeline lazily to avoid making bootstrap even
+    // larger just for a screen the user may never open.
     showCustomerOrderDetailsSheet(
       context: context,
       order: order,
@@ -839,6 +876,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
 
     final stores = <StoreOption>[];
     for (final retailer in bootstrap.retailers) {
+      // Flatten retailers into location-specific choices because the customer
+      // UI always browses a concrete store location.
       for (final location in retailer.locations) {
         if (!location.isActive) {
           continue;
@@ -887,6 +926,9 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       }
     }
 
+    // Prefer a previously selected store, then a connected store, and finally
+    // the first available location so the shell always has a deterministic
+    // selection strategy.
     for (final store in stores) {
       if (store.isConnected) {
         return store.id;
@@ -956,6 +998,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     }
 
     return switch (_selectedNavIndex) {
+      // The shell keeps all cross-tab state local and hands each tab only the
+      // callbacks and derived data it needs.
       0 => CustomerTabHome(
           stores: _stores,
           selectedStoreId: _selectedStoreId,
@@ -1084,6 +1128,7 @@ class _BottomNavBar extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: onSelected,
       destinations: [
+        // Stable keys make the bottom navigation easy to target in tests.
         for (final item in items)
           NavigationDestination(
             icon: Icon(item.icon, key: Key('customer-nav-${item.label}')),
@@ -1116,6 +1161,7 @@ class _AddressInput {
   final bool isDefault;
 }
 
+/// Small dialog used to collect the minimum address data needed for checkout.
 class _AddressDialog extends StatefulWidget {
   const _AddressDialog();
 
@@ -1157,6 +1203,8 @@ class _AddressDialogState extends State<_AddressDialog> {
       return;
     }
 
+    // Normalize defaults in one place before sending the record to the generic
+    // resource API.
     Navigator.of(context).pop(
       _AddressInput(
         label: _labelController.text.trim().isEmpty
