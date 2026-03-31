@@ -34,13 +34,13 @@ class DriverJob {
 
   final String id;
   final String title;
-  final double driverStartLat;
-  final double driverStartLng;
+  final double? driverStartLat;
+  final double? driverStartLng;
   final String pickup;
   final String pickupAddressLine;
   final String pickupStoreId;
-  final double pickupLat;
-  final double pickupLng;
+  final double? pickupLat;
+  final double? pickupLng;
   final String dropoff;
   final String dropoffAddressLine;
   final double? dropoffLat;
@@ -55,6 +55,70 @@ class DriverJob {
   final double basePay;
   final double tipAmount;
   final String orderId;
+
+  // Dropoff coordinates are resolved lazily because most API payloads still
+  // provide only the customer-facing address line at assignment time.
+  DriverJob withPickupCoordinates({
+    required double pickupLat,
+    required double pickupLng,
+  }) {
+    return DriverJob(
+      id: id,
+      title: title,
+      driverStartLat: driverStartLat ?? pickupLat + 0.02,
+      driverStartLng: driverStartLng ?? pickupLng - 0.02,
+      pickup: pickup,
+      pickupAddressLine: pickupAddressLine,
+      pickupStoreId: pickupStoreId,
+      pickupLat: pickupLat,
+      pickupLng: pickupLng,
+      dropoff: dropoff,
+      dropoffAddressLine: dropoffAddressLine,
+      dropoffLat: dropoffLat,
+      dropoffLng: dropoffLng,
+      zone: zone,
+      payEstimateText: payEstimateText,
+      distanceText: distanceText,
+      etaText: etaText,
+      stage: stage,
+      detailLines: detailLines,
+      gradient: gradient,
+      basePay: basePay,
+      tipAmount: tipAmount,
+      orderId: orderId,
+    );
+  }
+
+  DriverJob withDropoffCoordinates({
+    required double dropoffLat,
+    required double dropoffLng,
+  }) {
+    return DriverJob(
+      id: id,
+      title: title,
+      driverStartLat: driverStartLat,
+      driverStartLng: driverStartLng,
+      pickup: pickup,
+      pickupAddressLine: pickupAddressLine,
+      pickupStoreId: pickupStoreId,
+      pickupLat: pickupLat,
+      pickupLng: pickupLng,
+      dropoff: dropoff,
+      dropoffAddressLine: dropoffAddressLine,
+      dropoffLat: dropoffLat,
+      dropoffLng: dropoffLng,
+      zone: zone,
+      payEstimateText: payEstimateText,
+      distanceText: distanceText,
+      etaText: etaText,
+      stage: stage,
+      detailLines: detailLines,
+      gradient: gradient,
+      basePay: basePay,
+      tipAmount: tipAmount,
+      orderId: orderId,
+    );
+  }
 }
 
 class DriverSupportCase {

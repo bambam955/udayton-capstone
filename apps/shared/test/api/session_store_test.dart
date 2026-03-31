@@ -52,6 +52,26 @@ void main() {
       final store = SecureSessionStore(store: _FakeSecureValueStore());
       expect(await store.read(), isNull);
     });
+
+    test('SecureSessionStore clears malformed JSON and returns null', () async {
+      final values = _FakeSecureValueStore()
+        ..seedValue('bizrush.api.session', '{not-json');
+      final store = SecureSessionStore(store: values);
+
+      expect(await store.read(), isNull);
+      expect(values.deletedKeys, contains('bizrush.api.session'));
+    });
+
+    test(
+        'SecureSessionStore clears wrong-shape session payloads and returns null',
+        () async {
+      final values = _FakeSecureValueStore()
+        ..seedValue('bizrush.api.session', '["not","a","session"]');
+      final store = SecureSessionStore(store: values);
+
+      expect(await store.read(), isNull);
+      expect(values.deletedKeys, contains('bizrush.api.session'));
+    });
   });
 }
 
@@ -60,9 +80,11 @@ void main() {
 class _FakeSecureValueStore implements SecureValueStore {
   final Map<String, String> _values = <String, String>{};
   final List<String> writtenKeys = <String>[];
+  final List<String> deletedKeys = <String>[];
 
   @override
   Future<void> delete(String key) async {
+    deletedKeys.add(key);
     _values.remove(key);
   }
 
@@ -74,6 +96,10 @@ class _FakeSecureValueStore implements SecureValueStore {
   @override
   Future<void> write(String key, String value) async {
     writtenKeys.add(key);
+    _values[key] = value;
+  }
+
+  void seedValue(String key, String value) {
     _values[key] = value;
   }
 }

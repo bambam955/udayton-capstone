@@ -207,14 +207,14 @@ export const customerResourceDefinitions = [
       admin: {},
       customer: {
         injectPrincipalColumn: 'customer_id',
-        writeColumns: ['retailer_id', 'retailer_location_id', 'status']
+        writeColumns: ['retailer_id', 'retailer_location_id']
       }
     },
     updateAccess: {
       admin: {},
       customer: {
         scope: customerDirectScope,
-        writeColumns: ['retailer_id', 'retailer_location_id', 'status']
+        writeColumns: ['retailer_id', 'retailer_location_id']
       }
     },
     deleteAccess: {
@@ -287,16 +287,7 @@ export const customerResourceDefinitions = [
           relatedColumn: 'cart_id',
           ownerColumn: 'customer_id'
         },
-        writeColumns: [
-          'cart_id',
-          'product_id',
-          'external_sku',
-          'name_snapshot',
-          'unit_price_cents',
-          'quantity',
-          'substitution_allowed',
-          'notes'
-        ]
+        writeColumns: ['cart_id', 'product_id', 'quantity', 'substitution_allowed', 'notes']
       }
     },
     updateAccess: {
@@ -309,15 +300,7 @@ export const customerResourceDefinitions = [
           relatedColumn: 'cart_id',
           ownerColumn: 'customer_id'
         },
-        writeColumns: [
-          'product_id',
-          'external_sku',
-          'name_snapshot',
-          'unit_price_cents',
-          'quantity',
-          'substitution_allowed',
-          'notes'
-        ]
+        writeColumns: ['quantity', 'substitution_allowed', 'notes']
       }
     },
     deleteAccess: {

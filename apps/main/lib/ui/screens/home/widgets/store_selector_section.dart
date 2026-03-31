@@ -59,11 +59,11 @@ class StoreSelectorSection extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
-                        Text(store.etaText, style: textTheme.bodySmall),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 10),
                         Text(
-                          '${store.isConnected ? 'Connected' : 'Connect in Account'} • ★ ${store.ratingText}',
+                          store.isConnected
+                              ? 'Connected'
+                              : 'Connect in Account',
                           style: textTheme.bodySmall,
                         ),
                       ],

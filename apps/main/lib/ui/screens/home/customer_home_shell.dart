@@ -107,13 +107,23 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       _catalogItems.take(3).toList(growable: false);
 
   List<CartLine> get _cartLines {
+    final catalogByProductId = <String, CatalogItem>{
+      for (final item in _catalogItems) item.id: item,
+    };
+
     return <CartLine>[
       for (final cartItem in _cartItems)
+        // Prefer catalog-backed display data so the cart UI stays aligned with
+        // authoritative product metadata after raw snapshot writes are removed.
         CartLine(
           cartItemId: cartItem.cartItemId,
           productId: cartItem.productId,
-          name: cartItem.nameSnapshot ?? 'Item',
-          unitPriceCents: cartItem.unitPriceCents,
+          name: catalogByProductId[cartItem.productId]?.name ??
+              cartItem.nameSnapshot ??
+              'Item',
+          unitPriceCents:
+              catalogByProductId[cartItem.productId]?.unitPriceCents ??
+                  cartItem.unitPriceCents,
           quantity: cartItem.quantity,
         ),
     ];
@@ -343,7 +353,6 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       <String, Object?>{
         'retailer_id': catalog.retailerId,
         'retailer_location_id': catalog.location.retailerLocationId,
-        'status': 'ACTIVE',
       },
       ResourceCart.fromJson,
     );
@@ -387,9 +396,6 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
           <String, Object?>{
             'cart_id': cartId,
             'product_id': item.id,
-            'external_sku': item.externalSku,
-            'name_snapshot': item.name,
-            'unit_price_cents': item.unitPriceCents,
             'quantity': 1,
             'substitution_allowed': true,
           },
@@ -844,8 +850,6 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
             retailerId: retailer.retailerId,
             name: location.name,
             subtitle: _storeSubtitle(location),
-            etaText: _etaText(location.retailerLocationId),
-            ratingText: _ratingText(location.retailerLocationId),
             isConnected: retailer.isConnected,
           ),
         );
@@ -865,18 +869,6 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     }
 
     return location.addressLine;
-  }
-
-  static String _etaText(String seed) {
-    final eta =
-        18 + (seed.codeUnits.fold<int>(0, (sum, value) => sum + value) % 12);
-    return 'Ready in ~$eta min';
-  }
-
-  static String _ratingText(String seed) {
-    final decimal =
-        7 + (seed.codeUnits.fold<int>(0, (sum, value) => sum + value) % 3);
-    return '4.$decimal';
   }
 
   static String? _resolveSelectedStoreId(

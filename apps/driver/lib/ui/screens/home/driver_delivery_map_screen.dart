@@ -212,11 +212,16 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
       );
     }
 
+    final missingCoordinatesMessage = _missingCoordinatesMessage;
+    if (missingCoordinatesMessage != null) {
+      return _MapUnavailableCard(message: missingCoordinatesMessage);
+    }
+
     return MapWidget(
       key: const Key('driver-delivery-map-screen'),
       styleUri: MapboxStyles.STANDARD,
       cameraOptions: CameraOptions(
-        center: Point(coordinates: _routeOrigin),
+        center: Point(coordinates: _initialCameraCenter),
         zoom: 11.5,
       ),
       onMapCreated: _onMapCreated,
@@ -242,20 +247,19 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
       _routeError = null;
     });
 
-    if (widget.phase == DriverRoutePhase.toDropoff &&
-        _dropoffPosition == null) {
+    final missingCoordinatesMessage = _missingCoordinatesMessage;
+    if (missingCoordinatesMessage != null) {
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _routeGeometry = <Position>[_routeOrigin];
-        _simulationRoute = <Position>[_routeOrigin];
+        _routeGeometry = const <Position>[];
+        _simulationRoute = const <Position>[];
         _simulationIndex = 0;
         _isSimulationRunning = false;
         _isSimulationCompleted = false;
-        _routeError =
-            'Precise dropoff coordinates are unavailable. External navigation can still open.';
+        _routeError = missingCoordinatesMessage;
         _loadingRoute = false;
       });
       return;
@@ -324,9 +328,7 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
       return;
     }
 
-    final pickupPoint = Point(
-      coordinates: Position(widget.job.pickupLng, widget.job.pickupLat),
-    );
+    final pickupPoint = Point(coordinates: _pickupPosition!);
     final dropoffPosition = _dropoffPosition;
 
     await circles.deleteAll();
@@ -609,6 +611,23 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
 
   bool get _canRenderMap => hasMapboxAccessToken && isMapboxPlatformSupported;
 
+  String? get _missingCoordinatesMessage {
+    final pickupUnavailable =
+        'Precise pickup coordinates are unavailable. External navigation can still open.';
+    const dropoffUnavailable =
+        'Precise dropoff coordinates are unavailable. External navigation can still open.';
+
+    return switch (widget.phase) {
+      DriverRoutePhase.toPickup =>
+        _pickupPosition == null ? pickupUnavailable : null,
+      DriverRoutePhase.toDropoff => _pickupPosition == null
+          ? pickupUnavailable
+          : _dropoffPosition == null
+              ? dropoffUnavailable
+              : null,
+    };
+  }
+
   bool get _isMapReadyForRoute {
     return _canRenderMap &&
         _styleLoaded &&
@@ -619,28 +638,48 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
         _simulationRoute.isNotEmpty;
   }
 
+  Position get _initialCameraCenter {
+    return switch (widget.phase) {
+      DriverRoutePhase.toPickup => _routeOrigin,
+      DriverRoutePhase.toDropoff => _pickupPosition!,
+    };
+  }
+
   Position get _routeOrigin {
     return switch (widget.phase) {
       DriverRoutePhase.toPickup => Position(
-          widget.job.driverStartLng,
-          widget.job.driverStartLat,
+          (_driverStartPosition ?? _pickupPosition!).lng,
+          (_driverStartPosition ?? _pickupPosition!).lat,
         ),
-      DriverRoutePhase.toDropoff => Position(
-          widget.job.pickupLng,
-          widget.job.pickupLat,
-        ),
+      DriverRoutePhase.toDropoff => _pickupPosition!,
     };
   }
 
   Position get _routeDestination {
     return switch (widget.phase) {
-      DriverRoutePhase.toPickup =>
-        Position(widget.job.pickupLng, widget.job.pickupLat),
-      DriverRoutePhase.toDropoff => Position(
-          widget.job.dropoffLng ?? widget.job.pickupLng,
-          widget.job.dropoffLat ?? widget.job.pickupLat,
-        ),
+      DriverRoutePhase.toPickup => _pickupPosition!,
+      DriverRoutePhase.toDropoff => _dropoffPosition!,
     };
+  }
+
+  Position? get _driverStartPosition {
+    final lat = widget.job.driverStartLat;
+    final lng = widget.job.driverStartLng;
+    if (lat == null || lng == null) {
+      return null;
+    }
+
+    return Position(lng, lat);
+  }
+
+  Position? get _pickupPosition {
+    final lat = widget.job.pickupLat;
+    final lng = widget.job.pickupLng;
+    if (lat == null || lng == null) {
+      return null;
+    }
+
+    return Position(lng, lat);
   }
 
   Position? get _dropoffPosition {

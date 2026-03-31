@@ -54,8 +54,18 @@ class SecureSessionStore implements SessionStore {
       return null;
     }
 
-    final decoded = jsonDecode(raw);
-    return ApiSession.fromJson(decoded);
+    try {
+      final decoded = jsonDecode(raw);
+      return ApiSession.fromJson(decoded);
+    } on FormatException {
+      // Treat unreadable session payloads as signed-out state so a corrupted
+      // secure-storage blob cannot block app startup forever.
+      await _clearCorruptedValue();
+      return null;
+    } on TypeError {
+      await _clearCorruptedValue();
+      return null;
+    }
   }
 
   @override
@@ -66,6 +76,15 @@ class SecureSessionStore implements SessionStore {
   @override
   Future<void> clear() {
     return _store.delete(storageKey);
+  }
+
+  Future<void> _clearCorruptedValue() async {
+    try {
+      await _store.delete(storageKey);
+    } catch (_) {
+      // Returning signed-out state is still better than failing app startup
+      // when cleanup cannot complete immediately.
+    }
   }
 }
 

@@ -5,6 +5,7 @@ import '../../widgets/driver_top_bar.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/surface_card.dart';
 import 'driver_delivery_map_screen.dart';
+import 'driver_geocoding_service.dart';
 import 'driver_home_models.dart';
 import 'driver_job_details_sheet.dart';
 import 'tabs/driver_tab_deliveries.dart';
@@ -22,6 +23,7 @@ class DriverHomeShell extends StatefulWidget {
     required this.driverApi,
     required this.resourceApi,
     required this.onSignedOut,
+    this.geocodingService = const DriverGeocodingService(),
   });
 
   final ApiSession session;
@@ -29,6 +31,7 @@ class DriverHomeShell extends StatefulWidget {
   final DriverMobileApi driverApi;
   final ResourceApi resourceApi;
   final VoidCallback onSignedOut;
+  final DriverGeocodingService geocodingService;
 
   @override
   State<DriverHomeShell> createState() => _DriverHomeShellState();
@@ -130,19 +133,20 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   }
 
   DriverJob _mapJob(DriverJobSummary job) {
-    final pickupLat = job.pickupLat ?? 35.2271;
-    final pickupLng = job.pickupLng ?? -80.8431;
-
     return DriverJob(
       id: job.deliveryId,
       title: job.title,
-      driverStartLat: pickupLat + 0.02,
-      driverStartLng: pickupLng - 0.02,
+      driverStartLat: job.pickupLat == null || job.pickupLng == null
+          ? null
+          : job.pickupLat! + 0.02,
+      driverStartLng: job.pickupLat == null || job.pickupLng == null
+          ? null
+          : job.pickupLng! - 0.02,
       pickup: job.pickupName,
       pickupAddressLine: job.pickupAddressLine,
       pickupStoreId: job.pickupLocationId ?? job.deliveryId,
-      pickupLat: pickupLat,
-      pickupLng: pickupLng,
+      pickupLat: job.pickupLat,
+      pickupLng: job.pickupLng,
       dropoff: job.dropoffName,
       dropoffAddressLine: job.dropoffAddressLine,
       dropoffLat: null,
@@ -323,12 +327,60 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     );
   }
 
-  Future<void> _openMap(DriverJob job, DriverRoutePhase phase) {
-    return Navigator.of(context).push(
+  Future<void> _openMap(DriverJob job, DriverRoutePhase phase) async {
+    final resolvedJob = await _resolveJobForMap(job, phase);
+    if (!mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => DriverDeliveryMapScreen(job: job, phase: phase),
+        builder: (_) => DriverDeliveryMapScreen(job: resolvedJob, phase: phase),
       ),
     );
+  }
+
+  Future<DriverJob> _resolveJobForMap(
+      DriverJob job, DriverRoutePhase phase) async {
+    var resolvedJob = job;
+
+    if (resolvedJob.pickupLat == null || resolvedJob.pickupLng == null) {
+      try {
+        final pickupResult = await widget.geocodingService
+            .geocodeAddress(resolvedJob.pickupAddressLine);
+        if (pickupResult != null) {
+          resolvedJob = resolvedJob.withPickupCoordinates(
+            pickupLat: pickupResult.lat,
+            pickupLng: pickupResult.lng,
+          );
+        }
+      } catch (_) {
+        // Leave pickup unresolved so the map screen can fail closed and still
+        // offer address-based external navigation.
+      }
+    }
+
+    if (phase != DriverRoutePhase.toDropoff ||
+        (resolvedJob.dropoffLat != null && resolvedJob.dropoffLng != null)) {
+      return resolvedJob;
+    }
+
+    try {
+      final result = await widget.geocodingService
+          .geocodeAddress(resolvedJob.dropoffAddressLine);
+      if (result == null) {
+        return resolvedJob;
+      }
+
+      return resolvedJob.withDropoffCoordinates(
+        dropoffLat: result.lat,
+        dropoffLng: result.lng,
+      );
+    } catch (_) {
+      // Keep the existing route-screen fallback when geocoding cannot resolve a
+      // precise point in time.
+      return resolvedJob;
+    }
   }
 
   void _openMapForActiveJob(String jobId) {

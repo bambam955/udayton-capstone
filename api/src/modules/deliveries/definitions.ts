@@ -65,16 +65,7 @@ export const deliveryResourceDefinitions = [
       }
     },
     createAccess: adminOnly(),
-    updateAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        },
-        writeColumns: ['status', 'pickup_location', 'assigned_at', 'picked_up_at', 'delivered_at']
-      }
-    },
+    updateAccess: adminOnly(),
     deleteAccess: adminOnly()
   }),
   resource({
@@ -127,16 +118,7 @@ export const deliveryResourceDefinitions = [
       }
     },
     createAccess: adminOnly(),
-    updateAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        },
-        writeColumns: ['status', 'responded_at', 'decline_reason']
-      }
-    },
+    updateAccess: adminOnly(),
     deleteAccess: adminOnly()
   }),
   resource({
@@ -264,43 +246,8 @@ export const deliveryResourceDefinitions = [
         }
       }
     },
-    createAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'related',
-          table: 'delivery_assignments',
-          localColumn: 'delivery_id',
-          relatedColumn: 'delivery_id',
-          ownerColumn: 'driver_id'
-        },
-        writeColumns: ['delivery_id', 'driver_id', 'status', 'event_time', 'note', 'lat', 'lng']
-      }
-    },
-    updateAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'related',
-          table: 'delivery_assignments',
-          localColumn: 'delivery_id',
-          relatedColumn: 'delivery_id',
-          ownerColumn: 'driver_id'
-        },
-        writeColumns: ['status', 'event_time', 'note', 'lat', 'lng']
-      }
-    },
-    deleteAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'related',
-          table: 'delivery_assignments',
-          localColumn: 'delivery_id',
-          relatedColumn: 'delivery_id',
-          ownerColumn: 'driver_id'
-        }
-      }
-    }
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
   })
 ];

@@ -7,8 +7,6 @@ class StoreOption {
     required this.retailerId,
     required this.name,
     required this.subtitle,
-    required this.etaText,
-    required this.ratingText,
     required this.isConnected,
   });
 
@@ -16,8 +14,6 @@ class StoreOption {
   final String retailerId;
   final String name;
   final String subtitle;
-  final String etaText;
-  final String ratingText;
   final bool isConnected;
 }
 

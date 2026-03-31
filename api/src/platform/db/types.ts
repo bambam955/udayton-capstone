@@ -127,6 +127,7 @@ export interface CartsTable {
   customer_id: string;
   retailer_id: string;
   retailer_location_id: string | null;
+  checked_out_order_id: string | null;
   status: string | null;
   created_at: DBTimestamp | null;
   updated_at: DBTimestamp | null;

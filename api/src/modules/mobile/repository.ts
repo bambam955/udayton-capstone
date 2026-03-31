@@ -166,7 +166,7 @@ function estimateEtaMinutes(itemCount: number): number {
 }
 
 function stageFromAssignment(status: string | null): DriverJobSummary['stage'] {
-  const normalized = status?.toUpperCase() ?? '';
+  const normalized = normalizeStatus(status);
 
   if (normalized === 'DELIVERED') {
     return 'delivered';
@@ -177,6 +177,57 @@ function stageFromAssignment(status: string | null): DriverJobSummary['stage'] {
   }
 
   return 'assigned';
+}
+
+function normalizeStatus(value: string | null | undefined): string {
+  return value?.toUpperCase() ?? '';
+}
+
+function buildCheckoutPricing(subtotalCents: number, tipCents: number) {
+  const serviceFeeCents = clamp(Math.round(subtotalCents * 0.06), 199, 1200);
+  const deliveryFeeCents = 499;
+  const estimatedTaxCents = Math.round(subtotalCents * 0.045);
+  const totalCents =
+    subtotalCents + serviceFeeCents + deliveryFeeCents + estimatedTaxCents + tipCents;
+
+  return {
+    subtotalCents,
+    serviceFeeCents,
+    deliveryFeeCents,
+    estimatedTaxCents,
+    tipCents,
+    totalCents,
+    currency: 'USD'
+  };
+}
+
+function offerIsLiveSql(alias: string) {
+  return sql<boolean>`${sql.ref(`${alias}.offered_at`)} is not null
+    and (
+      ${sql.ref(`${alias}.offered_at`)}
+      + coalesce(${sql.ref(`${alias}.expires_in_sec`)}, 0) * interval '1 second'
+    ) > now()`;
+}
+
+function isOfferExpired(
+  offer: {
+    offeredAt: Date | string | null;
+    expiresInSec: number | null;
+  },
+  now: Date
+): boolean {
+  if (!offer.offeredAt) {
+    return true;
+  }
+
+  const offeredAt =
+    typeof offer.offeredAt === 'string' ? new Date(offer.offeredAt) : offer.offeredAt;
+  if (Number.isNaN(offeredAt.getTime())) {
+    return true;
+  }
+
+  const expiresInMs = Math.max(0, offer.expiresInSec ?? 0) * 1000;
+  return offeredAt.getTime() + expiresInMs <= now.getTime();
 }
 
 function buildDriverJobSummary(row: {
@@ -600,62 +651,81 @@ export class KyselyMobileRepository implements MobileRepository {
           'cart_id as cartId',
           'retailer_id as retailerId',
           'retailer_location_id as retailerLocationId',
+          'checked_out_order_id as checkedOutOrderId',
           'status'
         ])
         .where('cart_id', '=', input.cartId)
         .where('customer_id', '=', customerId)
+        .forUpdate()
         .executeTakeFirst();
 
       if (!cart) {
         throw new HttpError(404, 'NOT_FOUND', 'Cart not found.');
       }
 
+      const cartStatus = normalizeStatus(cart.status || 'ACTIVE');
+      if (cartStatus === 'CHECKED_OUT') {
+        if (!cart.checkedOutOrderId) {
+          throw new HttpError(409, 'CONFLICT', 'Cart has already been checked out.');
+        }
+
+        return this.getCheckoutResultByOrderId(tx, customerId, cart.checkedOutOrderId);
+      }
+
+      if (cartStatus !== 'ACTIVE') {
+        throw new HttpError(409, 'CONFLICT', 'Cart is not ready for checkout.');
+      }
+
       if (!cart.retailerLocationId) {
         throw new HttpError(400, 'INVALID_REQUEST', 'Cart is missing a retailer location.');
       }
 
-      const [address, location, connection, cartItems, retailer] = await Promise.all([
-        tx
-          .selectFrom('addresses')
-          .select('address_id')
-          .where('address_id', '=', input.addressId)
-          .where('customer_id', '=', customerId)
-          .executeTakeFirst(),
-        tx
-          .selectFrom('retailer_locations')
-          .select([
-            'retailer_location_id as retailerLocationId',
-            'name',
-            'retailer_id as retailerId'
-          ])
-          .where('retailer_location_id', '=', cart.retailerLocationId)
-          .executeTakeFirst(),
-        tx
-          .selectFrom('retailer_accounts')
-          .select('retailer_account_id')
-          .where('customer_id', '=', customerId)
-          .where('retailer_id', '=', cart.retailerId)
-          .where('is_connected', '=', true)
-          .executeTakeFirst(),
-        tx
-          .selectFrom('cart_items')
-          .select([
-            'cart_item_id as cartItemId',
-            'product_id as productId',
-            'external_sku as externalSku',
-            'name_snapshot as nameSnapshot',
-            'unit_price_cents as unitPriceCents',
-            'quantity',
-            'notes'
-          ])
-          .where('cart_id', '=', input.cartId)
-          .execute(),
-        tx
-          .selectFrom('retailers')
-          .select(['retailer_id as retailerId', 'name'])
-          .where('retailer_id', '=', cart.retailerId)
-          .executeTakeFirst()
-      ]);
+      // Lock the current cart rows so checkout cannot race cart edits or
+      // create a second order from the same cart contents.
+      const cartItems = await tx
+        .selectFrom('cart_items as ci')
+        .leftJoin('products as p', 'p.product_id', 'ci.product_id')
+        .select([
+          'ci.cart_item_id as cartItemId',
+          'ci.product_id as productId',
+          'ci.quantity',
+          'ci.notes',
+          'p.retailer_id as productRetailerId',
+          'p.external_sku as productExternalSku',
+          'p.name as productName',
+          'p.unit_price_cents as productUnitPriceCents',
+          'p.is_available as productIsAvailable'
+        ])
+        .where('ci.cart_id', '=', input.cartId)
+        .forUpdate()
+        .execute();
+
+      const address = await tx
+        .selectFrom('addresses')
+        .select('address_id')
+        .where('address_id', '=', input.addressId)
+        .where('customer_id', '=', customerId)
+        .executeTakeFirst();
+
+      const location = await tx
+        .selectFrom('retailer_locations')
+        .select(['retailer_location_id as retailerLocationId', 'name', 'retailer_id as retailerId'])
+        .where('retailer_location_id', '=', cart.retailerLocationId)
+        .executeTakeFirst();
+
+      const connection = await tx
+        .selectFrom('retailer_accounts')
+        .select('retailer_account_id')
+        .where('customer_id', '=', customerId)
+        .where('retailer_id', '=', cart.retailerId)
+        .where('is_connected', '=', true)
+        .executeTakeFirst();
+
+      const retailer = await tx
+        .selectFrom('retailers')
+        .select(['retailer_id as retailerId', 'name'])
+        .where('retailer_id', '=', cart.retailerId)
+        .executeTakeFirst();
 
       if (!address) {
         throw new HttpError(404, 'NOT_FOUND', 'Address not found.');
@@ -677,16 +747,32 @@ export class KyselyMobileRepository implements MobileRepository {
         throw new HttpError(400, 'INVALID_REQUEST', 'Cart is empty.');
       }
 
+      for (const item of cartItems) {
+        if (toNumber(item.quantity) <= 0) {
+          throw new HttpError(409, 'CONFLICT', 'Cart contains an invalid quantity.');
+        }
+
+        if (
+          !item.productRetailerId ||
+          item.productRetailerId !== cart.retailerId ||
+          item.productIsAvailable !== true ||
+          item.productName == null ||
+          item.productName.trim().length === 0 ||
+          item.productUnitPriceCents == null
+        ) {
+          throw new HttpError(
+            409,
+            'CONFLICT',
+            'Cart contains unavailable or invalid items. Refresh the catalog and try again.'
+          );
+        }
+      }
+
       const subtotalCents = cartItems.reduce(
-        (sum, item) => sum + toNumber(item.unitPriceCents) * toNumber(item.quantity),
+        (sum, item) => sum + toNumber(item.productUnitPriceCents) * toNumber(item.quantity),
         0
       );
-      const serviceFeeCents = clamp(Math.round(subtotalCents * 0.06), 199, 1200);
-      const deliveryFeeCents = 499;
-      const estimatedTaxCents = Math.round(subtotalCents * 0.045);
-      const tipCents = input.tipCents ?? 0;
-      const totalCents =
-        subtotalCents + serviceFeeCents + deliveryFeeCents + estimatedTaxCents + tipCents;
+      const pricing = buildCheckoutPricing(subtotalCents, input.tipCents ?? 0);
       const now = new Date();
       const orderId = randomUUID();
       const paymentId = randomUUID();
@@ -704,11 +790,12 @@ export class KyselyMobileRepository implements MobileRepository {
           external_order_id: externalOrderId,
           status: 'SUBMITTED',
           placed_at: now,
-          subtotal_cents: subtotalCents,
-          fees_cents: serviceFeeCents + deliveryFeeCents + estimatedTaxCents,
-          tip_cents: tipCents,
+          subtotal_cents: pricing.subtotalCents,
+          fees_cents:
+            pricing.serviceFeeCents + pricing.deliveryFeeCents + pricing.estimatedTaxCents,
+          tip_cents: pricing.tipCents,
           discount_cents: 0,
-          total_cents: totalCents,
+          total_cents: pricing.totalCents,
           currency: 'USD',
           delivery_notes: input.deliveryNotes ?? null,
           created_at: now,
@@ -723,9 +810,9 @@ export class KyselyMobileRepository implements MobileRepository {
             order_item_id: randomUUID(),
             order_id: orderId,
             product_id: item.productId,
-            external_sku: item.externalSku,
-            name_snapshot: item.nameSnapshot,
-            unit_price_cents: item.unitPriceCents,
+            external_sku: item.productExternalSku,
+            name_snapshot: item.productName,
+            unit_price_cents: item.productUnitPriceCents,
             quantity: item.quantity,
             substituted_for_sku: null,
             created_at: now
@@ -752,7 +839,7 @@ export class KyselyMobileRepository implements MobileRepository {
           customer_id: customerId,
           provider: 'mock',
           provider_ref: `pay-${paymentId.slice(0, 8)}`,
-          amount_cents: totalCents,
+          amount_cents: pricing.totalCents,
           currency: 'USD',
           status: 'AUTHORIZED',
           created_at: now
@@ -803,6 +890,7 @@ export class KyselyMobileRepository implements MobileRepository {
       await tx
         .updateTable('carts')
         .set({
+          checked_out_order_id: orderId,
           status: 'CHECKED_OUT',
           updated_at: now
         })
@@ -819,23 +907,15 @@ export class KyselyMobileRepository implements MobileRepository {
           retailerLocationName: location.name,
           status: 'SUBMITTED',
           placedAt: now.toISOString(),
-          totalCents,
+          totalCents: pricing.totalCents,
           currency: 'USD',
           itemCount: cartItems.length
         },
-        pricing: {
-          subtotalCents,
-          serviceFeeCents,
-          deliveryFeeCents,
-          estimatedTaxCents,
-          tipCents,
-          totalCents,
-          currency: 'USD'
-        },
+        pricing,
         payment: {
           paymentId,
           status: 'AUTHORIZED',
-          amountCents: totalCents,
+          amountCents: pricing.totalCents,
           currency: 'USD'
         },
         delivery: {
@@ -845,6 +925,91 @@ export class KyselyMobileRepository implements MobileRepository {
         }
       };
     });
+  }
+
+  private async getCheckoutResultByOrderId(
+    tx: DbExecutor,
+    customerId: string,
+    orderId: string
+  ): Promise<CustomerCheckoutResult> {
+    const row = await tx
+      .selectFrom('orders as o')
+      .innerJoin('retailers as r', 'r.retailer_id', 'o.retailer_id')
+      .leftJoin('retailer_locations as rl', 'rl.retailer_location_id', 'o.retailer_location_id')
+      .innerJoin('delivery_assignments as da', 'da.order_id', 'o.order_id')
+      .select([
+        'o.order_id as orderId',
+        'o.external_order_id as externalOrderId',
+        'o.retailer_id as retailerId',
+        'r.name as retailerName',
+        'o.retailer_location_id as retailerLocationId',
+        'rl.name as retailerLocationName',
+        'o.status',
+        'o.placed_at as placedAt',
+        'o.subtotal_cents as subtotalCents',
+        'o.tip_cents as tipCents',
+        'o.total_cents as totalCents',
+        'o.currency',
+        'da.delivery_id as deliveryId',
+        'da.status as deliveryStatus',
+        'da.pickup_location as pickupLocation',
+        sql<string>`(
+          select p.payment_id::text
+          from payments p
+          where p.order_id = o.order_id
+          order by p.created_at desc nulls last
+          limit 1
+        )`.as('paymentId'),
+        sql<string>`(
+          select p.status
+          from payments p
+          where p.order_id = o.order_id
+          order by p.created_at desc nulls last
+          limit 1
+        )`.as('paymentStatus'),
+        sql<number>`(
+          select count(*)::int
+          from order_items oi
+          where oi.order_id = o.order_id
+        )`.as('itemCount')
+      ])
+      .where('o.customer_id', '=', customerId)
+      .where('o.order_id', '=', orderId)
+      .executeTakeFirst();
+
+    if (!row || !row.paymentId) {
+      throw new HttpError(409, 'CONFLICT', 'Checkout record is unavailable.');
+    }
+
+    const pricing = buildCheckoutPricing(toNumber(row.subtotalCents), toNumber(row.tipCents));
+
+    return {
+      order: {
+        orderId: row.orderId,
+        externalOrderId: row.externalOrderId,
+        retailerId: row.retailerId,
+        retailerName: row.retailerName ?? 'Retailer',
+        retailerLocationId: row.retailerLocationId,
+        retailerLocationName: row.retailerLocationName,
+        status: row.status,
+        placedAt: formatIso(row.placedAt),
+        totalCents: toNumber(row.totalCents),
+        currency: row.currency ?? 'USD',
+        itemCount: toNumber(row.itemCount)
+      },
+      pricing,
+      payment: {
+        paymentId: row.paymentId,
+        status: row.paymentStatus ?? 'AUTHORIZED',
+        amountCents: toNumber(row.totalCents),
+        currency: row.currency ?? 'USD'
+      },
+      delivery: {
+        deliveryId: row.deliveryId,
+        status: row.deliveryStatus ?? 'PENDING_ASSIGNMENT',
+        pickupLocation: row.pickupLocation ?? 'Partner pickup'
+      }
+    };
   }
 
   async getDriverBootstrap(driverId: string): Promise<DriverBootstrapResult> {
@@ -879,9 +1044,29 @@ export class KyselyMobileRepository implements MobileRepository {
 
   async acceptDelivery(driverId: string, deliveryId: string): Promise<DriverJobSummary> {
     return this.db.transaction().execute(async (tx) => {
+      const assignment = await tx
+        .selectFrom('delivery_assignments')
+        .select(['delivery_id as deliveryId', 'driver_id as driverId', 'status'])
+        .where('delivery_id', '=', deliveryId)
+        .forUpdate()
+        .executeTakeFirst();
+
+      if (!assignment) {
+        throw new HttpError(404, 'NOT_FOUND', 'Assigned delivery not found.');
+      }
+
+      if (assignment.driverId === driverId) {
+        return this.getDriverAssignmentJob(tx, driverId, deliveryId);
+      }
+
       const offer = await tx
         .selectFrom('delivery_offers')
-        .select(['offer_id as offerId', 'status'])
+        .select([
+          'offer_id as offerId',
+          'status',
+          'offered_at as offeredAt',
+          'expires_in_sec as expiresInSec'
+        ])
         .where('delivery_id', '=', deliveryId)
         .where('driver_id', '=', driverId)
         .executeTakeFirst();
@@ -890,20 +1075,75 @@ export class KyselyMobileRepository implements MobileRepository {
         throw new HttpError(404, 'NOT_FOUND', 'Delivery offer not found.');
       }
 
-      if ((offer.status ?? '').toUpperCase() !== 'OFFERED') {
+      if (assignment.driverId) {
+        throw new HttpError(
+          409,
+          'CONFLICT',
+          'Delivery has already been claimed by another driver.'
+        );
+      }
+
+      if (normalizeStatus(assignment.status) !== 'PENDING_ASSIGNMENT') {
+        throw new HttpError(409, 'CONFLICT', 'Delivery is no longer available for assignment.');
+      }
+
+      if (normalizeStatus(offer.status) !== 'OFFERED') {
         throw new HttpError(409, 'CONFLICT', 'Delivery offer is no longer available.');
       }
 
       const now = new Date();
 
-      await tx
+      if (isOfferExpired(offer, now)) {
+        await tx
+          .updateTable('delivery_offers')
+          .set({
+            status: 'EXPIRED',
+            responded_at: now
+          })
+          .where('offer_id', '=', offer.offerId)
+          .where('status', '=', 'OFFERED')
+          .where(sql<boolean>`not ${offerIsLiveSql('delivery_offers')}`)
+          .execute();
+
+        throw new HttpError(409, 'CONFLICT', 'Delivery offer is no longer available.');
+      }
+
+      const claimedAssignment = await tx
+        .updateTable('delivery_assignments')
+        .set({
+          driver_id: driverId,
+          status: 'ASSIGNED',
+          assigned_at: now
+        })
+        .where('delivery_id', '=', deliveryId)
+        .where('driver_id', 'is', null)
+        .where('status', '=', 'PENDING_ASSIGNMENT')
+        .returning('delivery_id')
+        .executeTakeFirst();
+
+      if (!claimedAssignment) {
+        throw new HttpError(
+          409,
+          'CONFLICT',
+          'Delivery has already been claimed by another driver.'
+        );
+      }
+
+      const acceptedOffer = await tx
         .updateTable('delivery_offers')
         .set({
           status: 'ACCEPTED',
           responded_at: now
         })
         .where('offer_id', '=', offer.offerId)
-        .execute();
+        .where('status', '=', 'OFFERED')
+        .where(offerIsLiveSql('delivery_offers'))
+        .returning('offer_id')
+        .executeTakeFirst();
+
+      if (!acceptedOffer) {
+        throw new HttpError(409, 'CONFLICT', 'Delivery offer is no longer available.');
+      }
 
       await tx
         .updateTable('delivery_offers')
@@ -914,16 +1154,7 @@ export class KyselyMobileRepository implements MobileRepository {
         .where('delivery_id', '=', deliveryId)
         .where('offer_id', '!=', offer.offerId)
         .where('status', '=', 'OFFERED')
-        .execute();
-
-      await tx
-        .updateTable('delivery_assignments')
-        .set({
-          driver_id: driverId,
-          status: 'ASSIGNED',
-          assigned_at: now
-        })
-        .where('delivery_id', '=', deliveryId)
+        .where(offerIsLiveSql('delivery_offers'))
         .execute();
 
       await this.insertDriverStatusChange(
@@ -945,31 +1176,47 @@ export class KyselyMobileRepository implements MobileRepository {
         .innerJoin('orders', 'orders.order_id', 'delivery_assignments.order_id')
         .select([
           'delivery_assignments.order_id as orderId',
+          'delivery_assignments.driver_id as assignedDriverId',
           'delivery_assignments.status as status'
         ])
         .where('delivery_assignments.delivery_id', '=', deliveryId)
-        .where('delivery_assignments.driver_id', '=', driverId)
+        .forUpdate()
         .executeTakeFirst();
 
       if (!assignment) {
         throw new HttpError(404, 'NOT_FOUND', 'Assigned delivery not found.');
       }
 
-      const normalized = (assignment.status ?? '').toUpperCase();
+      if (assignment.assignedDriverId !== driverId) {
+        throw new HttpError(404, 'NOT_FOUND', 'Assigned delivery not found.');
+      }
+
+      const normalized = normalizeStatus(assignment.status);
+      if (normalized === 'OUT_FOR_DELIVERY') {
+        return this.getDriverAssignmentJob(tx, driverId, deliveryId);
+      }
+
       if (normalized !== 'ASSIGNED' && normalized !== 'READY_FOR_PICKUP') {
         throw new HttpError(409, 'CONFLICT', 'Delivery is not ready for pickup.');
       }
 
       const now = new Date();
 
-      await tx
+      const pickedUpAssignment = await tx
         .updateTable('delivery_assignments')
         .set({
           status: 'OUT_FOR_DELIVERY',
           picked_up_at: now
         })
         .where('delivery_id', '=', deliveryId)
-        .execute();
+        .where('driver_id', '=', driverId)
+        .where('status', 'in', ['ASSIGNED', 'READY_FOR_PICKUP'])
+        .returning('delivery_id')
+        .executeTakeFirst();
+
+      if (!pickedUpAssignment) {
+        throw new HttpError(409, 'CONFLICT', 'Delivery is not ready for pickup.');
+      }
 
       await this.insertDriverStatusChange(
         tx,
@@ -990,20 +1237,30 @@ export class KyselyMobileRepository implements MobileRepository {
         .innerJoin('orders as o', 'o.order_id', 'da.order_id')
         .select([
           'da.order_id as orderId',
+          'da.driver_id as assignedDriverId',
           'da.status',
           'o.tip_cents as tipCents',
           'o.total_cents as totalCents',
           'o.currency'
         ])
         .where('da.delivery_id', '=', deliveryId)
-        .where('da.driver_id', '=', driverId)
+        .forUpdate()
         .executeTakeFirst();
 
       if (!assignment) {
         throw new HttpError(404, 'NOT_FOUND', 'Assigned delivery not found.');
       }
 
-      if ((assignment.status ?? '').toUpperCase() !== 'OUT_FOR_DELIVERY') {
+      if (assignment.assignedDriverId !== driverId) {
+        throw new HttpError(404, 'NOT_FOUND', 'Assigned delivery not found.');
+      }
+
+      const normalizedStatus = normalizeStatus(assignment.status);
+      if (normalizedStatus === 'DELIVERED') {
+        return this.getDriverAssignmentJob(tx, driverId, deliveryId);
+      }
+
+      if (normalizedStatus !== 'OUT_FOR_DELIVERY') {
         throw new HttpError(409, 'CONFLICT', 'Delivery is not ready to complete.');
       }
 
@@ -1011,14 +1268,21 @@ export class KyselyMobileRepository implements MobileRepository {
       const tipCents = toNumber(assignment.tipCents);
       const basePayCents = estimateBasePay(toNumber(assignment.totalCents));
 
-      await tx
+      const completedAssignment = await tx
         .updateTable('delivery_assignments')
         .set({
           status: 'DELIVERED',
           delivered_at: now
         })
         .where('delivery_id', '=', deliveryId)
-        .execute();
+        .where('driver_id', '=', driverId)
+        .where('status', '=', 'OUT_FOR_DELIVERY')
+        .returning('delivery_id')
+        .executeTakeFirst();
+
+      if (!completedAssignment) {
+        throw new HttpError(409, 'CONFLICT', 'Delivery is not ready to complete.');
+      }
 
       await this.insertDriverStatusChange(
         tx,
@@ -1028,31 +1292,23 @@ export class KyselyMobileRepository implements MobileRepository {
         'Driver completed delivery.'
       );
 
-      const existingEarning = await tx
-        .selectFrom('driver_earnings')
-        .select('earning_id')
-        .where('delivery_id', '=', deliveryId)
-        .where('driver_id', '=', driverId)
-        .executeTakeFirst();
-
-      if (!existingEarning) {
-        await tx
-          .insertInto('driver_earnings')
-          .values({
-            earning_id: randomUUID(),
-            driver_id: driverId,
-            delivery_id: deliveryId,
-            base_pay_cents: basePayCents,
-            bonus_cents: 0,
-            tip_cents: tipCents,
-            adjustments_cents: 0,
-            total_pay_cents: basePayCents + tipCents,
-            currency: assignment.currency ?? 'USD',
-            status: 'PENDING',
-            created_at: now
-          })
-          .execute();
-      }
+      await tx
+        .insertInto('driver_earnings')
+        .values({
+          earning_id: randomUUID(),
+          driver_id: driverId,
+          delivery_id: deliveryId,
+          base_pay_cents: basePayCents,
+          bonus_cents: 0,
+          tip_cents: tipCents,
+          adjustments_cents: 0,
+          total_pay_cents: basePayCents + tipCents,
+          currency: assignment.currency ?? 'USD',
+          status: 'PENDING',
+          created_at: now
+        })
+        .onConflict((oc) => oc.column('delivery_id').doNothing())
+        .execute();
 
       return this.getDriverAssignmentJob(tx, driverId, deliveryId);
     });
@@ -1205,6 +1461,7 @@ export class KyselyMobileRepository implements MobileRepository {
       ])
       .where('offer.driver_id', '=', driverId)
       .where('offer.status', '=', 'OFFERED')
+      .where(offerIsLiveSql('offer'))
       .orderBy('offer.offered_at desc')
       .execute();
 

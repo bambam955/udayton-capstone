@@ -35,19 +35,50 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+      'shows pickup-unavailable fallback when pickup coordinates are missing',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DriverDeliveryMapScreen(
+          job: _testJob(
+            driverStartLat: null,
+            driverStartLng: null,
+            pickupLat: null,
+            pickupLng: null,
+          ),
+          phase: DriverRoutePhase.toPickup,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('driver-map-unavailable')), findsOneWidget);
+    expect(
+      find.text(
+          'Precise pickup coordinates are unavailable. External navigation can still open.'),
+      findsOneWidget,
+    );
+  });
 }
 
-DriverJob _testJob() {
-  return const DriverJob(
+DriverJob _testJob({
+  double? driverStartLat = 35.2471,
+  double? driverStartLng = -80.8631,
+  double? pickupLat = 35.2271,
+  double? pickupLng = -80.8431,
+}) {
+  return DriverJob(
     id: 'del-1',
     title: 'Downtown Pantry Run',
-    driverStartLat: 35.2471,
-    driverStartLng: -80.8631,
+    driverStartLat: driverStartLat,
+    driverStartLng: driverStartLng,
     pickup: 'Downtown Market',
     pickupAddressLine: '100 Main St',
     pickupStoreId: 'loc-1',
-    pickupLat: 35.2271,
-    pickupLng: -80.8431,
+    pickupLat: pickupLat,
+    pickupLng: pickupLng,
     dropoff: 'Northside Deli',
     dropoffAddressLine: '1 Elm St',
     dropoffLat: null,
