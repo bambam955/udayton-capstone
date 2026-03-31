@@ -1,77 +1,350 @@
 -- ============================================================
--- Local-development seed data
+-- Local-development seed data (efficient, deterministic, idempotent)
 -- Loaded by the separate `db-seed` compose service.
--- Keep this out of the Flyway migration path.
 -- ============================================================
 
--- Retailers used by seeded orders/moves
+-- Deterministic UUID helper for repeatable seeds.
+CREATE OR REPLACE FUNCTION pg_temp.seed_uuid(seed TEXT)
+RETURNS UUID
+LANGUAGE SQL
+IMMUTABLE
+AS $$
+  SELECT (
+    substr(md5(seed), 1, 8) || '-' ||
+    substr(md5(seed), 9, 4) || '-' ||
+    substr(md5(seed), 13, 4) || '-' ||
+    substr(md5(seed), 17, 4) || '-' ||
+    substr(md5(seed), 21, 12)
+  )::uuid;
+$$;
+
+-- Retailers (20 total)
+CREATE TEMP TABLE seed_retailers ON COMMIT DROP AS
+SELECT *
+FROM (
+  VALUES
+    (1, '11111111-1111-1111-1111-111111111113'::uuid, 'Walmart',    'https://www.walmart.com',     TRUE, NOW() - INTERVAL '18 days'),
+    (2, '11111111-1111-1111-1111-111111111114'::uuid, 'Target',     'https://www.target.com',      TRUE, NOW() - INTERVAL '17 days')
+) AS base(n, retailer_id, name, website, is_enabled, created_at)
+UNION ALL
+SELECT
+  n + 2,
+  pg_temp.seed_uuid('retailer-extra-' || n::text),
+  CASE WHEN n % 2 = 0 THEN 'Walmart Mock Store ' ELSE 'Target Mock Store ' END || lpad(n::text, 2, '0'),
+  CASE WHEN n % 2 = 0 THEN 'https://walmart-mock-' ELSE 'https://target-mock-' END || n::text || '.example',
+  TRUE,
+  NOW() - make_interval(days => 18 - n)
+FROM generate_series(1, 18) AS gs(n);
+
 INSERT INTO retailers (retailer_id, name, website, is_enabled, created_at)
-VALUES
-  ('11111111-1111-1111-1111-111111111111', 'FreshMart', 'https://freshmart.example', TRUE, NOW()),
-  ('11111111-1111-1111-1111-111111111112', 'QuickGrocer', 'https://quickgrocer.example', TRUE, NOW())
-ON CONFLICT (retailer_id) DO NOTHING;
+SELECT retailer_id, name, website, is_enabled, created_at
+FROM seed_retailers
+ON CONFLICT DO NOTHING;
 
--- Customers
+-- Customers (25 total)
+CREATE TEMP TABLE seed_customers ON COMMIT DROP AS
+SELECT *
+FROM (
+  VALUES
+    (1, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid, 'ava.johnson@example.com',      '+1-555-101-0001', 'Ava Johnson',       '$2b$10$dummyhashcustomer01', TRUE, NOW() - INTERVAL '30 days', NOW()),
+    (2, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid, 'liam.carter@example.com',      '+1-555-101-0002', 'Liam Carter',       '$2b$10$dummyhashcustomer02', TRUE, NOW() - INTERVAL '28 days', NOW()),
+    (3, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3'::uuid, 'mia.nguyen@example.com',       '+1-555-101-0003', 'Mia Nguyen',        '$2b$10$dummyhashcustomer03', TRUE, NOW() - INTERVAL '24 days', NOW()),
+    (4, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4'::uuid, 'noah.baker@example.com',       '+1-555-101-0004', 'Noah Baker',        '$2b$10$dummyhashcustomer04', TRUE, NOW() - INTERVAL '20 days', NOW()),
+    (5, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5'::uuid, 'olivia.hernandez@example.com', '+1-555-101-0005', 'Olivia Hernandez',  '$2b$10$dummyhashcustomer05', TRUE, NOW() - INTERVAL '18 days', NOW())
+) AS base(n, customer_id, email, phone, full_name, password_hash, is_active, created_at, updated_at)
+UNION ALL
+SELECT
+  n,
+  pg_temp.seed_uuid('customer-' || n::text),
+  'seed.customer' || lpad(n::text, 2, '0') || '@example.com',
+  '+1-555-101-' || lpad((1000 + n)::text, 4, '0'),
+  'Seed Customer ' || lpad(n::text, 2, '0'),
+  '$2b$10$seedhashcustomer' || lpad(n::text, 2, '0'),
+  TRUE,
+  NOW() - make_interval(days => n),
+  NOW() - make_interval(hours => n)
+FROM generate_series(6, 25) AS gs(n);
+
 INSERT INTO customers (customer_id, email, phone, full_name, password_hash, is_active, created_at, updated_at)
-VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'ava.johnson@example.com', '+1-555-101-0001', 'Ava Johnson', '$2b$10$dummyhashcustomer01', TRUE, NOW() - INTERVAL '30 days', NOW()),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', 'liam.carter@example.com', '+1-555-101-0002', 'Liam Carter', '$2b$10$dummyhashcustomer02', TRUE, NOW() - INTERVAL '28 days', NOW()),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', 'mia.nguyen@example.com', '+1-555-101-0003', 'Mia Nguyen', '$2b$10$dummyhashcustomer03', TRUE, NOW() - INTERVAL '24 days', NOW()),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', 'noah.baker@example.com', '+1-555-101-0004', 'Noah Baker', '$2b$10$dummyhashcustomer04', TRUE, NOW() - INTERVAL '20 days', NOW()),
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5', 'olivia.hernandez@example.com', '+1-555-101-0005', 'Olivia Hernandez', '$2b$10$dummyhashcustomer05', TRUE, NOW() - INTERVAL '18 days', NOW())
-ON CONFLICT (customer_id) DO NOTHING;
+SELECT customer_id, email, phone, full_name, password_hash, is_active, created_at, updated_at
+FROM seed_customers
+ON CONFLICT DO NOTHING;
 
--- Customer addresses
+-- Addresses (25 total)
+CREATE TEMP TABLE seed_addresses ON COMMIT DROP AS
+SELECT
+  c.n,
+  CASE c.n
+    WHEN 1 THEN 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid
+    WHEN 2 THEN 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid
+    WHEN 3 THEN 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    WHEN 4 THEN 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb4'::uuid
+    WHEN 5 THEN 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb5'::uuid
+    ELSE pg_temp.seed_uuid('address-' || c.n::text)
+  END AS address_id,
+  c.customer_id,
+  'Home'::text AS label,
+  (100 + c.n)::text || ' Seedline Ave' AS line1,
+  CASE WHEN c.n % 3 = 0 THEN 'Unit ' || (10 + c.n)::text ELSE NULL END AS line2,
+  CASE WHEN c.n % 2 = 0 THEN 'Brooklyn' ELSE 'Jersey City' END AS city,
+  CASE WHEN c.n % 2 = 0 THEN 'NY' ELSE 'NJ' END AS state,
+  lpad((10000 + c.n * 7)::text, 5, '0') AS postal_code,
+  'USA'::text AS country,
+  CASE WHEN c.n % 2 = 0 THEN 'Leave at door' ELSE 'Ring bell once' END AS instructions,
+  TRUE AS is_default,
+  NOW() - make_interval(days => c.n - 1) AS created_at
+FROM seed_customers c;
+
 INSERT INTO addresses (address_id, customer_id, label, line1, line2, city, state, postal_code, country, instructions, is_default, created_at)
-VALUES
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'Home', '123 Maple St', 'Apt 4B', 'Brooklyn', 'NY', '11201', 'USA', 'Leave at front desk', TRUE, NOW() - INTERVAL '29 days'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', 'Home', '55 King Ave', NULL, 'Jersey City', 'NJ', '07302', 'USA', 'Ring once', TRUE, NOW() - INTERVAL '27 days'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', 'Home', '880 Pine Rd', NULL, 'Queens', 'NY', '11368', 'USA', 'Call on arrival', TRUE, NOW() - INTERVAL '23 days'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb4', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', 'Home', '742 Oak Dr', 'Unit 12', 'Newark', 'NJ', '07102', 'USA', 'Use side entrance', TRUE, NOW() - INTERVAL '19 days'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb5', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5', 'Home', '91 River Pl', NULL, 'Hoboken', 'NJ', '07030', 'USA', 'Lobby drop-off', TRUE, NOW() - INTERVAL '17 days')
-ON CONFLICT (address_id) DO NOTHING;
+SELECT address_id, customer_id, label, line1, line2, city, state, postal_code, country, instructions, is_default, created_at
+FROM seed_addresses
+ON CONFLICT DO NOTHING;
 
--- Drivers
+-- Drivers (25 total)
+CREATE TEMP TABLE seed_drivers ON COMMIT DROP AS
+SELECT *
+FROM (
+  VALUES
+    (1, 'cccccccc-cccc-cccc-cccc-ccccccccccc1'::uuid, 'ethan.driver@example.com',    '+1-555-202-0001', 'Ethan Brooks',  '$2b$10$dummyhashdriver01', TRUE, 'ONLINE',  NOW() - INTERVAL '40 days', NOW()),
+    (2, 'cccccccc-cccc-cccc-cccc-ccccccccccc2'::uuid, 'sophia.driver@example.com',   '+1-555-202-0002', 'Sophia Patel',  '$2b$10$dummyhashdriver02', TRUE, 'ONLINE',  NOW() - INTERVAL '35 days', NOW()),
+    (3, 'cccccccc-cccc-cccc-cccc-ccccccccccc3'::uuid, 'jacob.driver@example.com',    '+1-555-202-0003', 'Jacob Kim',     '$2b$10$dummyhashdriver03', TRUE, 'OFFLINE', NOW() - INTERVAL '31 days', NOW()),
+    (4, 'cccccccc-cccc-cccc-cccc-ccccccccccc4'::uuid, 'isabella.driver@example.com', '+1-555-202-0004', 'Isabella Reed', '$2b$10$dummyhashdriver04', TRUE, 'ONLINE',  NOW() - INTERVAL '26 days', NOW()),
+    (5, 'cccccccc-cccc-cccc-cccc-ccccccccccc5'::uuid, 'mason.driver@example.com',    '+1-555-202-0005', 'Mason Flores',  '$2b$10$dummyhashdriver05', TRUE, 'BUSY',    NOW() - INTERVAL '21 days', NOW())
+) AS base(n, driver_id, email, phone, full_name, password_hash, is_active, status, created_at, updated_at)
+UNION ALL
+SELECT
+  n,
+  pg_temp.seed_uuid('driver-' || n::text),
+  'seed.driver' || lpad(n::text, 2, '0') || '@example.com',
+  '+1-555-202-' || lpad((2000 + n)::text, 4, '0'),
+  'Seed Driver ' || lpad(n::text, 2, '0'),
+  '$2b$10$seedhashdriver' || lpad(n::text, 2, '0'),
+  TRUE,
+  CASE n % 3 WHEN 0 THEN 'OFFLINE' WHEN 1 THEN 'ONLINE' ELSE 'BUSY' END,
+  NOW() - make_interval(days => n + 2),
+  NOW() - make_interval(hours => n)
+FROM generate_series(6, 25) AS gs(n);
+
 INSERT INTO drivers (driver_id, email, phone, full_name, password_hash, is_active, status, created_at, updated_at)
-VALUES
-  ('cccccccc-cccc-cccc-cccc-ccccccccccc1', 'ethan.driver@example.com', '+1-555-202-0001', 'Ethan Brooks', '$2b$10$dummyhashdriver01', TRUE, 'ONLINE', NOW() - INTERVAL '40 days', NOW()),
-  ('cccccccc-cccc-cccc-cccc-ccccccccccc2', 'sophia.driver@example.com', '+1-555-202-0002', 'Sophia Patel', '$2b$10$dummyhashdriver02', TRUE, 'ONLINE', NOW() - INTERVAL '35 days', NOW()),
-  ('cccccccc-cccc-cccc-cccc-ccccccccccc3', 'jacob.driver@example.com', '+1-555-202-0003', 'Jacob Kim', '$2b$10$dummyhashdriver03', TRUE, 'OFFLINE', NOW() - INTERVAL '31 days', NOW()),
-  ('cccccccc-cccc-cccc-cccc-ccccccccccc4', 'isabella.driver@example.com', '+1-555-202-0004', 'Isabella Reed', '$2b$10$dummyhashdriver04', TRUE, 'ONLINE', NOW() - INTERVAL '26 days', NOW()),
-  ('cccccccc-cccc-cccc-cccc-ccccccccccc5', 'mason.driver@example.com', '+1-555-202-0005', 'Mason Flores', '$2b$10$dummyhashdriver05', TRUE, 'BUSY', NOW() - INTERVAL '21 days', NOW())
-ON CONFLICT (driver_id) DO NOTHING;
+SELECT driver_id, email, phone, full_name, password_hash, is_active, status, created_at, updated_at
+FROM seed_drivers
+ON CONFLICT DO NOTHING;
 
--- Moves represented as orders
+-- Retailer accounts (20 total)
+CREATE TEMP TABLE seed_retailer_accounts ON COMMIT DROP AS
+SELECT
+  n,
+  CASE n
+    WHEN 1 THEN 'abababab-abab-abab-abab-abababababa1'::uuid
+    WHEN 2 THEN 'abababab-abab-abab-abab-abababababa2'::uuid
+    WHEN 3 THEN 'abababab-abab-abab-abab-abababababa3'::uuid
+    WHEN 4 THEN 'abababab-abab-abab-abab-abababababa4'::uuid
+    ELSE pg_temp.seed_uuid('retailer-account-' || n::text)
+  END AS retailer_account_id,
+  c.customer_id,
+  CASE WHEN n % 2 = 0 THEN '11111111-1111-1111-1111-111111111113'::uuid ELSE '11111111-1111-1111-1111-111111111114'::uuid END AS retailer_id,
+  (n % 5) <> 0 AS is_connected,
+  CASE
+    WHEN (n % 5) = 0 THEN NULL
+    WHEN n % 2 = 0 THEN 'wmrt-dev-key'
+    ELSE 'tgt-dev-key'
+  END AS access_token,
+  CASE WHEN (n % 5) <> 0 THEN 'mock-refresh-token-' || n::text ELSE NULL END AS refresh_token,
+  CASE WHEN (n % 5) <> 0 THEN NOW() + make_interval(days => 14 + n) ELSE NULL END AS token_expires_at,
+  NOW() - make_interval(days => n) AS created_at,
+  NOW() - make_interval(hours => n) AS updated_at
+FROM seed_customers c
+WHERE c.n <= 20;
+
+INSERT INTO retailer_accounts (
+  retailer_account_id, customer_id, retailer_id, is_connected, access_token, refresh_token,
+  token_expires_at, created_at, updated_at
+)
+SELECT
+  retailer_account_id, customer_id, retailer_id, is_connected, access_token, refresh_token,
+  token_expires_at, created_at, updated_at
+FROM seed_retailer_accounts
+ON CONFLICT DO NOTHING;
+
+-- Product categories (30 total)
+CREATE TEMP TABLE seed_categories ON COMMIT DROP AS
+SELECT *
+FROM (
+  VALUES
+    (1, '22222222-2222-2222-2222-222222222221'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, 'Produce',       'WM-PRODUCE',      NOW() - INTERVAL '1 day'),
+    (2, '22222222-2222-2222-2222-222222222222'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, 'Dairy & Eggs',  'WM-DAIRY',        NOW() - INTERVAL '1 day'),
+    (3, '22222222-2222-2222-2222-222222222223'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, 'Pantry Staples','WM-PANTRY',       NOW() - INTERVAL '1 day'),
+    (4, '22222222-2222-2222-2222-222222222224'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, 'Fresh Produce', 'TGT-PRODUCE',     NOW() - INTERVAL '1 day'),
+    (5, '22222222-2222-2222-2222-222222222225'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, 'Snacks',        'TGT-SNACKS',      NOW() - INTERVAL '1 day'),
+    (6, '22222222-2222-2222-2222-222222222226'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, 'Beverages',     'TGT-BEVERAGES',   NOW() - INTERVAL '1 day')
+) AS base(n, category_id, retailer_id, name, external_category_id, updated_at)
+UNION ALL
+SELECT
+  n,
+  pg_temp.seed_uuid('category-' || n::text),
+  CASE WHEN n % 2 = 0 THEN '11111111-1111-1111-1111-111111111113'::uuid ELSE '11111111-1111-1111-1111-111111111114'::uuid END,
+  'Mock Category ' || lpad(n::text, 2, '0'),
+  'MOCK-CAT-' || lpad(n::text, 3, '0'),
+  NOW() - make_interval(hours => n)
+FROM generate_series(7, 30) AS gs(n);
+
+INSERT INTO product_categories (category_id, retailer_id, name, external_category_id, updated_at)
+SELECT category_id, retailer_id, name, external_category_id, updated_at
+FROM seed_categories
+ON CONFLICT DO NOTHING;
+
+-- Products (60 total, local image paths)
+CREATE TEMP TABLE seed_products ON COMMIT DROP AS
+SELECT *
+FROM (
+  VALUES
+    (1,  '33333333-3333-3333-3333-333333333331'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, '22222222-2222-2222-2222-222222222221'::uuid, 'WM-TOM-001', 'Roma Tomatoes (1 lb)',               'Fresh roma tomatoes sold by the pound.',           '/images/products/mock-product-01.png', 229, 'USD', TRUE,  NOW() - INTERVAL '2 hours'),
+    (2,  '33333333-3333-3333-3333-333333333332'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, '22222222-2222-2222-2222-222222222221'::uuid, 'WM-BAN-001', 'Bananas (2 lb bunch)',                'Sweet bananas, average 2 lb bunch.',               '/images/products/mock-product-02.png', 189, 'USD', TRUE,  NOW() - INTERVAL '2 hours'),
+    (3,  '33333333-3333-3333-3333-333333333333'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'WM-EGG-018', 'Large Eggs (18 ct)',                 'Grade A large eggs, 18 count.',                    '/images/products/mock-product-03.png', 499, 'USD', TRUE,  NOW() - INTERVAL '90 minutes'),
+    (4,  '33333333-3333-3333-3333-333333333334'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, '22222222-2222-2222-2222-222222222223'::uuid, 'WM-RIC-005', 'Long Grain Rice (5 lb)',             'Enriched long grain white rice.',                  '/images/products/mock-product-04.png', 879, 'USD', TRUE,  NOW() - INTERVAL '90 minutes'),
+    (5,  '33333333-3333-3333-3333-333333333335'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, '22222222-2222-2222-2222-222222222223'::uuid, 'WM-PAS-001', 'Spaghetti Pasta (16 oz)',            'Durum wheat spaghetti pasta.',                     '/images/products/mock-product-05.png', 169, 'USD', TRUE,  NOW() - INTERVAL '90 minutes'),
+    (6,  '33333333-3333-3333-3333-333333333336'::uuid, '11111111-1111-1111-1111-111111111113'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'WM-MIL-1G',  'Whole Milk (1 gal)',                 'Vitamin D whole milk.',                            '/images/products/mock-product-06.png', 429, 'USD', FALSE, NOW() - INTERVAL '1 hour'),
+    (7,  '33333333-3333-3333-3333-333333333337'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, '22222222-2222-2222-2222-222222222224'::uuid, '10000001',    'Laundry Detergent 92oz',            'Target mock inventory item (tcin 10000001).',     '/images/products/mock-product-07.png', 1499, 'USD', TRUE,  NOW() - INTERVAL '2 hours'),
+    (8,  '33333333-3333-3333-3333-333333333338'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, '22222222-2222-2222-2222-222222222225'::uuid, '10000002',    'Trash Bags 40ct',                   'Target mock inventory item (tcin 10000002).',     '/images/products/mock-product-08.png', 1149, 'USD', TRUE,  NOW() - INTERVAL '2 hours'),
+    (9,  '33333333-3333-3333-3333-333333333339'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, '22222222-2222-2222-2222-222222222226'::uuid, '10000003',    'Dish Soap 2-Pack',                  'Target mock inventory item (tcin 10000003).',     '/images/products/mock-product-09.png', 679, 'USD', FALSE, NOW() - INTERVAL '70 minutes'),
+    (10, '33333333-3333-3333-3333-33333333333a'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, '22222222-2222-2222-2222-222222222225'::uuid, 'TGT-GRA-006', 'Granola Bars Variety (12 ct)',       'Chewy granola bars assortment pack.',              '/images/products/mock-product-10.png', 629, 'USD', TRUE,  NOW() - INTERVAL '70 minutes'),
+    (11, '33333333-3333-3333-3333-33333333333b'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, '22222222-2222-2222-2222-222222222226'::uuid, 'TGT-SPK-008', 'Sparkling Water Lime (8 pk)',        'Lime flavored sparkling water.',                   '/images/products/mock-product-11.png', 469, 'USD', TRUE,  NOW() - INTERVAL '50 minutes'),
+    (12, '33333333-3333-3333-3333-33333333333c'::uuid, '11111111-1111-1111-1111-111111111114'::uuid, '22222222-2222-2222-2222-222222222226'::uuid, 'TGT-COL-12',  'Cola (12 pack)',                     '12-pack canned cola beverage.',                    '/images/products/mock-product-12.png', 799, 'USD', FALSE, NOW() - INTERVAL '50 minutes')
+) AS base(n, product_id, retailer_id, category_id, external_sku, name, description, image_url, unit_price_cents, currency, is_available, updated_at)
+UNION ALL
+SELECT
+  n,
+  pg_temp.seed_uuid('product-' || n::text),
+  c.retailer_id,
+  c.category_id,
+  CASE
+    WHEN c.retailer_id = '11111111-1111-1111-1111-111111111114'::uuid
+      THEN lpad((10000000 + n)::text, 8, '0')
+    ELSE 'WM-SKU-' || lpad(n::text, 4, '0')
+  END,
+  'Mock Product ' || lpad(n::text, 3, '0'),
+  'Generated seed item for mock retailer browsing and checkout flows.',
+  '/images/products/mock-product-' || lpad((((n - 1) % 12) + 1)::text, 2, '0') || '.png',
+  149 + (n * 37),
+  'USD',
+  (n % 9) <> 0,
+  NOW() - make_interval(minutes => n * 3)
+FROM generate_series(13, 60) AS gs(n)
+JOIN LATERAL (
+  SELECT category_id, retailer_id
+  FROM seed_categories sc
+  WHERE sc.n = ((n - 1) % 30) + 1
+) c ON TRUE;
+
+INSERT INTO products (
+  product_id, retailer_id, category_id, external_sku, name, description, image_url,
+  unit_price_cents, currency, is_available, updated_at
+)
+SELECT
+  product_id, retailer_id, category_id, external_sku, name, description, image_url,
+  unit_price_cents, currency, is_available, updated_at
+FROM seed_products
+ON CONFLICT DO NOTHING;
+
+-- Orders (25 total)
+CREATE TEMP TABLE seed_orders ON COMMIT DROP AS
+SELECT
+  n,
+  CASE n
+    WHEN 1 THEN 'dddddddd-dddd-dddd-dddd-ddddddddddd1'::uuid
+    WHEN 2 THEN 'dddddddd-dddd-dddd-dddd-ddddddddddd2'::uuid
+    WHEN 3 THEN 'dddddddd-dddd-dddd-dddd-ddddddddddd3'::uuid
+    WHEN 4 THEN 'dddddddd-dddd-dddd-dddd-ddddddddddd4'::uuid
+    WHEN 5 THEN 'dddddddd-dddd-dddd-dddd-ddddddddddd5'::uuid
+    ELSE pg_temp.seed_uuid('order-' || n::text)
+  END AS order_id,
+  c.customer_id,
+  a.address_id,
+  CASE
+    WHEN n % 2 = 0 THEN '11111111-1111-1111-1111-111111111113'::uuid
+    ELSE '11111111-1111-1111-1111-111111111114'::uuid
+  END AS retailer_id,
+  CASE (n % 4)
+    WHEN 3 THEN 'WM-PO-' || lpad((700000 + n)::text, 7, '0')
+    WHEN 0 THEN 'TGT-' || upper(substr(md5('tgt-order-' || n::text), 1, 10))
+    ELSE 'ORD-' || lpad((10000 + n)::text, 5, '0')
+  END AS external_order_id,
+  CASE n % 5 WHEN 0 THEN 'PLACED' WHEN 1 THEN 'ASSIGNED' WHEN 2 THEN 'IN_TRANSIT' WHEN 3 THEN 'DELIVERED' ELSE 'SUBMITTED' END AS status,
+  NOW() - make_interval(hours => n * 2) AS placed_at,
+  2500 + (n * 125) AS subtotal_cents,
+  399 + (n * 12) AS fees_cents,
+  200 + (n * 15) AS tip_cents,
+  CASE WHEN n % 4 = 0 THEN 300 ELSE 0 END AS discount_cents,
+  (2500 + (n * 125)) + (399 + (n * 12)) + (200 + (n * 15)) - CASE WHEN n % 4 = 0 THEN 300 ELSE 0 END AS total_cents,
+  'USD'::text AS currency,
+  'Generated seed order #' || n::text AS delivery_notes,
+  NOW() - make_interval(hours => n * 2) AS created_at,
+  NOW() - make_interval(minutes => n * 5) AS updated_at
+FROM seed_customers c
+JOIN seed_addresses a ON a.n = c.n
+WHERE c.n <= 25;
+
 INSERT INTO orders (
   order_id, customer_id, retailer_id, address_id, external_order_id, status, placed_at,
   subtotal_cents, fees_cents, tip_cents, discount_cents, total_cents, currency, delivery_notes, created_at, updated_at
 )
-VALUES
-  ('dddddddd-dddd-dddd-dddd-ddddddddddd1', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1', 'ORD-10001', 'DELIVERED', NOW() - INTERVAL '5 days', 5200, 799, 500, 0, 6499, 'USD', 'Please leave at concierge', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
-  ('dddddddd-dddd-dddd-dddd-ddddddddddd2', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '11111111-1111-1111-1111-111111111112', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2', 'ORD-10002', 'DELIVERED', NOW() - INTERVAL '4 days', 3800, 599, 300, 0, 4699, 'USD', 'Contactless dropoff', NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days'),
-  ('dddddddd-dddd-dddd-dddd-ddddddddddd3', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3', 'ORD-10003', 'IN_TRANSIT', NOW() - INTERVAL '3 hours', 6400, 899, 700, 500, 7499, 'USD', 'Text before arrival', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '30 minutes'),
-  ('dddddddd-dddd-dddd-dddd-ddddddddddd4', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '11111111-1111-1111-1111-111111111112', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb4', 'ORD-10004', 'ASSIGNED', NOW() - INTERVAL '2 hours', 4700, 699, 500, 0, 5899, 'USD', 'Use side door', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '45 minutes'),
-  ('dddddddd-dddd-dddd-dddd-ddddddddddd5', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb5', 'ORD-10005', 'PLACED', NOW() - INTERVAL '45 minutes', 3000, 499, 300, 0, 3799, 'USD', 'Leave in lobby', NOW() - INTERVAL '45 minutes', NOW() - INTERVAL '45 minutes')
-ON CONFLICT (order_id) DO NOTHING;
+SELECT
+  order_id, customer_id, retailer_id, address_id, external_order_id, status, placed_at,
+  subtotal_cents, fees_cents, tip_cents, discount_cents, total_cents, currency, delivery_notes, created_at, updated_at
+FROM seed_orders
+ON CONFLICT DO NOTHING;
 
--- Moves represented as delivery assignments
+-- Delivery assignments (25 total)
+CREATE TEMP TABLE seed_deliveries ON COMMIT DROP AS
+SELECT
+  n,
+  CASE n
+    WHEN 1 THEN 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1'::uuid
+    WHEN 2 THEN 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2'::uuid
+    WHEN 3 THEN 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3'::uuid
+    WHEN 4 THEN 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee4'::uuid
+    WHEN 5 THEN 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5'::uuid
+    ELSE pg_temp.seed_uuid('delivery-' || n::text)
+  END AS delivery_id,
+  o.order_id,
+  CASE WHEN n % 5 = 0 THEN NULL ELSE d.driver_id END AS driver_id,
+  CASE n % 5 WHEN 0 THEN 'PENDING_ASSIGNMENT' WHEN 1 THEN 'ASSIGNED' WHEN 2 THEN 'PICKED_UP' WHEN 3 THEN 'IN_TRANSIT' ELSE 'DELIVERED' END AS status,
+  CASE WHEN o.retailer_id = '11111111-1111-1111-1111-111111111113'::uuid
+    THEN 'Walmart Mock Pickup Hub'
+    ELSE 'Target Mock Pickup Hub'
+  END AS pickup_location,
+  NOW() - make_interval(hours => n * 2 - 1) AS assigned_at,
+  CASE WHEN n % 5 IN (2, 3, 4) THEN NOW() - make_interval(hours => n * 2 - 2) ELSE NULL END AS picked_up_at,
+  CASE WHEN n % 5 = 4 THEN NOW() - make_interval(hours => n * 2 - 3) ELSE NULL END AS delivered_at
+FROM seed_orders o
+JOIN seed_drivers d ON d.n = o.n
+WHERE o.n <= 25;
+
 INSERT INTO delivery_assignments (
   delivery_id, order_id, driver_id, status, pickup_location, assigned_at, picked_up_at, delivered_at
 )
-VALUES
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1', 'dddddddd-dddd-dddd-dddd-ddddddddddd1', 'cccccccc-cccc-cccc-cccc-ccccccccccc1', 'DELIVERED', 'FreshMart - Downtown', NOW() - INTERVAL '5 days' + INTERVAL '10 minutes', NOW() - INTERVAL '5 days' + INTERVAL '35 minutes', NOW() - INTERVAL '5 days' + INTERVAL '58 minutes'),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2', 'dddddddd-dddd-dddd-dddd-ddddddddddd2', 'cccccccc-cccc-cccc-cccc-ccccccccccc2', 'DELIVERED', 'QuickGrocer - Journal Sq', NOW() - INTERVAL '4 days' + INTERVAL '12 minutes', NOW() - INTERVAL '4 days' + INTERVAL '30 minutes', NOW() - INTERVAL '4 days' + INTERVAL '52 minutes'),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3', 'dddddddd-dddd-dddd-dddd-ddddddddddd3', 'cccccccc-cccc-cccc-cccc-ccccccccccc4', 'IN_TRANSIT', 'FreshMart - Astoria', NOW() - INTERVAL '2 hours 40 minutes', NOW() - INTERVAL '1 hour 55 minutes', NULL),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee4', 'dddddddd-dddd-dddd-dddd-ddddddddddd4', 'cccccccc-cccc-cccc-cccc-ccccccccccc5', 'ASSIGNED', 'QuickGrocer - Newark', NOW() - INTERVAL '1 hour 45 minutes', NULL, NULL),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5', 'dddddddd-dddd-dddd-dddd-ddddddddddd5', NULL, 'PENDING_ASSIGNMENT', 'FreshMart - Hoboken', NULL, NULL, NULL)
-ON CONFLICT (delivery_id) DO NOTHING;
+SELECT
+  delivery_id, order_id, driver_id, status, pickup_location, assigned_at, picked_up_at, delivered_at
+FROM seed_deliveries
+ON CONFLICT DO NOTHING;
 
--- Delivery timeline events for seeded moves
+-- Delivery status events (25 total)
 INSERT INTO delivery_status_events (event_id, delivery_id, driver_id, status, event_time, note, lat, lng)
-VALUES
-  ('ffffffff-ffff-ffff-ffff-fffffffffff1', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1', 'cccccccc-cccc-cccc-cccc-ccccccccccc1', 'ASSIGNED', NOW() - INTERVAL '5 days' + INTERVAL '10 minutes', 'Driver accepted offer', 40.7128, -74.0060),
-  ('ffffffff-ffff-ffff-ffff-fffffffffff2', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1', 'cccccccc-cccc-cccc-cccc-ccccccccccc1', 'DELIVERED', NOW() - INTERVAL '5 days' + INTERVAL '58 minutes', 'Delivered to concierge', 40.7090, -74.0112),
-  ('ffffffff-ffff-ffff-ffff-fffffffffff3', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3', 'cccccccc-cccc-cccc-cccc-ccccccccccc4', 'PICKED_UP', NOW() - INTERVAL '1 hour 55 minutes', 'Order picked up', 40.7590, -73.9845),
-  ('ffffffff-ffff-ffff-ffff-fffffffffff4', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3', 'cccccccc-cccc-cccc-cccc-ccccccccccc4', 'IN_TRANSIT', NOW() - INTERVAL '20 minutes', 'Approaching destination', 40.7526, -73.9772),
-  ('ffffffff-ffff-ffff-ffff-fffffffffff5', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee4', 'cccccccc-cccc-cccc-cccc-ccccccccccc5', 'ASSIGNED', NOW() - INTERVAL '1 hour 45 minutes', 'Waiting for pickup', 40.7357, -74.1724)
-ON CONFLICT (event_id) DO NOTHING;
+SELECT
+  CASE n
+    WHEN 1 THEN 'ffffffff-ffff-ffff-ffff-fffffffffff1'::uuid
+    WHEN 2 THEN 'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid
+    WHEN 3 THEN 'ffffffff-ffff-ffff-ffff-fffffffffff3'::uuid
+    WHEN 4 THEN 'ffffffff-ffff-ffff-ffff-fffffffffff4'::uuid
+    WHEN 5 THEN 'ffffffff-ffff-ffff-ffff-fffffffffff5'::uuid
+    ELSE pg_temp.seed_uuid('event-' || n::text)
+  END AS event_id,
+  delivery_id,
+  driver_id,
+  status,
+  NOW() - make_interval(hours => n) AS event_time,
+  'Generated seed event for delivery #' || n::text AS note,
+  40.6000 + (n * 0.01) AS lat,
+  -74.2000 + (n * 0.01) AS lng
+FROM seed_deliveries
+ON CONFLICT DO NOTHING;
