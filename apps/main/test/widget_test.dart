@@ -8,34 +8,16 @@ void main() {
   testWidgets('Customer app authenticates and renders API-backed tabs', (
     WidgetTester tester,
   ) async {
-    final sessionStore = InMemorySessionStore();
-    final apiClient = _FakeApiClient();
-    final dependencies = CustomerAppDependencies(
-      authApi: AuthApi(apiClient, sessionStore),
-      customerApi: CustomerMobileApi(apiClient),
-      resourceApi: ResourceApi(apiClient),
-    );
-
-    Future<void> selectMainTab(int index) async {
-      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-      navBar.onDestinationSelected?.call(index);
-      await tester.pumpAndSettle();
-    }
-
-    await tester.pumpWidget(MyApp(dependencies: dependencies));
-    await tester.pumpAndSettle();
+    await _pumpApp(tester, apiClient: _FakeApiClient());
 
     expect(
-        find.text(
-            'Sign in to manage orders, stores, and support from live API data.'),
-        findsOneWidget);
+      find.text(
+        'Sign in to manage orders, stores, and support from live API data.',
+      ),
+      findsOneWidget,
+    );
 
-    await tester.enterText(
-        find.byKey(const Key('customer-auth-email')), 'customer@example.com');
-    await tester.enterText(
-        find.byKey(const Key('customer-auth-password')), 'secret');
-    await tester.tap(find.byKey(const Key('customer-auth-submit')));
-    await tester.pumpAndSettle();
+    await _login(tester);
 
     expect(find.byKey(const Key('customer-logo')), findsOneWidget);
     expect(find.byKey(const Key('main-tab-home')), findsOneWidget);
@@ -43,30 +25,87 @@ void main() {
     expect(find.byKey(const Key('catalog-item-prod-1')), findsOneWidget);
     expect(find.byKey(const Key('cart-line-prod-1')), findsOneWidget);
 
-    await selectMainTab(2);
+    await _selectMainTab(tester, 2);
     expect(find.byKey(const Key('main-tab-orders')), findsOneWidget);
     expect(find.byKey(const Key('order-card-ord-1')), findsOneWidget);
     await tester.tap(find.byKey(const Key('order-view-ord-1')));
     await tester.pumpAndSettle();
     expect(find.text('Order details'), findsOneWidget);
+    expect(find.byKey(const Key('order-timeline-status-hist-1')), findsOneWidget);
+    expect(find.text('Submitted'), findsOneWidget);
+    expect(find.text('Order submitted through checkout.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('details-sheet-close')));
     await tester.pumpAndSettle();
     expect(find.text('Order details'), findsNothing);
 
-    await selectMainTab(3);
+    await _selectMainTab(tester, 3);
     expect(find.byKey(const Key('main-tab-support')), findsOneWidget);
     expect(find.byKey(const Key('support-ticket-ticket-1')), findsOneWidget);
 
-    await selectMainTab(4);
+    await _selectMainTab(tester, 4);
     expect(find.byKey(const Key('main-tab-account')), findsOneWidget);
     expect(find.text('Delivery addresses'), findsOneWidget);
     expect(find.text('Downtown Market'), findsWidgets);
+  });
+
+  testWidgets('Customer order details show an empty timeline state', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(
+      tester,
+      apiClient: _FakeApiClient(orderTimeline: const <Object?>[]),
+    );
+
+    await _login(tester);
+    await _selectMainTab(tester, 2);
+    await tester.tap(find.byKey(const Key('order-view-ord-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('order-timeline-empty')), findsOneWidget);
+    expect(
+      find.text('No status history has been recorded for this order yet.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Customer order details show an error state on timeline failure', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(
+      tester,
+      apiClient: _FakeApiClient(
+        orderTimelineError: const ApiError(
+          kind: ApiErrorKind.server,
+          statusCode: 500,
+          message: 'boom',
+        ),
+      ),
+    );
+
+    await _login(tester);
+    await _selectMainTab(tester, 2);
+    await tester.tap(find.byKey(const Key('order-view-ord-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('order-timeline-error')), findsOneWidget);
+    expect(
+      find.text('Unable to load order timeline right now.'),
+      findsOneWidget,
+    );
   });
 }
 
 // Small fake client that mirrors the handful of routes exercised by the widget
 // test so the UI can be tested without a live backend.
 class _FakeApiClient implements ApiClient {
+  _FakeApiClient({
+    List<Object?>? orderTimeline,
+    this.orderTimelineError,
+  }) : orderTimeline = orderTimeline ?? _defaultOrderTimeline();
+
+  final List<Object?> orderTimeline;
+  final Object? orderTimelineError;
+
   @override
   Future<ApiResponse<T>> send<T>(
     ApiRequest request, {
@@ -99,6 +138,7 @@ class _FakeApiClient implements ApiClient {
             },
           ],
         },
+      'GET /v1/order-status-history' => _orderTimelineResponse(),
       _ => throw StateError(
           'Unexpected request: ${request.method} ${request.path}'),
     };
@@ -106,6 +146,50 @@ class _FakeApiClient implements ApiClient {
     final data = decoder == null ? raw as T : decoder(raw);
     return ApiResponse<T>(statusCode: 200, data: data);
   }
+
+  Object _orderTimelineResponse() {
+    if (orderTimelineError != null) {
+      throw orderTimelineError!;
+    }
+
+    return <String, Object?>{
+      'data': orderTimeline,
+    };
+  }
+}
+
+Future<void> _pumpApp(
+  WidgetTester tester, {
+  required ApiClient apiClient,
+}) async {
+  final sessionStore = InMemorySessionStore();
+  final dependencies = CustomerAppDependencies(
+    authApi: AuthApi(apiClient, sessionStore),
+    customerApi: CustomerMobileApi(apiClient),
+    resourceApi: ResourceApi(apiClient),
+  );
+
+  await tester.pumpWidget(MyApp(dependencies: dependencies));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _login(WidgetTester tester) async {
+  await tester.enterText(
+    find.byKey(const Key('customer-auth-email')),
+    'customer@example.com',
+  );
+  await tester.enterText(
+    find.byKey(const Key('customer-auth-password')),
+    'secret',
+  );
+  await tester.tap(find.byKey(const Key('customer-auth-submit')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _selectMainTab(WidgetTester tester, int index) async {
+  final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+  navBar.onDestinationSelected?.call(index);
+  await tester.pumpAndSettle();
 }
 
 Map<String, Object?> _bootstrapJson() {
@@ -240,4 +324,23 @@ Map<String, Object?> _catalogJson() {
       'subtotalCents': 500,
     },
   };
+}
+
+List<Object?> _defaultOrderTimeline() {
+  return <Object?>[
+    <String, Object?>{
+      'order_status_history_id': 'hist-1',
+      'order_id': 'ord-1',
+      'status': 'SUBMITTED',
+      'status_time': '2099-01-01T00:00:00.000Z',
+      'note': 'Order submitted through checkout.',
+    },
+    <String, Object?>{
+      'order_status_history_id': 'hist-2',
+      'order_id': 'ord-1',
+      'status': 'ASSIGNED',
+      'status_time': '2099-01-01T00:10:00.000Z',
+      'note': 'Driver assigned.',
+    },
+  ];
 }

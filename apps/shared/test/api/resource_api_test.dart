@@ -41,6 +41,40 @@ void main() {
       expect(result.single.isDefault, isTrue);
     });
 
+    test('list preserves resource filters and decodes order status history',
+        () async {
+      final api = ResourceApi(
+        RecordingApiClient((request) {
+          expect(request.path, '/v1/order-status-history');
+          expect(request.queryParameters['order_id'], 'ord-1');
+          return <String, Object?>{
+            'data': <Object?>[
+              <String, Object?>{
+                'order_status_history_id': 'hist-1',
+                'order_id': 'ord-1',
+                'status': 'SUBMITTED',
+                'status_time': '2026-03-30T12:00:00.000Z',
+                'note': 'Order submitted through checkout.',
+              },
+            ],
+          };
+        }),
+      );
+
+      final result = await api.list<ResourceOrderStatusHistory>(
+        '/v1/order-status-history',
+        ResourceOrderStatusHistory.fromJson,
+        queryParameters: const <String, String>{'order_id': 'ord-1'},
+      );
+
+      expect(result.single.orderStatusHistoryId, 'hist-1');
+      expect(result.single.status, 'SUBMITTED');
+      expect(
+        result.single.statusTime,
+        DateTime.parse('2026-03-30T12:00:00.000Z'),
+      );
+    });
+
     test(
         'get, create, update, and delete use the resource envelope consistently',
         () async {

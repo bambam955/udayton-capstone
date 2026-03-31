@@ -981,6 +981,33 @@ class ResourceSupportTicket {
   }
 }
 
+class ResourceOrderStatusHistory {
+  const ResourceOrderStatusHistory({
+    required this.orderStatusHistoryId,
+    required this.orderId,
+    required this.status,
+    required this.statusTime,
+    required this.note,
+  });
+
+  final String orderStatusHistoryId;
+  final String orderId;
+  final String? status;
+  final DateTime? statusTime;
+  final String? note;
+
+  factory ResourceOrderStatusHistory.fromJson(Object? raw) {
+    final json = asJsonMap(raw);
+    return ResourceOrderStatusHistory(
+      orderStatusHistoryId: readString(json, 'order_status_history_id'),
+      orderId: readString(json, 'order_id'),
+      status: readNullableString(json, 'status'),
+      statusTime: readDateTime(json, 'status_time'),
+      note: readNullableString(json, 'note'),
+    );
+  }
+}
+
 class ResourceDriverSupportTicket {
   const ResourceDriverSupportTicket({
     required this.ticketId,

@@ -81,6 +81,20 @@ class OrderPreview {
   final int itemCount;
 }
 
+class OrderTimelineEntry {
+  const OrderTimelineEntry({
+    required this.id,
+    required this.status,
+    required this.occurredAt,
+    required this.note,
+  });
+
+  final String id;
+  final String status;
+  final DateTime? occurredAt;
+  final String? note;
+}
+
 class SupportTicket {
   const SupportTicket({
     required this.id,

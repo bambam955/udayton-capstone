@@ -702,9 +702,50 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     showCustomerOrderDetailsSheet(
       context: context,
       order: order,
+      loadTimeline: _loadOrderTimeline,
       orderStatusTone: _orderStatusTone,
       formatPrice: _formatPrice,
     );
+  }
+
+  Future<List<OrderTimelineEntry>> _loadOrderTimeline(String orderId) async {
+    final history = await widget.resourceApi.list<ResourceOrderStatusHistory>(
+      '/v1/order-status-history',
+      ResourceOrderStatusHistory.fromJson,
+      queryParameters: <String, String>{
+        'order_id': orderId,
+        'limit': '100',
+      },
+    );
+
+    final entries = <OrderTimelineEntry>[
+      for (final item in history)
+        OrderTimelineEntry(
+          id: item.orderStatusHistoryId,
+          status: item.status ?? 'UNKNOWN',
+          occurredAt: item.statusTime,
+          note: item.note,
+        ),
+    ];
+
+    // The resource API does not expose server-side ordering controls, so the
+    // client makes the timeline deterministic before rendering it.
+    entries.sort((left, right) {
+      final leftTime = left.occurredAt;
+      final rightTime = right.occurredAt;
+      if (leftTime == null && rightTime == null) {
+        return left.status.compareTo(right.status);
+      }
+      if (leftTime == null) {
+        return -1;
+      }
+      if (rightTime == null) {
+        return 1;
+      }
+      return leftTime.compareTo(rightTime);
+    });
+
+    return entries;
   }
 
   static StatusBadgeTone _orderStatusTone(String status) {
