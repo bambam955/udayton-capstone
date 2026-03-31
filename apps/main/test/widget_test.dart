@@ -31,7 +31,8 @@ void main() {
     await tester.tap(find.byKey(const Key('order-view-ord-1')));
     await tester.pumpAndSettle();
     expect(find.text('Order details'), findsOneWidget);
-    expect(find.byKey(const Key('order-timeline-status-hist-1')), findsOneWidget);
+    expect(
+        find.byKey(const Key('order-timeline-status-hist-1')), findsOneWidget);
     expect(find.text('Submitted'), findsOneWidget);
     expect(find.text('Order submitted through checkout.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('details-sheet-close')));
@@ -68,7 +69,8 @@ void main() {
     );
   });
 
-  testWidgets('Customer order details show an error state on timeline failure', (
+  testWidgets('Customer order details show an error state on timeline failure',
+      (
     WidgetTester tester,
   ) async {
     await _pumpApp(
