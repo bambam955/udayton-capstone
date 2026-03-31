@@ -612,7 +612,7 @@ class _DriverDeliveryMapScreenState extends State<DriverDeliveryMapScreen> {
   bool get _canRenderMap => hasMapboxAccessToken && isMapboxPlatformSupported;
 
   String? get _missingCoordinatesMessage {
-    final pickupUnavailable =
+    const pickupUnavailable =
         'Precise pickup coordinates are unavailable. External navigation can still open.';
     const dropoffUnavailable =
         'Precise dropoff coordinates are unavailable. External navigation can still open.';

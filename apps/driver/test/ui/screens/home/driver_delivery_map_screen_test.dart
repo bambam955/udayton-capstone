@@ -89,7 +89,7 @@ DriverJob _testJob({
     etaText: '18 min route',
     stage: DeliveryStage.assigned,
     detailLines: <String>['Pickup window: ASAP'],
-    gradient: <Color>[Color(0xFF7FD5CC), Color(0xFFB6E0AE)],
+    gradient: <Color>[const Color(0xFF7FD5CC), const Color(0xFFB6E0AE)],
     basePay: 8,
     tipAmount: 4.5,
     orderId: 'ord-1',
