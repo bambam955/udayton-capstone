@@ -205,6 +205,13 @@ function normalizeStatus(value: string | null | undefined): string {
   return value?.toUpperCase() ?? '';
 }
 
+// Driver availability is intentionally a simple current-state flag now. Active
+// work stays visible separately, but only online drivers can see or claim new
+// open offers.
+function isDriverOnlineStatus(value: string | null | undefined): boolean {
+  return normalizeStatus(value) === 'ONLINE';
+}
+
 // Checkout pricing is derived server-side so the order record, payment record,
 // and client confirmation screen all agree on the same totals.
 function buildCheckoutPricing(subtotalCents: number, tipCents: number) {
@@ -931,33 +938,21 @@ export class KyselyMobileRepository implements MobileRepository {
         })
         .execute();
 
-      const onlineDrivers = await tx
-        .selectFrom('drivers')
-        .select('driver_id')
-        .where('is_active', '=', true)
-        .where('status', 'in', ['ONLINE', 'AVAILABLE'])
+      // Open offers are shared across all online drivers, so checkout creates
+      // a single offer row that becomes visible whenever a driver is online.
+      await tx
+        .insertInto('delivery_offers')
+        .values({
+          offer_id: randomUUID(),
+          order_id: orderId,
+          delivery_id: deliveryId,
+          status: 'OFFERED',
+          offered_at: now,
+          responded_at: null,
+          expires_in_sec: 300,
+          decline_reason: null
+        })
         .execute();
-
-      if (onlineDrivers.length > 0) {
-        // Offers are pre-created for every currently available driver so the
-        // driver bootstrap can show live work without additional dispatch jobs.
-        await tx
-          .insertInto('delivery_offers')
-          .values(
-            onlineDrivers.map((driver) => ({
-              offer_id: randomUUID(),
-              order_id: orderId,
-              delivery_id: deliveryId,
-              driver_id: driver.driver_id,
-              status: 'OFFERED',
-              offered_at: now,
-              responded_at: null,
-              expires_in_sec: 300,
-              decline_reason: null
-            }))
-          )
-          .execute();
-      }
 
       await tx.deleteFrom('cart_items').where('cart_id', '=', input.cartId).execute();
       // Mark the cart as checked out instead of deleting it outright so repeat
@@ -1105,7 +1100,9 @@ export class KyselyMobileRepository implements MobileRepository {
 
     const [availableJobs, activeJobs, completedJobs, supportTickets, earningsSummary] =
       await Promise.all([
-        this.listAvailableDriverJobs(driverId),
+        isDriverOnlineStatus(driver.status)
+          ? this.listAvailableDriverJobs(driverId)
+          : Promise.resolve([]),
         this.listDriverAssignmentJobs(driverId, ['ASSIGNED', 'OUT_FOR_DELIVERY', 'IN_TRANSIT']),
         this.listDriverAssignmentJobs(driverId, ['DELIVERED']),
         this.listDriverSupportTickets(driverId),
@@ -1142,22 +1139,6 @@ export class KyselyMobileRepository implements MobileRepository {
         return this.getDriverAssignmentJob(tx, driverId, deliveryId);
       }
 
-      const offer = await tx
-        .selectFrom('delivery_offers')
-        .select([
-          'offer_id as offerId',
-          'status',
-          'offered_at as offeredAt',
-          'expires_in_sec as expiresInSec'
-        ])
-        .where('delivery_id', '=', deliveryId)
-        .where('driver_id', '=', driverId)
-        .executeTakeFirst();
-
-      if (!offer) {
-        throw new HttpError(404, 'NOT_FOUND', 'Delivery offer not found.');
-      }
-
       if (assignment.driverId) {
         throw new HttpError(
           409,
@@ -1168,6 +1149,35 @@ export class KyselyMobileRepository implements MobileRepository {
 
       if (normalizeStatus(assignment.status) !== 'PENDING_ASSIGNMENT') {
         throw new HttpError(409, 'CONFLICT', 'Delivery is no longer available for assignment.');
+      }
+
+      const driver = await tx
+        .selectFrom('drivers')
+        .select(['driver_id as driverId', 'status'])
+        .where('driver_id', '=', driverId)
+        .executeTakeFirst();
+
+      if (!driver) {
+        throw new HttpError(404, 'NOT_FOUND', 'Driver not found.');
+      }
+
+      if (!isDriverOnlineStatus(driver.status)) {
+        throw new HttpError(409, 'CONFLICT', 'Driver must be online to accept new deliveries.');
+      }
+
+      const offer = await tx
+        .selectFrom('delivery_offers')
+        .select([
+          'offer_id as offerId',
+          'status',
+          'offered_at as offeredAt',
+          'expires_in_sec as expiresInSec'
+        ])
+        .where('delivery_id', '=', deliveryId)
+        .executeTakeFirst();
+
+      if (!offer) {
+        throw new HttpError(404, 'NOT_FOUND', 'Delivery offer not found.');
       }
 
       if (normalizeStatus(offer.status) !== 'OFFERED') {
@@ -1227,18 +1237,6 @@ export class KyselyMobileRepository implements MobileRepository {
       if (!acceptedOffer) {
         throw new HttpError(409, 'CONFLICT', 'Delivery offer is no longer available.');
       }
-
-      await tx
-        .updateTable('delivery_offers')
-        .set({
-          status: 'EXPIRED',
-          responded_at: now
-        })
-        .where('delivery_id', '=', deliveryId)
-        .where('offer_id', '!=', offer.offerId)
-        .where('status', '=', 'OFFERED')
-        .where(offerIsLiveSql('delivery_offers'))
-        .execute();
 
       await this.insertDriverStatusChange(
         tx,
@@ -1510,9 +1508,9 @@ export class KyselyMobileRepository implements MobileRepository {
   }
 
   private async listAvailableDriverJobs(driverId: string): Promise<DriverJobSummary[]> {
-    // Available jobs come from still-live offers rather than assignments alone;
-    // once an offer expires or another driver claims it, it should disappear
-    // from the Nearby tab automatically.
+    // Available jobs come from shared live offers. Drivers do not own offer
+    // rows individually anymore, so online visibility is handled by bootstrap
+    // and acceptance eligibility instead of per-driver persistence.
     const rows = await this.db
       .selectFrom('delivery_offers as offer')
       .innerJoin('delivery_assignments as da', 'da.delivery_id', 'offer.delivery_id')
@@ -1555,8 +1553,9 @@ export class KyselyMobileRepository implements MobileRepository {
         'da.status as assignmentStatus',
         'o.delivery_notes as deliveryNotes'
       ])
-      .where('offer.driver_id', '=', driverId)
       .where('offer.status', '=', 'OFFERED')
+      .where('da.driver_id', 'is', null)
+      .where('da.status', '=', 'PENDING_ASSIGNMENT')
       .where(offerIsLiveSql('offer'))
       .orderBy('offer.offered_at desc')
       .execute();

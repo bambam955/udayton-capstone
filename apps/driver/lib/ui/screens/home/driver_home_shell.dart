@@ -75,6 +75,17 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
 
   List<DriverJob> get _completedJobs => _mapJobs(_bootstrap?.completedJobs);
 
+  String get _driverStatusLabel {
+    final rawStatus = _bootstrap?.driver.status?.trim();
+    if (rawStatus == null || rawStatus.isEmpty) {
+      return widget.session.user.email;
+    }
+
+    return rawStatus;
+  }
+
+  bool get _isDriverOnline => _driverStatusLabel.toUpperCase() == 'ONLINE';
+
   List<DriverSupportCase> get _supportCases {
     final bootstrap = _bootstrap;
     if (bootstrap == null) {
@@ -310,6 +321,39 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
       if (mounted) {
         setState(() {
           _isSubmittingSupport = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _setAvailability(bool isOnline) async {
+    setState(() {
+      _isMutating = true;
+    });
+
+    try {
+      await widget.resourceApi.update<ResourceDriver>(
+        '/v1/drivers/${widget.session.user.id}',
+        <String, Object?>{
+          'status': isOnline ? 'ONLINE' : 'OFFLINE',
+        },
+        ResourceDriver.fromJson,
+      );
+      await _refreshData();
+      _showMessage(
+        isOnline
+            ? 'You are online and can receive delivery offers.'
+            : 'You are offline and hidden from new delivery offers.',
+      );
+    } on ApiError catch (error) {
+      await _handleApiError(
+        error,
+        fallbackMessage: 'Unable to update driver status.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isMutating = false;
         });
       }
     }
@@ -614,7 +658,6 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   @override
   Widget build(BuildContext context) {
     final driverName = _bootstrap?.driver.fullName?.trim();
-    final driverStatus = _bootstrap?.driver.status?.trim();
 
     return Scaffold(
       body: SafeArea(
@@ -626,9 +669,10 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
                 title: driverName == null || driverName.isEmpty
                     ? 'Driver'
                     : driverName,
-                subtitle: driverStatus == null || driverStatus.isEmpty
-                    ? widget.session.user.email
-                    : driverStatus,
+                subtitle: _driverStatusLabel,
+                isOnline: _isDriverOnline,
+                isAvailabilityBusy: _isMutating,
+                onAvailabilityChanged: _setAvailability,
                 onProfileAction: _onProfileAction,
               ),
               const SizedBox(height: 8),

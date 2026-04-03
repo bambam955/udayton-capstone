@@ -881,6 +881,36 @@ class DriverBootstrap {
 
 /// Generic resource models below map the CRUD-style `/v1/*` endpoints used by
 /// the shells to fill in data that is not part of the opinionated mobile API.
+class ResourceDriver {
+  const ResourceDriver({
+    required this.driverId,
+    required this.email,
+    required this.phone,
+    required this.fullName,
+    required this.isActive,
+    required this.status,
+  });
+
+  final String driverId;
+  final String? email;
+  final String? phone;
+  final String? fullName;
+  final bool? isActive;
+  final String? status;
+
+  factory ResourceDriver.fromJson(Object? raw) {
+    final json = asJsonMap(raw);
+    return ResourceDriver(
+      driverId: readString(json, 'driver_id'),
+      email: readNullableString(json, 'email'),
+      phone: readNullableString(json, 'phone'),
+      fullName: readNullableString(json, 'full_name'),
+      isActive: json['is_active'] == null ? null : readBool(json, 'is_active'),
+      status: readNullableString(json, 'status'),
+    );
+  }
+}
+
 class ResourceAddress {
   const ResourceAddress({
     required this.addressId,

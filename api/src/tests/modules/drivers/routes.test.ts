@@ -99,7 +99,7 @@ describe('driver routes', () => {
     expect(repository.list).not.toHaveBeenCalled();
   });
 
-  it('lets drivers publish availability updates', async () => {
+  it('lets drivers update their online status through the drivers resource', async () => {
     const repository = makeRepository();
     const app = makeTestApp({
       repository,
@@ -107,19 +107,17 @@ describe('driver routes', () => {
     });
 
     const response = await request(app)
-      .post('/v1/driver-availability')
+      .patch('/v1/drivers/driver-1')
       .set('authorization', makeBearer('driver-1', 'driver'))
       .send({
-        is_available: true,
-        reason: 'ONLINE'
+        status: 'ONLINE'
       });
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(response.body.data).toMatchObject({
-      driver_id: 'driver-1',
-      is_available: true,
-      reason: 'ONLINE'
+      status: 'ONLINE'
     });
+    expect(repository.update).toHaveBeenCalled();
   });
 
   it('allows admins to list driver sessions', async () => {

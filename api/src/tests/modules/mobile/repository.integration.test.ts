@@ -57,15 +57,13 @@ describeIfDatabase('mobile repository integration', () => {
       expect(assignment.status).toBe('ASSIGNED');
       expect(fixture.driverIds).toContain(assignment.driverId ?? '');
 
-      const offers = await db
+      const offer = await db
         .selectFrom('delivery_offers')
-        .select(['driver_id as driverId', 'status'])
+        .select('status')
         .where('delivery_id', '=', fixture.deliveryId)
-        .orderBy('driver_id')
-        .execute();
+        .executeTakeFirstOrThrow();
 
-      expect(offers.filter((offer) => offer.status === 'ACCEPTED')).toHaveLength(1);
-      expect(offers.filter((offer) => offer.status === 'EXPIRED')).toHaveLength(1);
+      expect(offer.status).toBe('ACCEPTED');
     } finally {
       await cleanupFixture(db, fixture);
     }
@@ -98,10 +96,12 @@ describeIfDatabase('mobile repository integration', () => {
       const orderCount = await countRows(db, 'orders', 'customer_id', fixture.customerId);
       const paymentCount = await countRows(db, 'payments', 'customer_id', fixture.customerId);
       const assignmentCount = await countDeliveryAssignmentsForCustomer(db, fixture.customerId);
+      const offerCount = await countDeliveryOffersForCustomer(db, fixture.customerId);
 
       expect(orderCount).toBe(1);
       expect(paymentCount).toBe(1);
       expect(assignmentCount).toBe(1);
+      expect(offerCount).toBe(1);
 
       const orderItem = await db
         .selectFrom('order_items')
@@ -151,6 +151,30 @@ describeIfDatabase('mobile repository integration', () => {
       await cleanupFixture(db, fixture);
     }
   });
+
+  it('shows shared offers as soon as an offline driver goes online', async () => {
+    const fixture = await createAcceptFixture(db, {
+      driverStatuses: ['OFFLINE', 'ONLINE']
+    });
+    const [driverId] = fixture.driverIds;
+
+    try {
+      const offlineBootstrap = await repository.getDriverBootstrap(driverId);
+      expect(offlineBootstrap.availableJobs).toEqual([]);
+
+      await db
+        .updateTable('drivers')
+        .set({ status: 'ONLINE' })
+        .where('driver_id', '=', driverId)
+        .execute();
+
+      const onlineBootstrap = await repository.getDriverBootstrap(driverId);
+      expect(onlineBootstrap.availableJobs).toHaveLength(1);
+      expect(onlineBootstrap.availableJobs[0]?.deliveryId).toBe(fixture.deliveryId);
+    } finally {
+      await cleanupFixture(db, fixture);
+    }
+  });
 });
 
 async function countRows(
@@ -182,11 +206,26 @@ async function countDeliveryAssignmentsForCustomer(
   return Number(result.count ?? 0);
 }
 
+async function countDeliveryOffersForCustomer(
+  db: Kysely<Database>,
+  customerId: string
+): Promise<number> {
+  const result = await db
+    .selectFrom('delivery_offers as offer')
+    .innerJoin('orders as o', 'o.order_id', 'offer.order_id')
+    .select(sql<number>`count(*)::int`.as('count'))
+    .where('o.customer_id', '=', customerId)
+    .executeTakeFirstOrThrow();
+
+  return Number(result.count ?? 0);
+}
+
 async function createAcceptFixture(
   db: Kysely<Database>,
   options?: {
     offerAgeSeconds?: number;
     expiresInSec?: number;
+    driverStatuses?: readonly string[];
   }
 ) {
   const customerId = randomUUID();
@@ -247,7 +286,7 @@ async function createAcceptFixture(
         password_hash: 'secret',
         full_name: `Driver ${index + 1}`,
         is_active: true,
-        status: 'ONLINE',
+        status: options?.driverStatuses?.[index] ?? 'ONLINE',
         created_at: now,
         updated_at: now
       }))
@@ -293,19 +332,16 @@ async function createAcceptFixture(
 
   await db
     .insertInto('delivery_offers')
-    .values(
-      driverIds.map((driverId) => ({
-        offer_id: randomUUID(),
-        order_id: orderId,
-        delivery_id: deliveryId,
-        driver_id: driverId,
-        status: 'OFFERED',
-        offered_at: offeredAt,
-        responded_at: null,
-        expires_in_sec: expiresInSec,
-        decline_reason: null
-      }))
-    )
+    .values({
+      offer_id: randomUUID(),
+      order_id: orderId,
+      delivery_id: deliveryId,
+      status: 'OFFERED',
+      offered_at: offeredAt,
+      responded_at: null,
+      expires_in_sec: expiresInSec,
+      decline_reason: null
+    })
     .execute();
 
   return {

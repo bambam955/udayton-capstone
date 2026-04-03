@@ -89,37 +89,16 @@ export const deliveryResourceDefinitions = [
         updateable: true,
         requiredOnCreate: true
       }),
-      driver_id: stringField({
-        filterable: true,
-        createable: true,
-        updateable: true,
-        requiredOnCreate: true
-      }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       offered_at: timestampField({ createable: true, updateable: true }),
       responded_at: timestampField({ createable: true, updateable: true }),
       expires_in_sec: integerField({ createable: true, updateable: true }),
       decline_reason: stringField({ createable: true, updateable: true })
     },
-    listAccess: {
-      admin: {},
-      driver: {
-        // Offers are private to the driver they were dispatched to.
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        }
-      }
-    },
-    getAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        }
-      }
-    },
+    // Shared offers are system-owned dispatch records; the driver app reads
+    // them through mobile bootstrap instead of raw CRUD routes.
+    listAccess: adminOnly(),
+    getAccess: adminOnly(),
     createAccess: adminOnly(),
     updateAccess: adminOnly(),
     deleteAccess: adminOnly()
