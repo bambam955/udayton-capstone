@@ -11,6 +11,7 @@ import type { AuthUser, SessionRecord, SignupInput } from './types.js';
 export interface AuthRepository {
   findUserByEmail(role: AuthRole, email: string): Promise<AuthUser | null>;
   createCustomer(input: SignupInput): Promise<AuthUser>;
+  createDriver(input: SignupInput): Promise<AuthUser>;
   createSession(session: SessionRecord): Promise<void>;
   revokeSession(role: AuthRole, sessionId: string): Promise<void>;
   hasActiveSession(role: AuthRole, sessionId: string): Promise<boolean>;
@@ -102,6 +103,50 @@ export class KyselyAuthRepository implements AuthRepository {
       };
     } catch (error) {
       // The MVP schema enforces unique customer emails, so surface a stable API error.
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === '23505'
+      ) {
+        throw new HttpError(409, 'CONFLICT', 'An account with that email already exists.');
+      }
+
+      throw error;
+    }
+  }
+
+  async createDriver(input: SignupInput): Promise<AuthUser> {
+    try {
+      // New drivers start inactive from a dispatch perspective, so sign-up
+      // provisions the account but leaves operational status offline until the
+      // driver finishes setup and chooses to go online.
+      const row = await this.db
+        .insertInto('drivers')
+        .values({
+          driver_id: randomUUID(),
+          email: input.email.toLowerCase(),
+          phone: input.phone ?? null,
+          full_name: input.fullName ?? null,
+          password_hash: input.password,
+          is_active: true,
+          status: 'OFFLINE',
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+        .returning(['driver_id', 'email', 'password_hash'])
+        .executeTakeFirstOrThrow();
+
+      return {
+        userId: row.driver_id,
+        role: 'driver',
+        email: row.email ?? input.email.toLowerCase(),
+        passwordHash: row.password_hash ?? input.password,
+        isActive: true
+      };
+    } catch (error) {
+      // Driver emails are unique within the driver identity store, so surface
+      // the same stable conflict error that customer signup already uses.
       if (
         typeof error === 'object' &&
         error !== null &&

@@ -22,6 +22,7 @@ void main() {
 
       final api = AuthApi(client, store);
       final session = await api.signup(
+        role: ApiUserRole.customer,
         email: 'new@example.com',
         password: 'secret',
         fullName: 'New Customer',
@@ -32,6 +33,7 @@ void main() {
       expect(
         client.requests.single.body,
         <String, Object?>{
+          'role': 'customer',
           'email': 'new@example.com',
           'password': 'secret',
           'fullName': 'New Customer',

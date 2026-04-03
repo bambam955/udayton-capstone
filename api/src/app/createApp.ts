@@ -1,6 +1,8 @@
 import express from 'express';
 
+import { env } from '../config/env.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { createCorsMiddleware } from './middleware/cors.js';
 import { createAdminsRouter } from '../modules/admins/routes.js';
 import { createAuthRouter } from '../modules/auth/routes.js';
 import type { AuthService } from '../modules/auth/service.js';
@@ -34,6 +36,7 @@ export function createApp(services: AppServices) {
   const app = express();
 
   // Global middleware before route registration.
+  app.use(createCorsMiddleware(env));
   app.use(express.json());
   app.use('/health', healthRouter);
 

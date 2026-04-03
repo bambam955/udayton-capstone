@@ -16,19 +16,22 @@ class AuthApi {
   }
 
   Future<ApiSession> signup({
+    ApiUserRole role = ApiUserRole.customer,
     required String email,
     required String password,
     String? fullName,
     String? phone,
     String? deviceInfo,
   }) async {
-    // Persist the resulting session immediately so app shells can resume from
-    // secure storage on the next launch without re-running the signup flow.
+    // Signup remains a shared endpoint, but the requested role still needs to
+    // travel over the wire so customer and driver accounts land in the correct
+    // backing tables.
     final response = await _client.send<AuthResult>(
       ApiRequest(
         method: 'POST',
         path: '/v1/auth/signup',
         body: {
+          'role': apiUserRoleToWire(role),
           'email': email,
           'password': password,
           if (fullName != null && fullName.isNotEmpty) 'fullName': fullName,
