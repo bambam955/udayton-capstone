@@ -39,6 +39,8 @@ services:
       - admin-node-modules:/workspace/node_modules
       - npm-cache:/root/.npm
     working_dir: /workspace
+    environment:
+      BIZRUSH_API_BASE_URL: http://api:3000
     ports:
       - "${ADMIN_PORT:-3001}:${ADMIN_PORT:-3001}"
     command: npm run dev -- --port ${ADMIN_PORT:-3001}

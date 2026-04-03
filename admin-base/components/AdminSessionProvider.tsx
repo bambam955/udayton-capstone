@@ -1,13 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-
-type AdminSession = {
-  id: number;
-  username?: string | null;
-  email?: string | null;
-  role?: string | null;
-};
+import type { AdminSession } from "@/lib/api/types";
 
 type AdminSessionProviderProps = {
   initialAdmin: AdminSession;

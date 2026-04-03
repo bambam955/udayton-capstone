@@ -57,15 +57,28 @@ export interface ResourceDefinition {
 
 export interface ResourceListInput {
   limit: number;
+  offset: number;
   filters: Record<string, string | number | boolean>;
+}
+
+export interface ResourceListMeta {
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface ResourceListResult {
   data: Record<string, unknown>[];
+  meta: ResourceListMeta;
 }
 
 export interface ResourceMutationResult {
   data: Record<string, unknown>;
+}
+
+export interface ResourceListPage {
+  data: Record<string, unknown>[];
+  total: number;
 }
 
 export interface ResourceRepository {
@@ -80,7 +93,7 @@ export interface ResourceRepository {
     access: ResourceOperationAccess,
     principal: AuthPrincipal,
     input: ResourceListInput
-  ): Promise<Record<string, unknown>[]>;
+  ): Promise<ResourceListPage>;
   get(
     definition: ResourceDefinition,
     access: ResourceOperationAccess,

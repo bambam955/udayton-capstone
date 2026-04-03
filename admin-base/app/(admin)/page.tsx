@@ -1,18 +1,58 @@
 import AdminHeader from "@/components/AdminHeader";
+import { getDashboard, listResource } from "@/lib/api/client";
+import type { OrderRecord } from "@/lib/api/types";
+import { requireAdminAccessToken } from "@/lib/auth/session";
 
-const stats = [
-  { label: "Active drivers", value: "184", note: "Currently online" },
-  { label: "Ready pickups", value: "72", note: "Awaiting dispatch" },
-  { label: "Deliveries today", value: "1,248", note: "Completed runs" }
-];
+export default async function AdminDashboard() {
+  const token = await requireAdminAccessToken();
+  const [dashboard, deliveredOrders] = await Promise.all([
+    getDashboard(token),
+    listResource<OrderRecord>("orders", token, {
+      status: "DELIVERED",
+      limit: 1,
+      offset: 0
+    })
+  ]);
 
-const activity = [
-  { title: "Retailer queue", detail: "12 staged orders need assignment" },
-  { title: "Support escalations", detail: "4 tickets flagged as urgent" },
-  { title: "System health", detail: "All critical services operational" }
-];
+  const stats = [
+    {
+      label: "Active drivers",
+      value: dashboard.metrics.activeDrivers.toLocaleString(),
+      note: "Currently online"
+    },
+    {
+      label: "Ready pickups",
+      value: dashboard.metrics.readyForPickupOrders.toLocaleString(),
+      note: "Awaiting dispatch"
+    },
+    {
+      label: "Deliveries today",
+      value: deliveredOrders.meta.total.toLocaleString(),
+      note: "Completed runs"
+    }
+  ];
 
-export default function AdminDashboard() {
+  const degradedIntegrations = dashboard.integrationHealth.filter(
+    (integration) => integration.status && !["HEALTHY", "OK"].includes(integration.status)
+  );
+  const activity = [
+    {
+      title: "Retailer queue",
+      detail: `${dashboard.metrics.readyForPickupOrders} staged orders need assignment`
+    },
+    {
+      title: "Support escalations",
+      detail: `${dashboard.metrics.integrationIssues} systems flagged for review`
+    },
+    {
+      title: "System health",
+      detail:
+        degradedIntegrations.length > 0
+          ? `${degradedIntegrations.length} integration checks need attention`
+          : "All critical services operational"
+    }
+  ];
+
   return (
     <div className="space-y-8">
       <AdminHeader title="Dashboard" subtitle="Quick pulse on Biz Rush operations." />

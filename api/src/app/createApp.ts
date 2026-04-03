@@ -1,6 +1,8 @@
 import express from 'express';
 
 import { errorHandler } from './middleware/error-handler.js';
+import { createAdminOperationsRouter } from '../modules/admins/operations-routes.js';
+import type { AdminOperationsService } from '../modules/admins/operations-service.js';
 import { createAdminsRouter } from '../modules/admins/routes.js';
 import { createAuthRouter } from '../modules/auth/routes.js';
 import type { AuthService } from '../modules/auth/service.js';
@@ -16,6 +18,7 @@ import type { ResourceService } from '../modules/shared/resource-core/service.js
 export interface AppServices {
   authService: AuthService;
   resourceService: ResourceService;
+  adminOperationsService?: AdminOperationsService;
 }
 
 export function createApp(services: AppServices) {
@@ -27,6 +30,12 @@ export function createApp(services: AppServices) {
 
   // Versioned API surface for mobile apps and admin dashboard.
   app.use('/v1/auth', createAuthRouter(services.authService));
+  if (services.adminOperationsService) {
+    app.use(
+      '/v1/admin',
+      createAdminOperationsRouter(services.adminOperationsService, services.authService)
+    );
+  }
   app.use('/v1', createAdminsRouter(services.resourceService, services.authService));
   app.use('/v1', createCustomersRouter(services.resourceService, services.authService));
   app.use('/v1', createDriversRouter(services.resourceService, services.authService));

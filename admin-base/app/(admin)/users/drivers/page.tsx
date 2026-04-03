@@ -1,7 +1,11 @@
 import Link from "next/link";
-import AdminHeader from "@/components/AdminHeader";
 
-type DriverRecord = {
+import AdminHeader from "@/components/AdminHeader";
+import { listResource } from "@/lib/api/client";
+import type { DeliveryAssignmentRecord, DriverRecord } from "@/lib/api/types";
+import { requireAdminAccessToken } from "@/lib/auth/session";
+
+type DriverDashboardRecord = {
   id: string;
   name: string;
   serviceZone: string;
@@ -10,25 +14,49 @@ type DriverRecord = {
   verificationStatus: "Verified" | "Review";
 };
 
-const driverRecords: DriverRecord[] = [
-  { id: "D-001", name: "Maya Brooks", serviceZone: "Midtown", activePickup: "Target - Midtown", availability: "On delivery", verificationStatus: "Verified" },
-  { id: "D-002", name: "Leo Turner", serviceZone: "Eastgate", activePickup: "Walmart - Eastgate", availability: "On delivery", verificationStatus: "Verified" },
-  { id: "D-003", name: "Eli Morgan", serviceZone: "Harbor", activePickup: "None", availability: "Available", verificationStatus: "Verified" },
-  { id: "D-004", name: "Nora Singh", serviceZone: "South Bay", activePickup: "Target - South Bay", availability: "On delivery", verificationStatus: "Verified" },
-  { id: "D-005", name: "Chris Vega", serviceZone: "West End", activePickup: "None", availability: "Available", verificationStatus: "Verified" },
-  { id: "D-006", name: "Aiden Cole", serviceZone: "Central", activePickup: "Walmart - Central", availability: "On delivery", verificationStatus: "Verified" },
-  { id: "D-007", name: "Rae Nolan", serviceZone: "Riverbend", activePickup: "None", availability: "Available", verificationStatus: "Review" },
-  { id: "D-008", name: "Noah Cruz", serviceZone: "Summit", activePickup: "Target - Summit", availability: "On delivery", verificationStatus: "Verified" },
-  { id: "D-009", name: "Liam Park", serviceZone: "Greenline", activePickup: "None", availability: "Offline", verificationStatus: "Verified" },
-  { id: "D-010", name: "Zoe Kim", serviceZone: "Beacon", activePickup: "Walmart - Beacon", availability: "On delivery", verificationStatus: "Verified" },
-  { id: "D-011", name: "Ivy Ward", serviceZone: "Westfield", activePickup: "None", availability: "Available", verificationStatus: "Verified" }
-];
+function zoneFromPickup(pickupLocation: string | null | undefined) {
+  if (!pickupLocation) {
+    return "Unassigned";
+  }
 
-const totalDrivers = driverRecords.length;
-const availableNow = driverRecords.filter((driver) => driver.availability === "Available").length;
-const onDelivery = driverRecords.filter((driver) => driver.availability === "On delivery").length;
+  const parts = pickupLocation.split(" - ");
+  return parts[parts.length - 1] ?? pickupLocation;
+}
 
-export default function DriversPage() {
+export default async function DriversPage() {
+  const token = await requireAdminAccessToken();
+  const [drivers, deliveries] = await Promise.all([
+    listResource<DriverRecord>("drivers", token, { limit: 100, offset: 0 }),
+    listResource<DeliveryAssignmentRecord>("delivery-assignments", token, { limit: 100, offset: 0 })
+  ]);
+
+  const driverRecords: DriverDashboardRecord[] = drivers.data.map((driver) => {
+    const activeDelivery = deliveries.data.find(
+      (delivery) =>
+        delivery.driver_id === driver.driver_id && delivery.status && delivery.status !== "DELIVERED"
+    );
+
+    const availability: DriverDashboardRecord["availability"] =
+      driver.status === "OFFLINE"
+        ? "Offline"
+        : driver.status === "BUSY" || activeDelivery
+          ? "On delivery"
+          : "Available";
+
+    return {
+      id: driver.driver_id,
+      name: driver.full_name ?? driver.email ?? driver.driver_id,
+      serviceZone: zoneFromPickup(activeDelivery?.pickup_location),
+      activePickup: activeDelivery?.pickup_location ?? "None",
+      availability,
+      verificationStatus: driver.is_active === true ? "Verified" : "Review"
+    };
+  });
+
+  const totalDrivers = driverRecords.length;
+  const availableNow = driverRecords.filter((driver) => driver.availability === "Available").length;
+  const onDelivery = driverRecords.filter((driver) => driver.availability === "On delivery").length;
+
   return (
     <div className="space-y-8">
       <AdminHeader

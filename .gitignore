@@ -1,1 +1,3 @@
 *.orig
+.env.local
+.env.*.local

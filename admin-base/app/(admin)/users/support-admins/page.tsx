@@ -1,19 +1,42 @@
 import Link from "next/link";
+
 import AdminHeader from "@/components/AdminHeader";
+import { getDashboard, listResource } from "@/lib/api/client";
+import type { AdminProfileRecord, AdminRecord } from "@/lib/api/types";
+import { requireAdminAccessToken } from "@/lib/auth/session";
 
-const supportStats = [
-  { label: "On shift", value: "7" },
-  { label: "Open escalations", value: "5" },
-  { label: "Awaiting handoff", value: "2" }
-];
+export default async function SupportAdminsPage() {
+  const token = await requireAdminAccessToken();
+  const [admins, profiles, dashboard] = await Promise.all([
+    listResource<AdminRecord>("admins", token, { limit: 100, offset: 0 }),
+    listResource<AdminProfileRecord>("admin-profiles", token, { limit: 100, offset: 0 }),
+    getDashboard(token)
+  ]);
 
-const supportQueue = [
-  { name: "Quinn Scott", focus: "Delivery escalation desk" },
-  { name: "Reese Flynn", focus: "Billing support desk" },
-  { name: "Sky Rivera", focus: "Driver support desk" }
-];
+  const profileByAdminId = new Map(profiles.data.map((profile) => [profile.admin_id, profile]));
+  const supportStats = [
+    { label: "On shift", value: admins.meta.total.toLocaleString() },
+    { label: "Open escalations", value: dashboard.metrics.integrationIssues.toLocaleString() },
+    {
+      label: "Awaiting handoff",
+      value: admins.data.filter((admin) => admin.is_active !== true).length.toLocaleString()
+    }
+  ];
 
-export default function SupportAdminsPage() {
+  const supportQueue = admins.data.slice(0, 3).map((admin, index) => {
+    const profile = profileByAdminId.get(admin.admin_id);
+    const focusAreas = [
+      "Delivery escalation desk",
+      "Billing support desk",
+      "Driver support desk"
+    ];
+
+    return {
+      name: admin.full_name ?? admin.email ?? admin.admin_id,
+      focus: profile?.title ?? focusAreas[index] ?? "Operations support desk"
+    };
+  });
+
   return (
     <div className="space-y-8">
       <AdminHeader title="Support Admins" subtitle="Starter view for operations support." />

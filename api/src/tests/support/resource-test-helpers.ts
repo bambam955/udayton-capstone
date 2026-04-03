@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 export function makeRepository(): ResourceRepository {
   return {
     canCreate: vi.fn().mockResolvedValue(true),
-    list: vi.fn().mockResolvedValue([]),
+    list: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     get: vi.fn().mockResolvedValue({ id: 'row-1' }),
     create: vi.fn().mockImplementation(async (_definition, _access, _principal, values) => values),
     update: vi
@@ -41,12 +41,17 @@ export function makeAuthService(isSessionActive = true): object {
   };
 }
 
-export function makeTestApp(options?: { repository?: ResourceRepository; authService?: object }) {
+export function makeTestApp(options?: {
+  repository?: ResourceRepository;
+  authService?: object;
+  adminOperationsService?: object;
+}) {
   const repository = options?.repository ?? makeRepository();
   const authService = options?.authService ?? makeAuthService(true);
 
   return createApp({
     authService: authService as never,
-    resourceService: new ResourceService(repository, allResourceDefinitions)
+    resourceService: new ResourceService(repository, allResourceDefinitions),
+    adminOperationsService: options?.adminOperationsService as never
   });
 }

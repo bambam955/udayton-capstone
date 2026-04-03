@@ -1,5 +1,9 @@
 import Link from "next/link";
+
 import AdminHeader from "@/components/AdminHeader";
+import { listResource } from "@/lib/api/client";
+import type { AdminRecord, CustomerRecord, DriverRecord } from "@/lib/api/types";
+import { requireAdminAccessToken } from "@/lib/auth/session";
 
 type UserSegment = {
   label: string;
@@ -8,23 +12,35 @@ type UserSegment = {
   href: string;
 };
 
-const userSegments: UserSegment[] = [
-  {
-    label: "Customers",
-    value: "12",
-    note: "Business owners placing supply orders",
-    href: "/users/customers"
-  },
-  {
-    label: "Drivers",
-    value: "11",
-    note: "Pickup and delivery after store fulfillment",
-    href: "/users/drivers"
-  },
-  { label: "Support admins", value: "7", note: "Operations support on shift", href: "/users/support-admins" }
-];
+export default async function UsersPage() {
+  const token = await requireAdminAccessToken();
+  const [customers, drivers, admins] = await Promise.all([
+    listResource<CustomerRecord>("customers", token, { limit: 1, offset: 0 }),
+    listResource<DriverRecord>("drivers", token, { limit: 1, offset: 0 }),
+    listResource<AdminRecord>("admins", token, { limit: 1, offset: 0 })
+  ]);
 
-export default function UsersPage() {
+  const userSegments: UserSegment[] = [
+    {
+      label: "Customers",
+      value: customers.meta.total.toLocaleString(),
+      note: "Business owners placing supply orders",
+      href: "/users/customers"
+    },
+    {
+      label: "Drivers",
+      value: drivers.meta.total.toLocaleString(),
+      note: "Pickup and delivery after store fulfillment",
+      href: "/users/drivers"
+    },
+    {
+      label: "Support admins",
+      value: admins.meta.total.toLocaleString(),
+      note: "Operations support on shift",
+      href: "/users/support-admins"
+    }
+  ];
+
   return (
     <div className="space-y-8">
       <AdminHeader

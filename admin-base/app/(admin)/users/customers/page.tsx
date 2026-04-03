@@ -1,7 +1,11 @@
 import Link from "next/link";
-import AdminHeader from "@/components/AdminHeader";
 
-type CustomerRecord = {
+import AdminHeader from "@/components/AdminHeader";
+import { listResource } from "@/lib/api/client";
+import type { CustomerRecord, OrderRecord } from "@/lib/api/types";
+import { requireAdminAccessToken } from "@/lib/auth/session";
+
+type CustomerDashboardRecord = {
   id: string;
   businessName: string;
   ownerName: string;
@@ -10,32 +14,48 @@ type CustomerRecord = {
   status: "Active" | "Needs follow-up";
 };
 
-const customerRecords: CustomerRecord[] = [
-  { id: "C-001", businessName: "Northside Deli", ownerName: "Jordan Lee", primaryStore: "Target - Midtown", openOrders: 3, status: "Active" },
-  { id: "C-002", businessName: "Elm Street Cafe", ownerName: "Taylor Reed", primaryStore: "Walmart - Eastgate", openOrders: 2, status: "Active" },
-  { id: "C-003", businessName: "Harbor Print Shop", ownerName: "Avery Kim", primaryStore: "Target - Harbor", openOrders: 1, status: "Needs follow-up" },
-  { id: "C-004", businessName: "Bayside Bakery", ownerName: "Morgan Park", primaryStore: "Walmart - South Bay", openOrders: 2, status: "Active" },
-  { id: "C-005", businessName: "Central Auto Care", ownerName: "Casey Noor", primaryStore: "Target - Central", openOrders: 0, status: "Active" },
-  { id: "C-006", businessName: "Oakline Flowers", ownerName: "Drew Patel", primaryStore: "Target - West End", openOrders: 2, status: "Active" },
-  { id: "C-007", businessName: "Metro Hardware", ownerName: "Reese Flynn", primaryStore: "Walmart - Metro", openOrders: 4, status: "Needs follow-up" },
-  { id: "C-008", businessName: "Summit Pet Supply", ownerName: "Quinn Scott", primaryStore: "Target - Summit", openOrders: 1, status: "Active" },
-  { id: "C-009", businessName: "Riverbend Office Co.", ownerName: "Sky Rivera", primaryStore: "Walmart - Riverbend", openOrders: 2, status: "Active" },
-  { id: "C-010", businessName: "Westfield Market", ownerName: "Riley Chen", primaryStore: "Target - Westfield", openOrders: 3, status: "Active" },
-  { id: "C-011", businessName: "Greenline Gym", ownerName: "Nico Hall", primaryStore: "Walmart - Greenline", openOrders: 1, status: "Active" },
-  { id: "C-012", businessName: "Beacon Bookstore", ownerName: "Jamie Ross", primaryStore: "Target - Beacon", openOrders: 0, status: "Active" }
-];
+function formatBusinessName(customer: CustomerRecord) {
+  if (customer.full_name) {
+    return customer.full_name;
+  }
 
-const totalCustomers = customerRecords.length;
-const activeOrders = customerRecords.filter((customer) => customer.openOrders > 0).length;
-const needsFollowUp = customerRecords.filter((customer) => customer.status === "Needs follow-up").length;
+  if (customer.email) {
+    return customer.email.split("@")[0] ?? customer.customer_id;
+  }
 
-export default function CustomersPage() {
+  return customer.customer_id;
+}
+
+export default async function CustomersPage() {
+  const token = await requireAdminAccessToken();
+  const [customers, orders] = await Promise.all([
+    listResource<CustomerRecord>("customers", token, { limit: 100, offset: 0 }),
+    listResource<OrderRecord>("orders", token, { limit: 100, offset: 0 })
+  ]);
+
+  const records: CustomerDashboardRecord[] = customers.data.map((customer) => {
+    const customerOrders = orders.data.filter((order) => order.customer_id === customer.customer_id);
+    const openOrders = customerOrders.filter((order) => order.status !== "DELIVERED").length;
+    const primaryStore = customerOrders[0]?.retailer_id ?? "No linked retailer";
+    const inactiveOrNeedsReview = customer.is_active !== true || openOrders > 1;
+
+    return {
+      id: customer.customer_id,
+      businessName: formatBusinessName(customer),
+      ownerName: customer.full_name ?? customer.email ?? customer.customer_id,
+      primaryStore,
+      openOrders,
+      status: inactiveOrNeedsReview ? "Needs follow-up" : "Active"
+    };
+  });
+
+  const totalCustomers = records.length;
+  const activeOrders = records.filter((customer) => customer.openOrders > 0).length;
+  const needsFollowUp = records.filter((customer) => customer.status === "Needs follow-up").length;
+
   return (
     <div className="space-y-8">
-      <AdminHeader
-        title="Customers"
-        subtitle="Business owners placing supply orders to partner stores."
-      />
+      <AdminHeader title="Customers" subtitle="Business owners placing supply orders to partner stores." />
       <div className="grid gap-6 md:grid-cols-3">
         <div className="glass-card animate-fade-up rounded-2xl p-6">
           <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">Total business owners</p>
@@ -71,7 +91,7 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {customerRecords.map((customer) => (
+              {records.map((customer) => (
                 <tr key={customer.id} className="border-t border-[rgba(255,255,255,0.08)] text-[color:var(--text-muted)]">
                   <td className="py-3 pr-4 text-white">{customer.businessName}</td>
                   <td className="py-3 pr-4">{customer.ownerName}</td>
@@ -89,7 +109,7 @@ export default function CustomersPage() {
         </div>
 
         <div className="space-y-3 md:hidden">
-          {customerRecords.map((customer) => (
+          {records.map((customer) => (
             <div
               key={customer.id}
               className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4"
