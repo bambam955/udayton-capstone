@@ -732,21 +732,42 @@ export class KyselyMobileRepository implements MobileRepository {
       // create a second order from the same cart contents.
       const cartItems = await tx
         .selectFrom('cart_items as ci')
-        .leftJoin('products as p', 'p.product_id', 'ci.product_id')
         .select([
           'ci.cart_item_id as cartItemId',
           'ci.product_id as productId',
           'ci.quantity',
-          'ci.notes',
-          'p.retailer_id as productRetailerId',
-          'p.external_sku as productExternalSku',
-          'p.name as productName',
-          'p.unit_price_cents as productUnitPriceCents',
-          'p.is_available as productIsAvailable'
+          'ci.notes'
         ])
         .where('ci.cart_id', '=', input.cartId)
         .forUpdate()
         .execute();
+
+      // Postgres rejects `FOR UPDATE` on the nullable side of an outer join, so
+      // lock cart rows first and then hydrate the current product snapshot in a
+      // second read. Missing products remain detectable because unmatched ids
+      // simply do not appear in the lookup map below.
+      const productIds = [...new Set(cartItems.map((item) => item.productId))];
+      const productRows =
+        productIds.length === 0
+          ? []
+          : await tx
+              .selectFrom('products as p')
+              .select([
+                'p.product_id as productId',
+                'p.retailer_id as productRetailerId',
+                'p.external_sku as productExternalSku',
+                'p.name as productName',
+                'p.unit_price_cents as productUnitPriceCents',
+                'p.is_available as productIsAvailable'
+              ])
+              .where('p.product_id', 'in', productIds)
+              .execute();
+
+      const productsById = new Map(productRows.map((row) => [row.productId, row]));
+      const cartItemsWithProducts = cartItems.map((item) => ({
+        ...item,
+        ...productsById.get(item.productId)
+      }));
 
       const address = await tx
         .selectFrom('addresses')
@@ -791,11 +812,11 @@ export class KyselyMobileRepository implements MobileRepository {
         );
       }
 
-      if (cartItems.length === 0) {
+      if (cartItemsWithProducts.length === 0) {
         throw new HttpError(400, 'INVALID_REQUEST', 'Cart is empty.');
       }
 
-      for (const item of cartItems) {
+      for (const item of cartItemsWithProducts) {
         if (toNumber(item.quantity) <= 0) {
           throw new HttpError(409, 'CONFLICT', 'Cart contains an invalid quantity.');
         }
@@ -816,7 +837,7 @@ export class KyselyMobileRepository implements MobileRepository {
         }
       }
 
-      const subtotalCents = cartItems.reduce(
+      const subtotalCents = cartItemsWithProducts.reduce(
         (sum, item) => sum + toNumber(item.productUnitPriceCents) * toNumber(item.quantity),
         0
       );
@@ -856,7 +877,7 @@ export class KyselyMobileRepository implements MobileRepository {
       await tx
         .insertInto('order_items')
         .values(
-          cartItems.map((item) => ({
+          cartItemsWithProducts.map((item) => ({
             order_item_id: randomUUID(),
             order_id: orderId,
             product_id: item.productId,
@@ -963,7 +984,7 @@ export class KyselyMobileRepository implements MobileRepository {
           placedAt: now.toISOString(),
           totalCents: pricing.totalCents,
           currency: 'USD',
-          itemCount: cartItems.length
+          itemCount: cartItemsWithProducts.length
         },
         pricing,
         payment: {
