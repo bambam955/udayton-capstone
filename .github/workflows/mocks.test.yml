@@ -1,0 +1,28 @@
+name: mocks test
+
+on:
+  pull_request:
+    paths:
+      - mocks/**
+      - .github/workflows/mocks.test.yml
+  push:
+    paths:
+      - mocks/**
+      - .github/workflows/mocks.test.yml
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mocks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mocks/package-lock.json
+      - run: npm ci
+      - run: npm test
