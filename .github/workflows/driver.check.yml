@@ -1,0 +1,43 @@
+name: driver check
+
+on:
+  pull_request:
+    paths:
+      - apps/driver/**
+      - apps/shared/**
+      - .github/workflows/driver.check.yml
+  push:
+    paths:
+      - apps/driver/**
+      - apps/shared/**
+      - .github/workflows/driver.check.yml
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/driver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+
+  format:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/driver
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
