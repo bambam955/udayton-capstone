@@ -1,4 +1,4 @@
-name: main test
+name: test:main
 
 on:
   pull_request:

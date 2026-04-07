@@ -1,4 +1,4 @@
-name: api check
+name: check:api
 
 on:
   pull_request:

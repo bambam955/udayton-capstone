@@ -1,4 +1,4 @@
-name: admin-base check
+name: check:admin
 
 on:
   pull_request:

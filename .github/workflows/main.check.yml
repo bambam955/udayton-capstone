@@ -1,4 +1,4 @@
-name: main check
+name: check:main
 
 on:
   pull_request:

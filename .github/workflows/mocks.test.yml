@@ -1,4 +1,4 @@
-name: mocks test
+name: test:mocks
 
 on:
   pull_request:

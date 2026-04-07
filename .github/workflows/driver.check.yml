@@ -1,5 +1,4 @@
-name: driver check
-
+name: check:driver
 on:
   pull_request:
     paths:
