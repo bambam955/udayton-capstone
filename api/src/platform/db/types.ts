@@ -339,15 +339,6 @@ export interface DriverDocumentsTable {
   created_at: DBTimestamp | null;
 }
 
-export interface DriverAvailabilityTable {
-  availability_id: string;
-  driver_id: string;
-  is_available: boolean | null;
-  reason: string | null;
-  started_at: DBTimestamp | null;
-  ended_at: DBTimestamp | null;
-}
-
 export interface DriverServiceAreasTable {
   service_area_id: string;
   driver_id: string;
@@ -447,7 +438,6 @@ export interface DeliveryOffersTable {
   offer_id: string;
   order_id: string;
   delivery_id: string;
-  driver_id: string;
   status: string | null;
   offered_at: DBTimestamp | null;
   responded_at: DBTimestamp | null;
@@ -705,7 +695,6 @@ export interface Database {
   driver_profiles: DriverProfilesTable;
   driver_vehicles: DriverVehiclesTable;
   driver_documents: DriverDocumentsTable;
-  driver_availability: DriverAvailabilityTable;
   driver_service_areas: DriverServiceAreasTable;
   driver_locations: DriverLocationsTable;
   driver_notifications: DriverNotificationsTable;

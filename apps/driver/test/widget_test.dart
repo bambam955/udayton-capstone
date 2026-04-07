@@ -27,7 +27,7 @@ void main() {
 
     expect(
         find.text(
-            'Sign in to manage live offers, deliveries, support, and earnings.'),
+            'Sign in or create an account to manage live offers, deliveries, support, and earnings.'),
         findsOneWidget);
 
     await tester.enterText(
@@ -94,10 +94,107 @@ void main() {
     expect(
         find.byKey(const Key('driver-support-case-ticket-2')), findsOneWidget);
   });
+
+  testWidgets('Driver app can sign up from the auth screen', (
+    WidgetTester tester,
+  ) async {
+    final sessionStore = InMemorySessionStore();
+    final apiClient = _FakeDriverApiClient();
+    final dependencies = DriverAppDependencies(
+      authApi: AuthApi(apiClient, sessionStore),
+      driverApi: DriverMobileApi(apiClient),
+      resourceApi: ResourceApi(apiClient),
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sign up'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-full-name')),
+      'New Driver',
+    );
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-phone')),
+      '555-202-0006',
+    );
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-email')),
+      'newdriver@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-password')),
+      'secret',
+    );
+    await tester.ensureVisible(find.byKey(const Key('driver-auth-submit')));
+    await tester.tap(find.byKey(const Key('driver-auth-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('driver-logo')), findsOneWidget);
+    expect(apiClient.lastSignupBody, <String, Object?>{
+      'role': 'driver',
+      'email': 'newdriver@example.com',
+      'password': 'secret',
+      'fullName': 'New Driver',
+      'phone': '555-202-0006',
+      'deviceInfo': 'driver-app',
+    });
+  });
+
+  testWidgets('Driver app toggles online status and refreshes shared offers', (
+    WidgetTester tester,
+  ) async {
+    final sessionStore = InMemorySessionStore();
+    final apiClient = _FakeDriverApiClient();
+    final dependencies = DriverAppDependencies(
+      authApi: AuthApi(apiClient, sessionStore),
+      driverApi: DriverMobileApi(apiClient),
+      resourceApi: ResourceApi(apiClient),
+    );
+
+    Future<void> selectDriverTab(int index) async {
+      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      navBar.onDestinationSelected?.call(index);
+      await tester.pumpAndSettle();
+    }
+
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-email')),
+      'driver@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-password')),
+      'secret',
+    );
+    await tester.tap(find.byKey(const Key('driver-auth-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('driver-status-subtitle')), findsOneWidget);
+    expect(find.text('ONLINE'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('driver-availability-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('OFFLINE'), findsOneWidget);
+    await selectDriverTab(1);
+    expect(find.byKey(const Key('driver-nearby-card-del-1')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('driver-availability-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ONLINE'), findsOneWidget);
+    expect(find.byKey(const Key('driver-nearby-card-del-1')), findsOneWidget);
+  });
 }
 
 class _FakeDriverApiClient implements ApiClient {
   String _stage = 'available';
+  String _driverStatus = 'ONLINE';
+  Map<String, Object?>? lastSignupBody;
   final List<Map<String, Object?>> _supportTickets = <Map<String, Object?>>[
     <String, Object?>{
       'ticketId': 'ticket-1',
@@ -113,7 +210,22 @@ class _FakeDriverApiClient implements ApiClient {
     ApiRequest request, {
     ApiDecoder<T>? decoder,
   }) async {
+    if (request.method == 'POST' && request.path == '/v1/auth/signup') {
+      lastSignupBody = Map<String, Object?>.from(
+        request.body! as Map<Object?, Object?>,
+      );
+    }
+
     final raw = switch ('${request.method} ${request.path}') {
+      'POST /v1/auth/signup' => <String, Object?>{
+          'accessToken': 'driver-signup-token',
+          'expiresAt': '2099-01-01T00:00:00.000Z',
+          'user': <String, Object?>{
+            'id': 'driver-2',
+            'role': 'driver',
+            'email': 'newdriver@example.com',
+          },
+        },
       'POST /v1/auth/login' => <String, Object?>{
           'accessToken': 'driver-token',
           'expiresAt': '2099-01-01T00:00:00.000Z',
@@ -124,13 +236,14 @@ class _FakeDriverApiClient implements ApiClient {
           },
         },
       'GET /v1/mobile/driver/bootstrap' =>
-        _bootstrapJson(_stage, _supportTickets),
+        _bootstrapJson(_stage, _supportTickets, _driverStatus),
       'POST /v1/mobile/driver/deliveries/del-1/accept' =>
         _transition('assigned'),
       'POST /v1/mobile/driver/deliveries/del-1/pickup' =>
         _transition('out_for_delivery'),
       'POST /v1/mobile/driver/deliveries/del-1/complete' =>
         _transition('delivered'),
+      'PATCH /v1/drivers/driver-1' => _updateDriverStatus(request.body),
       'GET /v1/driver-earnings' => <String, Object?>{
           'data': <Object?>[
             <String, Object?>{
@@ -175,6 +288,21 @@ class _FakeDriverApiClient implements ApiClient {
     };
   }
 
+  Map<String, Object?> _updateDriverStatus(Object? rawBody) {
+    final body = Map<Object?, Object?>.from(rawBody! as Map<Object?, Object?>);
+    _driverStatus = body['status'] as String? ?? _driverStatus;
+    return <String, Object?>{
+      'data': <String, Object?>{
+        'driver_id': 'driver-1',
+        'email': 'driver@example.com',
+        'phone': '555-202-0001',
+        'full_name': 'Driver Test',
+        'is_active': true,
+        'status': _driverStatus,
+      },
+    };
+  }
+
   Map<String, Object?> _createSupportTicket() {
     _supportTickets.insert(
       0,
@@ -204,16 +332,18 @@ class _FakeDriverApiClient implements ApiClient {
 Map<String, Object?> _bootstrapJson(
   String stage,
   List<Map<String, Object?>> supportTickets,
+  String driverStatus,
 ) {
   return <String, Object?>{
     'driver': <String, Object?>{
       'id': 'driver-1',
       'email': 'driver@example.com',
       'fullName': 'Driver Test',
-      'status': 'ONLINE',
+      'status': driverStatus,
     },
-    'availableJobs':
-        stage == 'available' ? <Object?>[_jobJson('available')] : <Object?>[],
+    'availableJobs': stage == 'available' && driverStatus == 'ONLINE'
+        ? <Object?>[_jobJson('available')]
+        : <Object?>[],
     'activeJobs': stage == 'assigned' || stage == 'out_for_delivery'
         ? <Object?>[_jobJson(stage)]
         : <Object?>[],

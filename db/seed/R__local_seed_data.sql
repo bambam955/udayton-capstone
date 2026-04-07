@@ -56,7 +56,7 @@ VALUES
   ('cccccccc-cccc-cccc-cccc-ccccccccccc2', 'sophia.driver@example.com', '+1-555-202-0002', 'Sophia Patel', 'driver-pass-2', TRUE, 'ONLINE', NOW() - INTERVAL '35 days', NOW()),
   ('cccccccc-cccc-cccc-cccc-ccccccccccc3', 'jacob.driver@example.com', '+1-555-202-0003', 'Jacob Kim', 'driver-pass-3', TRUE, 'OFFLINE', NOW() - INTERVAL '31 days', NOW()),
   ('cccccccc-cccc-cccc-cccc-ccccccccccc4', 'isabella.driver@example.com', '+1-555-202-0004', 'Isabella Reed', 'driver-pass-4', TRUE, 'ONLINE', NOW() - INTERVAL '26 days', NOW()),
-  ('cccccccc-cccc-cccc-cccc-ccccccccccc5', 'mason.driver@example.com', '+1-555-202-0005', 'Mason Flores', 'driver-pass-5', TRUE, 'BUSY', NOW() - INTERVAL '21 days', NOW())
+  ('cccccccc-cccc-cccc-cccc-ccccccccccc5', 'mason.driver@example.com', '+1-555-202-0005', 'Mason Flores', 'driver-pass-5', TRUE, 'ONLINE', NOW() - INTERVAL '21 days', NOW())
 ON CONFLICT (driver_id) DO NOTHING;
 
 -- Customer retailer connections used by the customer account tab and checkout flow.
@@ -171,12 +171,10 @@ VALUES
 ON CONFLICT (delivery_id) DO NOTHING;
 
 INSERT INTO delivery_offers (
-  offer_id, order_id, delivery_id, driver_id, status, offered_at, responded_at, expires_in_sec, decline_reason
+  offer_id, order_id, delivery_id, status, offered_at, responded_at, expires_in_sec, decline_reason
 )
 VALUES
-  ('26262626-2626-4262-8262-262626262611', 'dddddddd-dddd-dddd-dddd-ddddddddddd5', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5', 'cccccccc-cccc-cccc-cccc-ccccccccccc1', 'OFFERED', NOW() - INTERVAL '15 minutes', NULL, 300, NULL),
-  ('26262626-2626-4262-8262-262626262612', 'dddddddd-dddd-dddd-dddd-ddddddddddd5', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5', 'cccccccc-cccc-cccc-cccc-ccccccccccc2', 'OFFERED', NOW() - INTERVAL '15 minutes', NULL, 300, NULL),
-  ('26262626-2626-4262-8262-262626262613', 'dddddddd-dddd-dddd-dddd-ddddddddddd5', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5', 'cccccccc-cccc-cccc-cccc-ccccccccccc4', 'OFFERED', NOW() - INTERVAL '15 minutes', NULL, 300, NULL)
+  ('26262626-2626-4262-8262-262626262611', 'dddddddd-dddd-dddd-dddd-ddddddddddd5', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5', 'OFFERED', NOW() - INTERVAL '15 minutes', NULL, 300, NULL)
 ON CONFLICT (offer_id) DO NOTHING;
 
 INSERT INTO delivery_status_events (event_id, delivery_id, driver_id, status, event_time, note, lat, lng)

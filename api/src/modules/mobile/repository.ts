@@ -205,6 +205,13 @@ function normalizeStatus(value: string | null | undefined): string {
   return value?.toUpperCase() ?? '';
 }
 
+// Driver availability is intentionally a simple current-state flag now. Active
+// work stays visible separately, but only online drivers can see or claim new
+// open offers.
+function isDriverOnlineStatus(value: string | null | undefined): boolean {
+  return normalizeStatus(value) === 'ONLINE';
+}
+
 // Checkout pricing is derived server-side so the order record, payment record,
 // and client confirmation screen all agree on the same totals.
 function buildCheckoutPricing(subtotalCents: number, tipCents: number) {
@@ -732,21 +739,42 @@ export class KyselyMobileRepository implements MobileRepository {
       // create a second order from the same cart contents.
       const cartItems = await tx
         .selectFrom('cart_items as ci')
-        .leftJoin('products as p', 'p.product_id', 'ci.product_id')
         .select([
           'ci.cart_item_id as cartItemId',
           'ci.product_id as productId',
           'ci.quantity',
-          'ci.notes',
-          'p.retailer_id as productRetailerId',
-          'p.external_sku as productExternalSku',
-          'p.name as productName',
-          'p.unit_price_cents as productUnitPriceCents',
-          'p.is_available as productIsAvailable'
+          'ci.notes'
         ])
         .where('ci.cart_id', '=', input.cartId)
         .forUpdate()
         .execute();
+
+      // Postgres rejects `FOR UPDATE` on the nullable side of an outer join, so
+      // lock cart rows first and then hydrate the current product snapshot in a
+      // second read. Missing products remain detectable because unmatched ids
+      // simply do not appear in the lookup map below.
+      const productIds = [...new Set(cartItems.map((item) => item.productId))];
+      const productRows =
+        productIds.length === 0
+          ? []
+          : await tx
+              .selectFrom('products as p')
+              .select([
+                'p.product_id as productId',
+                'p.retailer_id as productRetailerId',
+                'p.external_sku as productExternalSku',
+                'p.name as productName',
+                'p.unit_price_cents as productUnitPriceCents',
+                'p.is_available as productIsAvailable'
+              ])
+              .where('p.product_id', 'in', productIds)
+              .execute();
+
+      const productsById = new Map(productRows.map((row) => [row.productId, row]));
+      const cartItemsWithProducts = cartItems.map((item) => ({
+        ...item,
+        ...productsById.get(item.productId)
+      }));
 
       const address = await tx
         .selectFrom('addresses')
@@ -791,11 +819,11 @@ export class KyselyMobileRepository implements MobileRepository {
         );
       }
 
-      if (cartItems.length === 0) {
+      if (cartItemsWithProducts.length === 0) {
         throw new HttpError(400, 'INVALID_REQUEST', 'Cart is empty.');
       }
 
-      for (const item of cartItems) {
+      for (const item of cartItemsWithProducts) {
         if (toNumber(item.quantity) <= 0) {
           throw new HttpError(409, 'CONFLICT', 'Cart contains an invalid quantity.');
         }
@@ -816,7 +844,7 @@ export class KyselyMobileRepository implements MobileRepository {
         }
       }
 
-      const subtotalCents = cartItems.reduce(
+      const subtotalCents = cartItemsWithProducts.reduce(
         (sum, item) => sum + toNumber(item.productUnitPriceCents) * toNumber(item.quantity),
         0
       );
@@ -856,7 +884,7 @@ export class KyselyMobileRepository implements MobileRepository {
       await tx
         .insertInto('order_items')
         .values(
-          cartItems.map((item) => ({
+          cartItemsWithProducts.map((item) => ({
             order_item_id: randomUUID(),
             order_id: orderId,
             product_id: item.productId,
@@ -910,33 +938,21 @@ export class KyselyMobileRepository implements MobileRepository {
         })
         .execute();
 
-      const onlineDrivers = await tx
-        .selectFrom('drivers')
-        .select('driver_id')
-        .where('is_active', '=', true)
-        .where('status', 'in', ['ONLINE', 'AVAILABLE'])
+      // Open offers are shared across all online drivers, so checkout creates
+      // a single offer row that becomes visible whenever a driver is online.
+      await tx
+        .insertInto('delivery_offers')
+        .values({
+          offer_id: randomUUID(),
+          order_id: orderId,
+          delivery_id: deliveryId,
+          status: 'OFFERED',
+          offered_at: now,
+          responded_at: null,
+          expires_in_sec: 300,
+          decline_reason: null
+        })
         .execute();
-
-      if (onlineDrivers.length > 0) {
-        // Offers are pre-created for every currently available driver so the
-        // driver bootstrap can show live work without additional dispatch jobs.
-        await tx
-          .insertInto('delivery_offers')
-          .values(
-            onlineDrivers.map((driver) => ({
-              offer_id: randomUUID(),
-              order_id: orderId,
-              delivery_id: deliveryId,
-              driver_id: driver.driver_id,
-              status: 'OFFERED',
-              offered_at: now,
-              responded_at: null,
-              expires_in_sec: 300,
-              decline_reason: null
-            }))
-          )
-          .execute();
-      }
 
       await tx.deleteFrom('cart_items').where('cart_id', '=', input.cartId).execute();
       // Mark the cart as checked out instead of deleting it outright so repeat
@@ -963,7 +979,7 @@ export class KyselyMobileRepository implements MobileRepository {
           placedAt: now.toISOString(),
           totalCents: pricing.totalCents,
           currency: 'USD',
-          itemCount: cartItems.length
+          itemCount: cartItemsWithProducts.length
         },
         pricing,
         payment: {
@@ -1084,7 +1100,9 @@ export class KyselyMobileRepository implements MobileRepository {
 
     const [availableJobs, activeJobs, completedJobs, supportTickets, earningsSummary] =
       await Promise.all([
-        this.listAvailableDriverJobs(driverId),
+        isDriverOnlineStatus(driver.status)
+          ? this.listAvailableDriverJobs(driverId)
+          : Promise.resolve([]),
         this.listDriverAssignmentJobs(driverId, ['ASSIGNED', 'OUT_FOR_DELIVERY', 'IN_TRANSIT']),
         this.listDriverAssignmentJobs(driverId, ['DELIVERED']),
         this.listDriverSupportTickets(driverId),
@@ -1121,22 +1139,6 @@ export class KyselyMobileRepository implements MobileRepository {
         return this.getDriverAssignmentJob(tx, driverId, deliveryId);
       }
 
-      const offer = await tx
-        .selectFrom('delivery_offers')
-        .select([
-          'offer_id as offerId',
-          'status',
-          'offered_at as offeredAt',
-          'expires_in_sec as expiresInSec'
-        ])
-        .where('delivery_id', '=', deliveryId)
-        .where('driver_id', '=', driverId)
-        .executeTakeFirst();
-
-      if (!offer) {
-        throw new HttpError(404, 'NOT_FOUND', 'Delivery offer not found.');
-      }
-
       if (assignment.driverId) {
         throw new HttpError(
           409,
@@ -1147,6 +1149,35 @@ export class KyselyMobileRepository implements MobileRepository {
 
       if (normalizeStatus(assignment.status) !== 'PENDING_ASSIGNMENT') {
         throw new HttpError(409, 'CONFLICT', 'Delivery is no longer available for assignment.');
+      }
+
+      const driver = await tx
+        .selectFrom('drivers')
+        .select(['driver_id as driverId', 'status'])
+        .where('driver_id', '=', driverId)
+        .executeTakeFirst();
+
+      if (!driver) {
+        throw new HttpError(404, 'NOT_FOUND', 'Driver not found.');
+      }
+
+      if (!isDriverOnlineStatus(driver.status)) {
+        throw new HttpError(409, 'CONFLICT', 'Driver must be online to accept new deliveries.');
+      }
+
+      const offer = await tx
+        .selectFrom('delivery_offers')
+        .select([
+          'offer_id as offerId',
+          'status',
+          'offered_at as offeredAt',
+          'expires_in_sec as expiresInSec'
+        ])
+        .where('delivery_id', '=', deliveryId)
+        .executeTakeFirst();
+
+      if (!offer) {
+        throw new HttpError(404, 'NOT_FOUND', 'Delivery offer not found.');
       }
 
       if (normalizeStatus(offer.status) !== 'OFFERED') {
@@ -1206,18 +1237,6 @@ export class KyselyMobileRepository implements MobileRepository {
       if (!acceptedOffer) {
         throw new HttpError(409, 'CONFLICT', 'Delivery offer is no longer available.');
       }
-
-      await tx
-        .updateTable('delivery_offers')
-        .set({
-          status: 'EXPIRED',
-          responded_at: now
-        })
-        .where('delivery_id', '=', deliveryId)
-        .where('offer_id', '!=', offer.offerId)
-        .where('status', '=', 'OFFERED')
-        .where(offerIsLiveSql('delivery_offers'))
-        .execute();
 
       await this.insertDriverStatusChange(
         tx,
@@ -1489,9 +1508,9 @@ export class KyselyMobileRepository implements MobileRepository {
   }
 
   private async listAvailableDriverJobs(driverId: string): Promise<DriverJobSummary[]> {
-    // Available jobs come from still-live offers rather than assignments alone;
-    // once an offer expires or another driver claims it, it should disappear
-    // from the Nearby tab automatically.
+    // Available jobs come from shared live offers. Drivers do not own offer
+    // rows individually anymore, so online visibility is handled by bootstrap
+    // and acceptance eligibility instead of per-driver persistence.
     const rows = await this.db
       .selectFrom('delivery_offers as offer')
       .innerJoin('delivery_assignments as da', 'da.delivery_id', 'offer.delivery_id')
@@ -1534,8 +1553,9 @@ export class KyselyMobileRepository implements MobileRepository {
         'da.status as assignmentStatus',
         'o.delivery_notes as deliveryNotes'
       ])
-      .where('offer.driver_id', '=', driverId)
       .where('offer.status', '=', 'OFFERED')
+      .where('da.driver_id', 'is', null)
+      .where('da.status', '=', 'PENDING_ASSIGNMENT')
       .where(offerIsLiveSql('offer'))
       .orderBy('offer.offered_at desc')
       .execute();
