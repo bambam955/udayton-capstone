@@ -9,13 +9,13 @@ class DriverTabSupport extends StatelessWidget {
   const DriverTabSupport({
     super.key,
     required this.supportCases,
-    required this.onQuickAction,
     required this.onCreateTicket,
+    required this.isSubmitting,
   });
 
   final List<DriverSupportCase> supportCases;
-  final ValueChanged<String> onQuickAction;
-  final VoidCallback onCreateTicket;
+  final ValueChanged<String> onCreateTicket;
+  final bool isSubmitting;
 
   @override
   Widget build(BuildContext context) {
@@ -37,39 +37,41 @@ class DriverTabSupport extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
+              // Match the quick action issue codes expected by the support
+              // resource rows created from the shell.
               OutlinedButton(
                 key: const Key('driver-support-quick-pickup'),
-                onPressed: () =>
-                    onQuickAction('Pickup issue clicked (demo only)'),
+                onPressed:
+                    isSubmitting ? null : () => onCreateTicket('PICKUP_ISSUE'),
                 style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Pickup Issue'),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
                 key: const Key('driver-support-quick-delivery'),
-                onPressed: () =>
-                    onQuickAction('Delivery issue clicked (demo only)'),
+                onPressed: isSubmitting
+                    ? null
+                    : () => onCreateTicket('DELIVERY_ISSUE'),
                 style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Delivery Issue'),
               ),
               const SizedBox(width: 8),
               OutlinedButton(
                 key: const Key('driver-support-quick-payment'),
-                onPressed: () =>
-                    onQuickAction('Payment question clicked (demo only)'),
+                onPressed: isSubmitting
+                    ? null
+                    : () => onCreateTicket('PAYMENT_QUESTION'),
                 style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
                 child: const Text('Payment Question'),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
-        FilledButton.tonal(
-          key: const Key('driver-support-create-ticket'),
-          onPressed: onCreateTicket,
-          child: const Text('Create demo ticket'),
-        ),
         const SizedBox(height: 14),
+        if (supportCases.isEmpty)
+          const SurfaceCard(
+            child: Text('No active support tickets.'),
+          ),
         for (final supportCase in supportCases) ...[
           SurfaceCard(
             key: Key('driver-support-case-${supportCase.id}'),
@@ -116,6 +118,8 @@ class DriverTabSupport extends StatelessWidget {
     if (normalized.contains('review')) {
       return StatusBadgeTone.assigned;
     }
+    // Treat any other state as completed/closed to keep the badge mapping
+    // stable even if the backend introduces more specific resolved values.
     return StatusBadgeTone.completed;
   }
 }

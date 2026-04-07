@@ -20,15 +20,13 @@ describe('customer routes', () => {
       .post('/v1/carts')
       .set('authorization', makeBearer('cust-1', 'customer'))
       .send({
-        retailer_id: 'ret-1',
-        status: 'ACTIVE'
+        retailer_id: 'ret-1'
       });
 
     expect(response.status).toBe(201);
     expect(response.body.data).toMatchObject({
       customer_id: 'cust-1',
-      retailer_id: 'ret-1',
-      status: 'ACTIVE'
+      retailer_id: 'ret-1'
     });
   });
 
@@ -56,6 +54,30 @@ describe('customer routes', () => {
       quantity: 2,
       substitution_allowed: true
     });
+  });
+
+  it('blocks customers from writing cart pricing snapshots directly', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/cart-items')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        cart_id: 'cart-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        unit_price_cents: 1,
+        name_snapshot: 'Totally Free',
+        external_sku: 'spoofed'
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+    expect(repository.create).not.toHaveBeenCalled();
   });
 
   it('injects the authenticated customer id on address creation', async () => {

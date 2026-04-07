@@ -11,8 +11,8 @@ function makeApp() {
         accessToken: 'signed-signup-token',
         expiresAt: new Date('2026-03-24T12:00:00.000Z'),
         user: {
-          id: 'cust-2',
-          role: 'customer',
+          id: (input as { role?: string }).role === 'driver' ? 'driver-2' : 'cust-2',
+          role: (input as { role?: string }).role ?? 'customer',
           email: (input as { email: string }).email
         }
       }),
@@ -41,6 +41,7 @@ function makeApp() {
 describe('auth routes', () => {
   it('returns signup results for valid payloads', async () => {
     const response = await request(makeApp()).post('/v1/auth/signup').send({
+      role: 'customer',
       email: 'newcustomer@example.com',
       password: 'secret',
       fullName: 'New Customer'
@@ -52,6 +53,25 @@ describe('auth routes', () => {
       user: {
         email: 'newcustomer@example.com',
         role: 'customer'
+      }
+    });
+  });
+
+  it('accepts driver signup payloads', async () => {
+    const response = await request(makeApp()).post('/v1/auth/signup').send({
+      role: 'driver',
+      email: 'newdriver@example.com',
+      password: 'secret',
+      fullName: 'New Driver',
+      phone: '555-202-0006'
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      accessToken: 'signed-signup-token',
+      user: {
+        email: 'newdriver@example.com',
+        role: 'driver'
       }
     });
   });

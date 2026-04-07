@@ -9,7 +9,7 @@ import {
 } from '../../support/resource-test-helpers.js';
 
 describe('delivery routes', () => {
-  it('allows drivers to update their delivery offer response fields', async () => {
+  it('blocks drivers from updating delivery offers outside the guarded mobile flow', async () => {
     const repository = makeRepository();
     const app = makeTestApp({
       repository,
@@ -24,11 +24,9 @@ describe('delivery routes', () => {
         decline_reason: null
       });
 
-    expect(response.status).toBe(200);
-    expect(response.body.data).toMatchObject({
-      status: 'ACCEPTED'
-    });
-    expect(repository.update).toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('blocks customers from creating delivery proof records', async () => {
@@ -51,7 +49,7 @@ describe('delivery routes', () => {
     expect(repository.create).not.toHaveBeenCalled();
   });
 
-  it('rejects invalid decimal payloads for delivery status events', async () => {
+  it('blocks drivers from creating delivery status events outside the guarded mobile flow', async () => {
     const repository = makeRepository();
     const app = makeTestApp({
       repository,
@@ -64,11 +62,11 @@ describe('delivery routes', () => {
       .send({
         delivery_id: 'delivery-1',
         status: 'IN_TRANSIT',
-        lat: 'north'
+        lat: 35.0
       });
 
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject({ error: 'INVALID_REQUEST' });
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: 'FORBIDDEN' });
     expect(repository.create).not.toHaveBeenCalled();
   });
 });

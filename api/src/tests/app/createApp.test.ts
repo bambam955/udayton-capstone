@@ -25,4 +25,27 @@ describe('createApp', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: 'ok' });
   });
+
+  it('answers localhost browser preflight requests', async () => {
+    const response = await request(app)
+      .options('/v1/auth/signup')
+      .set('origin', 'http://localhost:8081')
+      .set('access-control-request-method', 'POST')
+      .set('access-control-request-headers', 'content-type');
+
+    expect(response.status).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:8081');
+    expect(response.headers['access-control-allow-headers']).toBe('content-type');
+  });
+
+  it('rejects disallowed browser preflight requests', async () => {
+    const response = await request(app)
+      .options('/v1/auth/signup')
+      .set('origin', 'https://malicious.example')
+      .set('access-control-request-method', 'POST')
+      .set('access-control-request-headers', 'content-type');
+
+    expect(response.status).toBe(403);
+    expect(response.headers['access-control-allow-origin']).toBeUndefined();
+  });
 });

@@ -26,24 +26,30 @@ class CustomerTabSearch extends StatelessWidget {
   });
 
   final List<StoreOption> stores;
-  final String selectedStoreId;
+  final String? selectedStoreId;
   final List<String> categories;
   final String selectedCategory;
   final List<CatalogItem> visibleItems;
   final int cartItemCount;
-  final double cartTotal;
+  final int cartTotal;
   final ValueChanged<String> onStoreSelected;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onCategorySelected;
   final ValueChanged<CatalogItem> onAddToCart;
   final int Function(String itemId) quantityInCartForItem;
   final VoidCallback onGoToHome;
-  final String Function(double value) formatPrice;
+  final String Function(int cents) formatPrice;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final selectedStore = stores.firstWhere((s) => s.id == selectedStoreId);
+    StoreOption? selectedStore;
+    for (final store in stores) {
+      if (store.id == selectedStoreId) {
+        selectedStore = store;
+        break;
+      }
+    }
 
     return Column(
       key: const Key('main-tab-search'),
@@ -52,7 +58,7 @@ class CustomerTabSearch extends StatelessWidget {
         Text('Search', style: textTheme.headlineSmall),
         const SizedBox(height: 6),
         Text(
-          'Filter by store, category, and keyword to find items quickly.',
+          'Filter by store, category, and keyword to browse live catalog items.',
           style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
@@ -66,7 +72,7 @@ class CustomerTabSearch extends StatelessWidget {
           key: const Key('customer-search-field'),
           onChanged: onSearchChanged,
           decoration: const InputDecoration(
-            hintText: 'Search items, categories, or tags',
+            hintText: 'Search items, categories, or descriptions',
             prefixIcon: Icon(Icons.search_rounded),
           ),
         ),
@@ -79,6 +85,8 @@ class CustomerTabSearch extends StatelessWidget {
               final category = categories[index];
               return ChoiceChip(
                 key: Key('customer-category-$category'),
+                // Category chips are local UI filters layered on top of the
+                // already-loaded store catalog.
                 selected: category == selectedCategory,
                 onSelected: (_) => onCategorySelected(category),
                 label: Text(category),
@@ -90,16 +98,18 @@ class CustomerTabSearch extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'Store: ${selectedStore.name}',
+          'Store: ${selectedStore?.name ?? 'No store selected'}',
           key: const Key('selected-store-label'),
           style: textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
         if (visibleItems.isEmpty)
           const SurfaceCard(
-            child: Text('No demo records'),
+            child: Text('No matching items found.'),
           )
         else
+          // Search results reuse the same catalog card component as the home
+          // tab so cart actions behave consistently.
           for (final item in visibleItems) ...[
             CatalogItemCard(
               item: item,

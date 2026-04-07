@@ -21,6 +21,7 @@ export const orderResourceDefinitions = [
         updateable: true,
         requiredOnCreate: true
       }),
+      retailer_location_id: stringField({ filterable: true, createable: true, updateable: true }),
       address_id: stringField({
         filterable: true,
         createable: true,
@@ -49,6 +50,8 @@ export const orderResourceDefinitions = [
         }
       },
       driver: {
+        // Drivers gain read access to orders only through their delivery
+        // assignments, never by browsing the full order table directly.
         scope: {
           kind: 'related',
           table: 'delivery_assignments',
@@ -91,6 +94,7 @@ export const orderResourceDefinitions = [
         injectPrincipalColumn: 'customer_id',
         writeColumns: [
           'retailer_id',
+          'retailer_location_id',
           'address_id',
           'external_order_id',
           'currency',
@@ -195,6 +199,9 @@ export const orderResourceDefinitions = [
     listAccess: {
       admin: {},
       customer: {
+        // Timeline history follows the same ownership chain as the parent
+        // order, which lets the customer app load order details safely through
+        // the generic resource API.
         scope: {
           kind: 'related',
           table: 'orders',

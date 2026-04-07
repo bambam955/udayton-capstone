@@ -26,8 +26,12 @@ export interface LoginInput {
   deviceInfo?: string;
 }
 
-// Customer self-service registration input for MVP account creation.
+// Public self-service registration is limited to customer and driver accounts.
+export type SignupRole = Exclude<AuthRole, 'admin'>;
+
+// Input expected by AuthService.signup.
 export interface SignupInput {
+  role: SignupRole;
   email: string;
   password: string;
   fullName?: string;

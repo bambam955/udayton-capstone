@@ -50,6 +50,8 @@ export const driverResourceDefinitions = [
     updateAccess: {
       admin: {},
       driver: {
+        // Drivers can edit contact info and their current online/offline
+        // status, while dispatch lifecycle changes remain mobile-only.
         scope: driverDirectScope,
         writeColumns: ['phone', 'full_name', 'status']
       }
@@ -213,52 +215,6 @@ export const driverResourceDefinitions = [
       }
     },
     deleteAccess: adminOnly()
-  }),
-  resource({
-    name: 'driver_availability',
-    path: 'driver-availability',
-    table: 'driver_availability',
-    idColumn: 'availability_id',
-    fields: {
-      availability_id: stringField({ filterable: true }),
-      driver_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
-      is_available: booleanField({ filterable: true, createable: true, updateable: true }),
-      reason: stringField({ createable: true, updateable: true }),
-      started_at: timestampField({ createable: true, updateable: true }),
-      ended_at: timestampField({ createable: true, updateable: true })
-    },
-    listAccess: {
-      admin: {},
-      driver: {
-        scope: driverDirectScope
-      }
-    },
-    getAccess: {
-      admin: {},
-      driver: {
-        scope: driverDirectScope
-      }
-    },
-    createAccess: {
-      admin: {},
-      driver: {
-        injectPrincipalColumn: 'driver_id',
-        writeColumns: ['is_available', 'reason', 'started_at', 'ended_at']
-      }
-    },
-    updateAccess: {
-      admin: {},
-      driver: {
-        scope: driverDirectScope,
-        writeColumns: ['is_available', 'reason', 'started_at', 'ended_at']
-      }
-    },
-    deleteAccess: {
-      admin: {},
-      driver: {
-        scope: driverDirectScope
-      }
-    }
   }),
   resource({
     name: 'driver_service_areas',
