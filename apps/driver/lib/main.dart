@@ -9,7 +9,9 @@ import 'ui/screens/driver_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();
+  // The local env asset is optional so CI and test runs do not depend on an
+  // ignored secrets file being present in the checkout.
+  await dotenv.load(fileName: 'assets/env/local.env', isOptional: true);
   // Mapbox should be configured only when the current platform can actually
   // host the native view and a token is present.
   if (isMapboxPlatformSupported && hasMapboxAccessToken) {
