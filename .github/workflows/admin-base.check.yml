@@ -1,0 +1,43 @@
+name: check:admin
+
+on:
+  pull_request:
+    paths:
+      - admin-base/**
+      - .github/workflows/admin-base.check.yml
+  push:
+    paths:
+      - admin-base/**
+      - .github/workflows/admin-base.check.yml
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-base
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin-base/package-lock.json
+      - run: npm ci
+      - run: npx --no-install eslint .
+
+  format:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-base
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin-base/package-lock.json
+      - run: npm ci
+      - run: npx --no-install prettier --check .
