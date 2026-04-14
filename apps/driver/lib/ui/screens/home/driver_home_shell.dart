@@ -613,9 +613,11 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
               _searchQueryNearby = value;
             });
           },
+          onRefreshOffers: _refreshData,
           onAccept: _acceptJob,
           onViewDetails: _openDetails,
           isBusy: _isMutating,
+          isRefreshingOffers: _isLoading,
         ),
       2 => DriverTabDeliveries(
           filterIndex: _deliveriesFilterIndex,
