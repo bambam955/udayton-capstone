@@ -184,7 +184,18 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
         for (final address in bootstrap.addresses)
           AddressPreview(
             id: address.addressId,
-            label: address.label ?? 'Address',
+            label: address.label?.trim().isEmpty ?? true
+                ? 'Address'
+                : address.label!.trim(),
+            line1: address.line1?.trim() ?? '',
+            line2: address.line2?.trim() ?? '',
+            city: address.city?.trim() ?? '',
+            state: address.state?.trim() ?? '',
+            postalCode: address.postalCode?.trim() ?? '',
+            country: address.country?.trim().isEmpty ?? true
+                ? 'US'
+                : address.country!.trim(),
+            instructions: address.instructions?.trim() ?? '',
             addressLine: address.addressLine,
             isDefault: address.isDefault,
           ),
@@ -646,38 +657,103 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   }
 
   Future<void> _showAddAddressDialog() async {
-    final input = await showDialog<_AddressInput>(
-      context: context,
-      builder: (context) => const _AddressDialog(),
-    );
+    final input = await _showAddressDialog();
     if (input == null) {
       return;
     }
 
+    await _saveAddress(input: input);
+  }
+
+  Future<void> _showEditAddressDialog(AddressPreview address) async {
+    final input = await _showAddressDialog(initialAddress: address);
+    if (input == null) {
+      return;
+    }
+
+    await _saveAddress(input: input, existingAddress: address);
+  }
+
+  Future<void> _showDeleteAddressDialog(AddressPreview address) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete address'),
+        content: Text(
+          'Delete ${address.label}?\n\n${address.addressLine}',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('address-delete-cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('address-delete-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    await _deleteAddress(address);
+  }
+
+  Future<_AddressInput?> _showAddressDialog({
+    AddressPreview? initialAddress,
+  }) {
+    return showDialog<_AddressInput>(
+      context: context,
+      builder: (context) => _AddressDialog(initialAddress: initialAddress),
+    );
+  }
+
+  Future<void> _saveAddress({
+    required _AddressInput input,
+    AddressPreview? existingAddress,
+  }) async {
     setState(() {
       _isMutating = true;
     });
 
+    final previousDefault = input.isDefault
+        ? _currentDefaultAddress(excludingId: existingAddress?.id)
+        : null;
+    var didMutateData = false;
+
     try {
-      // Address creation goes through the generic resource API because the
-      // mobile backend only consumes the resulting address IDs.
-      await widget.resourceApi.create<ResourceAddress>(
-        '/v1/addresses',
-        <String, Object?>{
-          'label': input.label,
-          'line1': input.line1,
-          'city': input.city,
-          'state': input.state,
-          'postal_code': input.postalCode,
-          'country': input.country,
-          'instructions': input.instructions,
-          'is_default': input.isDefault,
-        },
-        ResourceAddress.fromJson,
-      );
+      if (existingAddress == null) {
+        // Address creation goes through the generic resource API because the
+        // mobile backend only consumes the resulting address IDs.
+        await widget.resourceApi.create<ResourceAddress>(
+          '/v1/addresses',
+          _buildAddressPayload(input),
+          ResourceAddress.fromJson,
+        );
+      } else {
+        await widget.resourceApi.update<ResourceAddress>(
+          '/v1/addresses/${existingAddress.id}',
+          _buildAddressPayload(input),
+          ResourceAddress.fromJson,
+        );
+      }
+      didMutateData = true;
+
+      if (previousDefault != null) {
+        await _setAddressDefault(previousDefault.id, false);
+      }
+
       await _refreshBootstrap();
-      _showMessage('Address saved.');
+      _showMessage(
+          existingAddress == null ? 'Address saved.' : 'Address updated.');
     } on ApiError catch (error) {
+      if (didMutateData) {
+        await _refreshBootstrap();
+      }
       await _handleApiError(error, fallbackMessage: 'Unable to save address.');
     } finally {
       if (mounted) {
@@ -686,6 +762,80 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
         });
       }
     }
+  }
+
+  Future<void> _deleteAddress(AddressPreview address) async {
+    setState(() {
+      _isMutating = true;
+    });
+
+    final fallbackDefault =
+        address.isDefault ? _nextAddressCandidateAfterDelete(address.id) : null;
+    var didDelete = false;
+
+    try {
+      await widget.resourceApi.delete('/v1/addresses/${address.id}');
+      didDelete = true;
+
+      if (fallbackDefault != null) {
+        await _setAddressDefault(fallbackDefault.id, true);
+      }
+
+      await _refreshBootstrap();
+      _showMessage('Address deleted.');
+    } on ApiError catch (error) {
+      if (didDelete) {
+        await _refreshBootstrap();
+      }
+      await _handleApiError(error,
+          fallbackMessage: 'Unable to delete address.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isMutating = false;
+        });
+      }
+    }
+  }
+
+  Map<String, Object?> _buildAddressPayload(_AddressInput input) {
+    return <String, Object?>{
+      'label': input.label,
+      'line1': input.line1,
+      'line2': input.line2.isEmpty ? null : input.line2,
+      'city': input.city,
+      'state': input.state,
+      'postal_code': input.postalCode,
+      'country': input.country,
+      'instructions': input.instructions.isEmpty ? null : input.instructions,
+      'is_default': input.isDefault,
+    };
+  }
+
+  AddressPreview? _currentDefaultAddress({String? excludingId}) {
+    for (final address in _accountOverview.addresses) {
+      if (address.isDefault && address.id != excludingId) {
+        return address;
+      }
+    }
+    return null;
+  }
+
+  AddressPreview? _nextAddressCandidateAfterDelete(String deletedAddressId) {
+    for (final address in _accountOverview.addresses) {
+      if (address.id != deletedAddressId) {
+        return address;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _setAddressDefault(String addressId, bool isDefault) async {
+    await widget.resourceApi.update<ResourceAddress>(
+      '/v1/addresses/$addressId',
+      <String, Object?>{'is_default': isDefault},
+      ResourceAddress.fromJson,
+    );
   }
 
   Future<void> _onProfileAction(String action) async {
@@ -1066,6 +1216,8 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
           overview: _accountOverview,
           onToggleStoreConnection: _toggleRetailerConnection,
           onAddAddress: _showAddAddressDialog,
+          onEditAddress: _showEditAddressDialog,
+          onDeleteAddress: _showDeleteAddressDialog,
           isBusy: _isMutating,
         ),
     };
@@ -1143,6 +1295,7 @@ class _AddressInput {
   const _AddressInput({
     required this.label,
     required this.line1,
+    required this.line2,
     required this.city,
     required this.state,
     required this.postalCode,
@@ -1153,6 +1306,7 @@ class _AddressInput {
 
   final String label;
   final String line1;
+  final String line2;
   final String city;
   final String state;
   final String postalCode;
@@ -1161,29 +1315,58 @@ class _AddressInput {
   final bool isDefault;
 }
 
-/// Small dialog used to collect the minimum address data needed for checkout.
+/// Shared dialog used to add or edit a saved delivery address.
 class _AddressDialog extends StatefulWidget {
-  const _AddressDialog();
+  const _AddressDialog({this.initialAddress});
+
+  final AddressPreview? initialAddress;
 
   @override
   State<_AddressDialog> createState() => _AddressDialogState();
 }
 
 class _AddressDialogState extends State<_AddressDialog> {
-  final _labelController = TextEditingController(text: 'Primary');
-  final _line1Controller = TextEditingController();
-  final _cityController = TextEditingController();
-  final _stateController = TextEditingController();
-  final _postalCodeController = TextEditingController();
-  final _countryController = TextEditingController(text: 'US');
-  final _instructionsController = TextEditingController();
-  bool _isDefault = true;
+  late final TextEditingController _labelController;
+  late final TextEditingController _line1Controller;
+  late final TextEditingController _line2Controller;
+  late final TextEditingController _cityController;
+  late final TextEditingController _stateController;
+  late final TextEditingController _postalCodeController;
+  late final TextEditingController _countryController;
+  late final TextEditingController _instructionsController;
+  late bool _isDefault;
   String? _errorText;
+
+  bool get _isEditing => widget.initialAddress != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialAddress = widget.initialAddress;
+    _labelController = TextEditingController(
+      text: initialAddress?.label ?? 'Primary',
+    );
+    _line1Controller = TextEditingController(text: initialAddress?.line1 ?? '');
+    _line2Controller = TextEditingController(text: initialAddress?.line2 ?? '');
+    _cityController = TextEditingController(text: initialAddress?.city ?? '');
+    _stateController = TextEditingController(text: initialAddress?.state ?? '');
+    _postalCodeController = TextEditingController(
+      text: initialAddress?.postalCode ?? '',
+    );
+    _countryController = TextEditingController(
+      text: initialAddress?.country ?? 'US',
+    );
+    _instructionsController = TextEditingController(
+      text: initialAddress?.instructions ?? '',
+    );
+    _isDefault = initialAddress?.isDefault ?? true;
+  }
 
   @override
   void dispose() {
     _labelController.dispose();
     _line1Controller.dispose();
+    _line2Controller.dispose();
     _cityController.dispose();
     _stateController.dispose();
     _postalCodeController.dispose();
@@ -1211,6 +1394,7 @@ class _AddressDialogState extends State<_AddressDialog> {
             ? 'Address'
             : _labelController.text.trim(),
         line1: _line1Controller.text.trim(),
+        line2: _line2Controller.text.trim(),
         city: _cityController.text.trim(),
         state: _stateController.text.trim(),
         postalCode: _postalCodeController.text.trim(),
@@ -1226,47 +1410,62 @@ class _AddressDialogState extends State<_AddressDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add address'),
+      title: Text(_isEditing ? 'Edit address' : 'Add address'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
+              key: const Key('address-label-field'),
               controller: _labelController,
               decoration: const InputDecoration(labelText: 'Label'),
             ),
             const SizedBox(height: 8),
             TextField(
+              key: const Key('address-line1-field'),
               controller: _line1Controller,
               decoration: const InputDecoration(labelText: 'Line 1'),
             ),
             const SizedBox(height: 8),
             TextField(
+              key: const Key('address-line2-field'),
+              controller: _line2Controller,
+              decoration: const InputDecoration(labelText: 'Line 2'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const Key('address-city-field'),
               controller: _cityController,
               decoration: const InputDecoration(labelText: 'City'),
             ),
             const SizedBox(height: 8),
             TextField(
+              key: const Key('address-state-field'),
               controller: _stateController,
               decoration: const InputDecoration(labelText: 'State'),
             ),
             const SizedBox(height: 8),
             TextField(
+              key: const Key('address-postal-code-field'),
               controller: _postalCodeController,
               decoration: const InputDecoration(labelText: 'Postal code'),
             ),
             const SizedBox(height: 8),
             TextField(
+              key: const Key('address-country-field'),
               controller: _countryController,
               decoration: const InputDecoration(labelText: 'Country'),
             ),
             const SizedBox(height: 8),
             TextField(
+              key: const Key('address-instructions-field'),
               controller: _instructionsController,
               decoration: const InputDecoration(labelText: 'Instructions'),
+              maxLines: 2,
             ),
             const SizedBox(height: 8),
             SwitchListTile(
+              key: const Key('address-default-toggle'),
               contentPadding: EdgeInsets.zero,
               value: _isDefault,
               onChanged: (value) {
@@ -1286,12 +1485,14 @@ class _AddressDialogState extends State<_AddressDialog> {
       ),
       actions: [
         TextButton(
+          key: const Key('address-dialog-cancel'),
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
         FilledButton(
+          key: const Key('address-dialog-submit'),
           onPressed: _submit,
-          child: const Text('Save'),
+          child: Text(_isEditing ? 'Save changes' : 'Save'),
         ),
       ],
     );

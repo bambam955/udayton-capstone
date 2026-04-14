@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../widgets/status_badge.dart';
 import '../../../widgets/stat_tile.dart';
 import '../../../widgets/surface_card.dart';
 import '../customer_home_models.dart';
@@ -11,12 +12,16 @@ class CustomerTabAccount extends StatelessWidget {
     required this.overview,
     required this.onToggleStoreConnection,
     required this.onAddAddress,
+    required this.onEditAddress,
+    required this.onDeleteAddress,
     required this.isBusy,
   });
 
   final CustomerAccountOverview overview;
   final ValueChanged<StoreOption> onToggleStoreConnection;
   final VoidCallback onAddAddress;
+  final ValueChanged<AddressPreview> onEditAddress;
+  final ValueChanged<AddressPreview> onDeleteAddress;
   final bool isBusy;
 
   @override
@@ -122,13 +127,74 @@ class CustomerTabAccount extends StatelessWidget {
               if (overview.addresses.isEmpty)
                 const Text('No saved addresses yet.')
               else
-                // Addresses are rendered as plain summaries because creation
-                // and selection happen elsewhere in the shell.
                 for (final address in overview.addresses)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      '${address.isDefault ? 'Default • ' : ''}${address.label}: ${address.addressLine}',
+                    child: Container(
+                      key: Key('account-address-${address.id}'),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  address.label,
+                                  style: textTheme.titleSmall,
+                                ),
+                              ),
+                              if (address.isDefault)
+                                StatusBadge(
+                                  key: Key(
+                                      'default-address-badge-${address.id}'),
+                                  label: 'Default',
+                                  tone: StatusBadgeTone.info,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(address.addressLine),
+                          if (address.instructions.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Instructions: ${address.instructions}',
+                              style: textTheme.bodySmall,
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                key: Key('edit-address-${address.id}'),
+                                onPressed: isBusy
+                                    ? null
+                                    : () => onEditAddress(address),
+                                child: const Text('Edit'),
+                              ),
+                              TextButton(
+                                key: Key('delete-address-${address.id}'),
+                                onPressed: isBusy
+                                    ? null
+                                    : () => onDeleteAddress(address),
+                                style: TextButton.styleFrom(
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.error,
+                                ),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
             ],

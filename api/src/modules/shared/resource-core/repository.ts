@@ -1,5 +1,6 @@
 import type { Pool } from 'pg';
 
+import { HttpError } from '../../../app/errors.js';
 import type { AuthPrincipal } from '../../../app/types.js';
 import type {
   ResourceDefinition,
@@ -51,6 +52,22 @@ function selectList(definition: ResourceDefinition, alias: string): string {
   return readableColumns(definition)
     .map((column) => `${alias}.${quoteIdentifier(column)}`)
     .join(', ');
+}
+
+interface PgErrorLike {
+  code?: string;
+}
+
+function isForeignKeyDeleteConflict(error: unknown): error is PgErrorLike {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === '23503';
+}
+
+function deleteConflictError(definition: ResourceDefinition): HttpError {
+  if (definition.name === 'addresses') {
+    return new HttpError(409, 'CONFLICT', 'Address is used by an existing order.');
+  }
+
+  return new HttpError(409, 'CONFLICT', 'Resource cannot be deleted because it is still in use.');
 }
 
 export class PgResourceRepository implements ResourceRepository {
@@ -238,7 +255,16 @@ export class PgResourceRepository implements ResourceRepository {
       delete from ${quoteIdentifier(definition.table)}
       where ${whereClauses.join(' and ')}
     `;
-    const result = await this.pool.query(query, params);
+    let result;
+    try {
+      result = await this.pool.query(query, params);
+    } catch (error) {
+      if (isForeignKeyDeleteConflict(error)) {
+        throw deleteConflictError(definition);
+      }
+
+      throw error;
+    }
 
     return (result.rowCount ?? 0) > 0;
   }

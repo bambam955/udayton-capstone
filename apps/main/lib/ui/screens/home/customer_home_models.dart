@@ -115,12 +115,26 @@ class AddressPreview {
   const AddressPreview({
     required this.id,
     required this.label,
+    required this.line1,
+    required this.line2,
+    required this.city,
+    required this.state,
+    required this.postalCode,
+    required this.country,
+    required this.instructions,
     required this.addressLine,
     required this.isDefault,
   });
 
   final String id;
   final String label;
+  final String line1;
+  final String line2;
+  final String city;
+  final String state;
+  final String postalCode;
+  final String country;
+  final String instructions;
   final String addressLine;
   final bool isDefault;
 }

@@ -46,6 +46,9 @@ void main() {
     await _selectMainTab(tester, 4);
     expect(find.byKey(const Key('main-tab-account')), findsOneWidget);
     expect(find.text('Delivery addresses'), findsOneWidget);
+    expect(find.byKey(const Key('edit-address-addr-1')), findsOneWidget);
+    expect(find.byKey(const Key('delete-address-addr-1')), findsOneWidget);
+    expect(find.byKey(const Key('account-address-addr-2')), findsOneWidget);
     expect(find.text('Downtown Market'), findsWidgets);
   });
 
@@ -95,6 +98,126 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('Customer can edit an address and move the default badge', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(tester, apiClient: _FakeApiClient());
+
+    await _login(tester);
+    await _openAccountTab(tester);
+    await _tapWhenVisible(
+      tester,
+      find.byKey(const Key('edit-address-addr-2')),
+    );
+
+    expect(find.text('Edit address'), findsOneWidget);
+    expect(
+      _textField(tester, 'address-label-field').controller?.text,
+      'Office',
+    );
+    expect(
+      _textField(tester, 'address-line2-field').controller?.text,
+      'Suite 500',
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('address-line1-field')),
+      '250 Pine St',
+    );
+    await tester.enterText(
+      find.byKey(const Key('address-line2-field')),
+      'Suite 700',
+    );
+    await tester.enterText(
+      find.byKey(const Key('address-instructions-field')),
+      'Ring the loading dock',
+    );
+    await _tapWhenVisible(
+      tester,
+      find.byKey(const Key('address-default-toggle')),
+    );
+    await _tapWhenVisible(
+      tester,
+      find.byKey(const Key('address-dialog-submit')),
+    );
+
+    expect(find.text('Address updated.'), findsOneWidget);
+    expect(
+        find.byKey(const Key('default-address-badge-addr-2')), findsOneWidget);
+    expect(find.byKey(const Key('default-address-badge-addr-1')), findsNothing);
+    expect(find.textContaining('250 Pine St'), findsOneWidget);
+    expect(find.textContaining('Suite 700'), findsOneWidget);
+    expect(find.text('Instructions: Ring the loading dock'), findsOneWidget);
+  });
+
+  testWidgets('Customer can delete a non-default address from the account tab',
+      (WidgetTester tester) async {
+    await _pumpApp(tester, apiClient: _FakeApiClient());
+
+    await _login(tester);
+    await _openAccountTab(tester);
+    await _tapWhenVisible(
+      tester,
+      find.byKey(const Key('delete-address-addr-2')),
+    );
+
+    expect(find.text('Delete address'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('address-delete-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Address deleted.'), findsOneWidget);
+    expect(find.byKey(const Key('account-address-addr-2')), findsNothing);
+    expect(find.byKey(const Key('account-address-addr-1')), findsOneWidget);
+  });
+
+  testWidgets('Deleting the default address promotes the next saved address', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(tester, apiClient: _FakeApiClient());
+
+    await _login(tester);
+    await _openAccountTab(tester);
+    await _tapWhenVisible(
+      tester,
+      find.byKey(const Key('delete-address-addr-1')),
+    );
+    await tester.tap(find.byKey(const Key('address-delete-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('account-address-addr-1')), findsNothing);
+    expect(find.byKey(const Key('account-address-addr-2')), findsOneWidget);
+    expect(
+        find.byKey(const Key('default-address-badge-addr-2')), findsOneWidget);
+  });
+
+  testWidgets('Delete failures keep the address visible and show the API error',
+      (WidgetTester tester) async {
+    await _pumpApp(
+      tester,
+      apiClient: _FakeApiClient(
+        undeletableAddressIds: const <String>{'addr-1'},
+      ),
+    );
+
+    await _login(tester);
+    await _openAccountTab(tester);
+    await _tapWhenVisible(
+      tester,
+      find.byKey(const Key('delete-address-addr-1')),
+    );
+    await tester.tap(find.byKey(const Key('address-delete-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Address is used by an existing order.'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('account-address-addr-1')), findsOneWidget);
+    expect(
+        find.byKey(const Key('default-address-badge-addr-1')), findsOneWidget);
+    expect(find.byKey(const Key('default-address-badge-addr-2')), findsNothing);
+  });
 }
 
 // Small fake client that mirrors the handful of routes exercised by the widget
@@ -103,16 +226,45 @@ class _FakeApiClient implements ApiClient {
   _FakeApiClient({
     List<Object?>? orderTimeline,
     this.orderTimelineError,
-  }) : orderTimeline = orderTimeline ?? _defaultOrderTimeline();
+    Set<String>? undeletableAddressIds,
+    List<_FakeAddressRecord>? addresses,
+  })  : orderTimeline = orderTimeline ?? _defaultOrderTimeline(),
+        _undeletableAddressIds = undeletableAddressIds ?? <String>{},
+        _addresses = [
+          for (final address in addresses ?? _defaultAddresses())
+            address.copy(),
+        ] {
+    _nextAddressNumber = _addresses.length + 1;
+  }
 
   final List<Object?> orderTimeline;
   final Object? orderTimelineError;
+  final Set<String> _undeletableAddressIds;
+  final List<_FakeAddressRecord> _addresses;
+  late int _nextAddressNumber;
 
   @override
   Future<ApiResponse<T>> send<T>(
     ApiRequest request, {
     ApiDecoder<T>? decoder,
   }) async {
+    if (request.method == 'PATCH' &&
+        request.path.startsWith('/v1/addresses/')) {
+      final raw = _updateAddress(
+        request.path.split('/').last,
+        Map<String, Object?>.from(request.body! as Map<Object?, Object?>),
+      );
+      final data = decoder == null ? raw as T : decoder(raw);
+      return ApiResponse<T>(statusCode: 200, data: data);
+    }
+
+    if (request.method == 'DELETE' &&
+        request.path.startsWith('/v1/addresses/')) {
+      _deleteAddress(request.path.split('/').last);
+      final data = decoder == null ? null as T : decoder(null);
+      return ApiResponse<T>(statusCode: 200, data: data);
+    }
+
     final raw = switch ('${request.method} ${request.path}') {
       'POST /v1/auth/login' => <String, Object?>{
           'accessToken': 'token-1',
@@ -123,7 +275,11 @@ class _FakeApiClient implements ApiClient {
             'email': 'customer@example.com',
           },
         },
-      'GET /v1/mobile/customer/bootstrap' => _bootstrapJson(),
+      'GET /v1/mobile/customer/bootstrap' => _bootstrapJson(
+          addresses: [
+            for (final address in _sortedAddresses()) address.toBootstrapJson(),
+          ],
+        ),
       'GET /v1/mobile/customer/catalog' => _catalogJson(),
       'GET /v1/cart-items' => <String, Object?>{
           'data': <Object?>[
@@ -141,6 +297,9 @@ class _FakeApiClient implements ApiClient {
           ],
         },
       'GET /v1/order-status-history' => _orderTimelineResponse(),
+      'POST /v1/addresses' => _createAddress(
+          Map<String, Object?>.from(request.body! as Map<Object?, Object?>),
+        ),
       _ => throw StateError(
           'Unexpected request: ${request.method} ${request.path}'),
     };
@@ -157,6 +316,58 @@ class _FakeApiClient implements ApiClient {
     return <String, Object?>{
       'data': orderTimeline,
     };
+  }
+
+  Object _createAddress(Map<String, Object?> body) {
+    final nextAddressNumber = _nextAddressNumber++;
+    final address = _FakeAddressRecord(
+      id: 'addr-$nextAddressNumber',
+      label: body['label'] as String? ?? 'Address',
+      line1: body['line1'] as String? ?? '',
+      line2: body['line2'] as String? ?? '',
+      city: body['city'] as String? ?? '',
+      state: body['state'] as String? ?? '',
+      postalCode: body['postal_code'] as String? ?? '',
+      country: body['country'] as String? ?? 'US',
+      instructions: body['instructions'] as String? ?? '',
+      isDefault: body['is_default'] as bool? ?? false,
+      createdOrder: nextAddressNumber,
+    );
+    _addresses.add(address);
+    return <String, Object?>{
+      'data': address.toResourceJson(),
+    };
+  }
+
+  Object _updateAddress(String addressId, Map<String, Object?> body) {
+    final address = _addresses.firstWhere((entry) => entry.id == addressId);
+    address.applyPatch(body);
+    return <String, Object?>{
+      'data': address.toResourceJson(),
+    };
+  }
+
+  void _deleteAddress(String addressId) {
+    if (_undeletableAddressIds.contains(addressId)) {
+      throw const ApiError(
+        kind: ApiErrorKind.server,
+        statusCode: 409,
+        message: 'Address is used by an existing order.',
+      );
+    }
+
+    _addresses.removeWhere((address) => address.id == addressId);
+  }
+
+  List<_FakeAddressRecord> _sortedAddresses() {
+    final addresses = <_FakeAddressRecord>[..._addresses];
+    addresses.sort((left, right) {
+      if (left.isDefault != right.isDefault) {
+        return left.isDefault ? -1 : 1;
+      }
+      return right.createdOrder.compareTo(left.createdOrder);
+    });
+    return addresses;
   }
 }
 
@@ -194,7 +405,24 @@ Future<void> _selectMainTab(WidgetTester tester, int index) async {
   await tester.pumpAndSettle();
 }
 
-Map<String, Object?> _bootstrapJson() {
+Future<void> _openAccountTab(WidgetTester tester) {
+  return _selectMainTab(tester, 4);
+}
+
+Future<void> _tapWhenVisible(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+TextField _textField(WidgetTester tester, String key) {
+  return tester.widget<TextField>(find.byKey(Key(key)));
+}
+
+Map<String, Object?> _bootstrapJson({
+  required List<Map<String, Object?>> addresses,
+}) {
   return <String, Object?>{
     'customer': <String, Object?>{
       'id': 'cust-1',
@@ -226,21 +454,7 @@ Map<String, Object?> _bootstrapJson() {
         ],
       },
     ],
-    'addresses': <Object?>[
-      <String, Object?>{
-        'addressId': 'addr-1',
-        'label': 'Primary',
-        'line1': '1 Elm St',
-        'line2': null,
-        'city': 'Charlotte',
-        'state': 'NC',
-        'postalCode': '28202',
-        'country': 'US',
-        'instructions': 'Front desk',
-        'addressLine': '1 Elm St, Charlotte, NC 28202',
-        'isDefault': true,
-      },
-    ],
+    'addresses': addresses,
     'carts': <Object?>[
       <String, Object?>{
         'cartId': 'cart-1',
@@ -275,7 +489,10 @@ Map<String, Object?> _bootstrapJson() {
         'summary': 'One apple was missing from the order.',
       },
     ],
-    'defaultAddressId': 'addr-1',
+    'defaultAddressId': addresses.cast<Map<String, Object?>>().firstWhere(
+          (address) => address['isDefault'] == true,
+          orElse: () => const <String, Object?>{},
+        )['addressId'],
   };
 }
 
@@ -345,4 +562,151 @@ List<Object?> _defaultOrderTimeline() {
       'note': 'Driver assigned.',
     },
   ];
+}
+
+List<_FakeAddressRecord> _defaultAddresses() {
+  return <_FakeAddressRecord>[
+    _FakeAddressRecord(
+      id: 'addr-1',
+      label: 'Primary',
+      line1: '1 Elm St',
+      line2: '',
+      city: 'Charlotte',
+      state: 'NC',
+      postalCode: '28202',
+      country: 'US',
+      instructions: 'Front desk',
+      isDefault: true,
+      createdOrder: 1,
+    ),
+    _FakeAddressRecord(
+      id: 'addr-2',
+      label: 'Office',
+      line1: '200 Pine St',
+      line2: 'Suite 500',
+      city: 'Charlotte',
+      state: 'NC',
+      postalCode: '28203',
+      country: 'US',
+      instructions: '',
+      isDefault: false,
+      createdOrder: 2,
+    ),
+  ];
+}
+
+class _FakeAddressRecord {
+  _FakeAddressRecord({
+    required this.id,
+    required this.label,
+    required this.line1,
+    required this.line2,
+    required this.city,
+    required this.state,
+    required this.postalCode,
+    required this.country,
+    required this.instructions,
+    required this.isDefault,
+    required this.createdOrder,
+  });
+
+  final String id;
+  String label;
+  String line1;
+  String line2;
+  String city;
+  String state;
+  String postalCode;
+  String country;
+  String instructions;
+  bool isDefault;
+  final int createdOrder;
+
+  _FakeAddressRecord copy() {
+    return _FakeAddressRecord(
+      id: id,
+      label: label,
+      line1: line1,
+      line2: line2,
+      city: city,
+      state: state,
+      postalCode: postalCode,
+      country: country,
+      instructions: instructions,
+      isDefault: isDefault,
+      createdOrder: createdOrder,
+    );
+  }
+
+  void applyPatch(Map<String, Object?> body) {
+    if (body.containsKey('label')) {
+      label = body['label'] as String? ?? '';
+    }
+    if (body.containsKey('line1')) {
+      line1 = body['line1'] as String? ?? '';
+    }
+    if (body.containsKey('line2')) {
+      line2 = body['line2'] as String? ?? '';
+    }
+    if (body.containsKey('city')) {
+      city = body['city'] as String? ?? '';
+    }
+    if (body.containsKey('state')) {
+      state = body['state'] as String? ?? '';
+    }
+    if (body.containsKey('postal_code')) {
+      postalCode = body['postal_code'] as String? ?? '';
+    }
+    if (body.containsKey('country')) {
+      country = body['country'] as String? ?? '';
+    }
+    if (body.containsKey('instructions')) {
+      instructions = body['instructions'] as String? ?? '';
+    }
+    if (body.containsKey('is_default')) {
+      isDefault = body['is_default'] as bool? ?? false;
+    }
+  }
+
+  Map<String, Object?> toBootstrapJson() {
+    return <String, Object?>{
+      'addressId': id,
+      'label': label,
+      'line1': line1,
+      'line2': line2.isEmpty ? null : line2,
+      'city': city,
+      'state': state,
+      'postalCode': postalCode,
+      'country': country,
+      'instructions': instructions.isEmpty ? null : instructions,
+      'addressLine': _addressLine,
+      'isDefault': isDefault,
+    };
+  }
+
+  Map<String, Object?> toResourceJson() {
+    return <String, Object?>{
+      'address_id': id,
+      'customer_id': 'cust-1',
+      'label': label,
+      'line1': line1,
+      'line2': line2.isEmpty ? null : line2,
+      'city': city,
+      'state': state,
+      'postal_code': postalCode,
+      'country': country,
+      'instructions': instructions.isEmpty ? null : instructions,
+      'is_default': isDefault,
+    };
+  }
+
+  String get _addressLine {
+    return <String>[
+      line1,
+      if (line2.isNotEmpty) line2,
+      city,
+      state,
+      postalCode,
+    ].where((part) => part.isNotEmpty).join(', ');
+  }
 }
