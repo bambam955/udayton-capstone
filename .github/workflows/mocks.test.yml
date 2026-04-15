@@ -6,6 +6,8 @@ on:
       - mocks/**
       - .github/workflows/mocks.test.yml
   push:
+    branches:
+      - main
     paths:
       - mocks/**
       - .github/workflows/mocks.test.yml

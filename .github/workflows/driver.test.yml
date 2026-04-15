@@ -7,6 +7,8 @@ on:
       - apps/shared/**
       - .github/workflows/driver.test.yml
   push:
+    branches:
+      - main
     paths:
       - apps/driver/**
       - apps/shared/**

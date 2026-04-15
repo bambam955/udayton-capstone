@@ -6,6 +6,8 @@ on:
       - admin-base/**
       - .github/workflows/admin-base.check.yml
   push:
+    branches:
+      - main
     paths:
       - admin-base/**
       - .github/workflows/admin-base.check.yml
