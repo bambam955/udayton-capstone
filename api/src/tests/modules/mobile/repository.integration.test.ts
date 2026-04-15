@@ -175,6 +175,108 @@ describeIfDatabase('mobile repository integration', () => {
       await cleanupFixture(db, fixture);
     }
   });
+
+  it('cancels pre-accept orders and removes them from driver availability', async () => {
+    const fixture = await createCancelableOrderFixture(db);
+    const [driverId] = fixture.driverIds;
+
+    try {
+      const canceled = await repository.cancelOrder(fixture.customerId, fixture.orderId);
+
+      expect(canceled.orderId).toBe(fixture.orderId);
+      expect(canceled.status).toBe('CANCELED');
+
+      const order = await db
+        .selectFrom('orders')
+        .select('status')
+        .where('order_id', '=', fixture.orderId)
+        .executeTakeFirstOrThrow();
+      expect(order.status).toBe('CANCELED');
+
+      const assignment = await db
+        .selectFrom('delivery_assignments')
+        .select('status')
+        .where('delivery_id', '=', fixture.deliveryId)
+        .executeTakeFirstOrThrow();
+      expect(assignment.status).toBe('CANCELED');
+
+      const offers = await db
+        .selectFrom('delivery_offers')
+        .select(['status', 'responded_at as respondedAt'])
+        .where('delivery_id', '=', fixture.deliveryId)
+        .execute();
+      expect(offers).not.toEqual([]);
+      expect(offers.every((offer) => offer.status === 'CANCELED')).toBe(true);
+      expect(offers.every((offer) => offer.respondedAt != null)).toBe(true);
+
+      const payments = await db
+        .selectFrom('payments')
+        .select('status')
+        .where('order_id', '=', fixture.orderId)
+        .execute();
+      expect(payments).not.toEqual([]);
+      expect(payments.every((payment) => payment.status === 'VOIDED')).toBe(true);
+
+      const timeline = await db
+        .selectFrom('order_status_history')
+        .select(['status', 'note'])
+        .where('order_id', '=', fixture.orderId)
+        .orderBy('status_time desc')
+        .limit(1)
+        .executeTakeFirstOrThrow();
+      expect(timeline.status).toBe('CANCELED');
+      expect(timeline.note).toBe('Canceled by customer from mobile app.');
+
+      const driverBootstrap = await repository.getDriverBootstrap(driverId);
+      expect(
+        driverBootstrap.availableJobs.every((job) => job.deliveryId !== fixture.deliveryId)
+      ).toBe(true);
+    } finally {
+      await cleanupFixture(db, fixture);
+    }
+  });
+
+  it('treats repeated customer cancel requests as idempotent', async () => {
+    const fixture = await createCancelableOrderFixture(db);
+
+    try {
+      const first = await repository.cancelOrder(fixture.customerId, fixture.orderId);
+      const second = await repository.cancelOrder(fixture.customerId, fixture.orderId);
+
+      expect(first.status).toBe('CANCELED');
+      expect(second.status).toBe('CANCELED');
+
+      const canceledEntries = await db
+        .selectFrom('order_status_history')
+        .select(sql<number>`count(*)::int`.as('count'))
+        .where('order_id', '=', fixture.orderId)
+        .where('status', '=', 'CANCELED')
+        .executeTakeFirstOrThrow();
+
+      expect(Number(canceledEntries.count ?? 0)).toBe(1);
+    } finally {
+      await cleanupFixture(db, fixture);
+    }
+  });
+
+  it('rejects cancel requests after a driver has accepted the order', async () => {
+    const fixture = await createCancelableOrderFixture(db, {
+      deliveryStatus: 'ASSIGNED',
+      orderStatus: 'ASSIGNED',
+      driverAssigned: true,
+      offerStatus: 'ACCEPTED'
+    });
+
+    try {
+      await expect(repository.cancelOrder(fixture.customerId, fixture.orderId)).rejects.toMatchObject(
+        {
+          code: 'CONFLICT'
+        }
+      );
+    } finally {
+      await cleanupFixture(db, fixture);
+    }
+  });
 });
 
 async function countRows(
@@ -502,8 +604,222 @@ async function createCheckoutFixture(db: Kysely<Database>) {
     driverIds: [] as string[],
     deliveryId: '',
     cartId,
-    addressId
+    addressId,
+    orderId: ''
   };
+}
+
+async function createCancelableOrderFixture(
+  db: Kysely<Database>,
+  options?: {
+    orderStatus?: string;
+    deliveryStatus?: string;
+    offerStatus?: string;
+    driverAssigned?: boolean;
+  }
+) {
+  const customerId = randomUUID();
+  const addressId = randomUUID();
+  const retailerId = randomUUID();
+  const orderId = randomUUID();
+  const deliveryId = randomUUID();
+  const paymentId = randomUUID();
+  const driverIds = [randomUUID()] as const;
+  const now = new Date();
+  const orderStatus = options?.orderStatus ?? 'SUBMITTED';
+  const deliveryStatus = options?.deliveryStatus ?? 'PENDING_ASSIGNMENT';
+  const offerStatus = options?.offerStatus ?? 'OFFERED';
+
+  await db
+    .insertInto('customers')
+    .values({
+      customer_id: customerId,
+      email: `customer-${customerId}@example.com`,
+      password_hash: 'secret',
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('addresses')
+    .values({
+      address_id: addressId,
+      customer_id: customerId,
+      label: 'Home',
+      line1: '1 Elm St',
+      city: 'Charlotte',
+      state: 'NC',
+      postal_code: '28202',
+      country: 'USA',
+      is_default: true,
+      created_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('retailers')
+    .values({
+      retailer_id: retailerId,
+      name: `Retailer ${retailerId}`,
+      is_enabled: true,
+      created_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('drivers')
+    .values({
+      driver_id: driverIds[0],
+      email: `driver-${driverIds[0]}@example.com`,
+      password_hash: 'secret',
+      full_name: 'Cancelable Fixture Driver',
+      is_active: true,
+      status: 'ONLINE',
+      created_at: now,
+      updated_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('orders')
+    .values({
+      order_id: orderId,
+      customer_id: customerId,
+      retailer_id: retailerId,
+      retailer_location_id: null,
+      address_id: addressId,
+      external_order_id: `ORD-${orderId.slice(0, 8).toUpperCase()}`,
+      status: orderStatus,
+      placed_at: now,
+      subtotal_cents: 1200,
+      fees_cents: 300,
+      tip_cents: 200,
+      discount_cents: 0,
+      total_cents: 1700,
+      currency: 'USD',
+      delivery_notes: null,
+      created_at: now,
+      updated_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('order_items')
+    .values({
+      order_item_id: randomUUID(),
+      order_id: orderId,
+      product_id: await createCancelableFixtureProduct(db, retailerId, now),
+      external_sku: 'ITEM-1',
+      name_snapshot: 'Olive Oil',
+      unit_price_cents: 1200,
+      quantity: 1,
+      substituted_for_sku: null,
+      created_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('order_status_history')
+    .values({
+      order_status_history_id: randomUUID(),
+      order_id: orderId,
+      status: 'SUBMITTED',
+      status_time: now,
+      note: 'Checkout submitted from mobile app.'
+    })
+    .execute();
+
+  await db
+    .insertInto('payments')
+    .values({
+      payment_id: paymentId,
+      order_id: orderId,
+      customer_id: customerId,
+      provider: 'mock',
+      provider_ref: `pay-${paymentId.slice(0, 8)}`,
+      amount_cents: 1700,
+      currency: 'USD',
+      status: 'AUTHORIZED',
+      created_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('delivery_assignments')
+    .values({
+      delivery_id: deliveryId,
+      order_id: orderId,
+      driver_id: options?.driverAssigned == true ? driverIds[0] : null,
+      status: deliveryStatus,
+      pickup_location: 'Downtown Market',
+      assigned_at: options?.driverAssigned == true ? now : null,
+      picked_up_at: null,
+      delivered_at: null
+    })
+    .execute();
+
+  await db
+    .insertInto('delivery_offers')
+    .values({
+      offer_id: randomUUID(),
+      order_id: orderId,
+      delivery_id: deliveryId,
+      status: offerStatus,
+      offered_at: now,
+      responded_at: offerStatus == 'OFFERED' ? null : now,
+      expires_in_sec: 300,
+      decline_reason: null
+    })
+    .execute();
+
+  return {
+    customerId,
+    retailerId,
+    driverIds,
+    deliveryId,
+    orderId
+  };
+}
+
+async function createCancelableFixtureProduct(
+  db: Kysely<Database>,
+  retailerId: string,
+  now: Date
+) {
+  const categoryId = randomUUID();
+  const productId = randomUUID();
+
+  await db
+    .insertInto('product_categories')
+    .values({
+      category_id: categoryId,
+      retailer_id: retailerId,
+      name: 'Pantry',
+      external_category_id: null,
+      updated_at: now
+    })
+    .execute();
+
+  await db
+    .insertInto('products')
+    .values({
+      product_id: productId,
+      retailer_id: retailerId,
+      category_id: categoryId,
+      external_sku: 'ITEM-1',
+      name: 'Olive Oil',
+      description: null,
+      image_url: null,
+      unit_price_cents: 1200,
+      currency: 'USD',
+      is_available: true,
+      updated_at: now
+    })
+    .execute();
+
+  return productId;
 }
 
 async function cleanupFixture(

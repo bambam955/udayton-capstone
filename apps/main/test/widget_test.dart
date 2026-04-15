@@ -95,6 +95,45 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('Customer can cancel a submitted order from details', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(tester, apiClient: _FakeApiClient());
+
+    await _login(tester);
+    await _selectMainTab(tester, 2);
+    await tester.tap(find.byKey(const Key('order-view-ord-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('order-cancel-action')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('order-cancel-action')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('order-cancel-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Order ord-1 canceled.'), findsOneWidget);
+    expect(find.text('Order details'), findsNothing);
+    expect(find.text('CANCELED'), findsOneWidget);
+    expect(find.text('Canceled'), findsOneWidget);
+  });
+
+  testWidgets('Customer cannot cancel an ineligible order', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(
+      tester,
+      apiClient: _FakeApiClient(orderStatus: 'ASSIGNED'),
+    );
+
+    await _login(tester);
+    await _selectMainTab(tester, 2);
+    await tester.tap(find.byKey(const Key('order-view-ord-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('order-cancel-action')), findsNothing);
+  });
 }
 
 // Small fake client that mirrors the handful of routes exercised by the widget
@@ -103,10 +142,14 @@ class _FakeApiClient implements ApiClient {
   _FakeApiClient({
     List<Object?>? orderTimeline,
     this.orderTimelineError,
-  }) : orderTimeline = orderTimeline ?? _defaultOrderTimeline();
+    this.orderStatus = 'SUBMITTED',
+  }) : _orderTimeline = List<Object?>.from(
+          orderTimeline ?? _defaultOrderTimeline(),
+        );
 
-  final List<Object?> orderTimeline;
+  final List<Object?> _orderTimeline;
   final Object? orderTimelineError;
+  String orderStatus;
 
   @override
   Future<ApiResponse<T>> send<T>(
@@ -123,7 +166,8 @@ class _FakeApiClient implements ApiClient {
             'email': 'customer@example.com',
           },
         },
-      'GET /v1/mobile/customer/bootstrap' => _bootstrapJson(),
+      'GET /v1/mobile/customer/bootstrap' =>
+        _bootstrapJsonWithStatus(orderStatus),
       'GET /v1/mobile/customer/catalog' => _catalogJson(),
       'GET /v1/cart-items' => <String, Object?>{
           'data': <Object?>[
@@ -141,6 +185,7 @@ class _FakeApiClient implements ApiClient {
           ],
         },
       'GET /v1/order-status-history' => _orderTimelineResponse(),
+      'POST /v1/mobile/customer/orders/ord-1/cancel' => _cancelOrderResponse(),
       _ => throw StateError(
           'Unexpected request: ${request.method} ${request.path}'),
     };
@@ -155,7 +200,31 @@ class _FakeApiClient implements ApiClient {
     }
 
     return <String, Object?>{
-      'data': orderTimeline,
+      'data': _orderTimeline,
+    };
+  }
+
+  Object _cancelOrderResponse() {
+    orderStatus = 'CANCELED';
+    _orderTimeline.add(<String, Object?>{
+      'order_status_history_id': 'hist-3',
+      'order_id': 'ord-1',
+      'status': 'CANCELED',
+      'status_time': '2099-01-01T00:15:00.000Z',
+      'note': 'Canceled by customer from mobile app.',
+    });
+    return <String, Object?>{
+      'orderId': 'ord-1',
+      'externalOrderId': 'external-1',
+      'retailerId': 'ret-1',
+      'retailerName': 'Fresh Market',
+      'retailerLocationId': 'loc-1',
+      'retailerLocationName': 'Downtown Market',
+      'status': orderStatus,
+      'placedAt': '2099-01-01T00:00:00.000Z',
+      'totalCents': 4550,
+      'currency': 'USD',
+      'itemCount': 3,
     };
   }
 }
@@ -195,6 +264,10 @@ Future<void> _selectMainTab(WidgetTester tester, int index) async {
 }
 
 Map<String, Object?> _bootstrapJson() {
+  return _bootstrapJsonWithStatus('SUBMITTED');
+}
+
+Map<String, Object?> _bootstrapJsonWithStatus(String orderStatus) {
   return <String, Object?>{
     'customer': <String, Object?>{
       'id': 'cust-1',
@@ -259,7 +332,7 @@ Map<String, Object?> _bootstrapJson() {
         'retailerName': 'Fresh Market',
         'retailerLocationId': 'loc-1',
         'retailerLocationName': 'Downtown Market',
-        'status': 'PLACED',
+        'status': orderStatus,
         'placedAt': '2099-01-01T00:00:00.000Z',
         'totalCents': 4550,
         'currency': 'USD',
@@ -336,13 +409,6 @@ List<Object?> _defaultOrderTimeline() {
       'status': 'SUBMITTED',
       'status_time': '2099-01-01T00:00:00.000Z',
       'note': 'Order submitted through checkout.',
-    },
-    <String, Object?>{
-      'order_status_history_id': 'hist-2',
-      'order_id': 'ord-1',
-      'status': 'ASSIGNED',
-      'status_time': '2099-01-01T00:10:00.000Z',
-      'note': 'Driver assigned.',
     },
   ];
 }

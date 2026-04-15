@@ -8,6 +8,7 @@ function makeRepository(): MobileRepository {
     getCustomerBootstrap: vi.fn().mockResolvedValue({}),
     getCustomerCatalog: vi.fn().mockResolvedValue({}),
     setRetailerConnection: vi.fn().mockResolvedValue({}),
+    cancelOrder: vi.fn().mockResolvedValue({}),
     checkout: vi.fn().mockResolvedValue({}),
     getDriverBootstrap: vi.fn().mockResolvedValue({}),
     acceptDelivery: vi.fn().mockResolvedValue({}),
@@ -29,6 +30,14 @@ function driverPrincipal() {
     userId: 'driver-1',
     role: 'driver' as const,
     sessionId: 'session-driver-1'
+  };
+}
+
+function adminPrincipal() {
+  return {
+    userId: 'admin-1',
+    role: 'admin' as const,
+    sessionId: 'session-admin-1'
   };
 }
 
@@ -89,6 +98,15 @@ describe('mobile service', () => {
     });
   });
 
+  it('forwards customer cancel requests to the repository', async () => {
+    const repository = makeRepository();
+    const service = new MobileService(repository);
+
+    await service.cancelOrder(customerPrincipal(), 'order-1');
+
+    expect(repository.cancelOrder).toHaveBeenCalledWith('cust-1', 'order-1');
+  });
+
   it('rejects driver principals from customer-only actions', async () => {
     const service = new MobileService(makeRepository());
 
@@ -104,6 +122,12 @@ describe('mobile service', () => {
         addressId: '22222222-2222-4222-8222-222222222222'
       })
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(service.cancelOrder(driverPrincipal(), 'order-1')).rejects.toMatchObject({
+      code: 'FORBIDDEN'
+    });
+    await expect(service.cancelOrder(adminPrincipal(), 'order-1')).rejects.toMatchObject({
+      code: 'FORBIDDEN'
+    });
   });
 
   it('forwards driver bootstrap and delivery actions to the repository', async () => {

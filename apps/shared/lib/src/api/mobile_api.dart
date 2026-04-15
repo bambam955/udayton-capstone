@@ -166,6 +166,17 @@ class CustomerMobileApi {
     return response.data;
   }
 
+  Future<CustomerOrderSummary> cancelOrder(String orderId) async {
+    final response = await _client.send<CustomerOrderSummary>(
+      ApiRequest(
+        method: 'POST',
+        path: '/v1/mobile/customer/orders/$orderId/cancel',
+      ),
+      decoder: CustomerOrderSummary.fromJson,
+    );
+    return response.data;
+  }
+
   Future<CustomerCheckout> checkout({
     required String cartId,
     required String addressId,
