@@ -47,7 +47,13 @@ services:
       PGHOST: db
       PGUSER: bizrush
       PGPASSWORD: ${POSTGRES_PASSWORD:-change_me_local}
-    command: ["psql", "-v", "ON_ERROR_STOP=1", "-f", "/seed/R__local_seed_data.sql"]
+      ADMIN_SEED_PASSWORD:
+    command:
+      [
+        "sh",
+        "-ceu",
+        ": \"$${ADMIN_SEED_PASSWORD:?Set ADMIN_SEED_PASSWORD before seeding.}\" && psql -v ON_ERROR_STOP=1 -v admin_seed_password=\"$${ADMIN_SEED_PASSWORD}\" -f /seed/R__local_seed_data.sql"
+      ]
     volumes:
       - ./seed:/seed:ro
 

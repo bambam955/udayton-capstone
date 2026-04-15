@@ -22,12 +22,8 @@ export default function Sidebar() {
   return (
     <aside className="glass-card flex h-full w-full flex-col gap-6 rounded-3xl p-6">
       <div>
-        <p className="font-display text-lg font-semibold text-white">
-          Biz Rush Admin
-        </p>
-        <p className="mt-1 text-xs text-[color:var(--text-muted)]">
-          Operations and oversight
-        </p>
+        <p className="font-display text-lg font-semibold text-white">Biz Rush Admin</p>
+        <p className="mt-1 text-xs text-[color:var(--text-muted)]">Operations and oversight</p>
       </div>
       <nav className="flex flex-col gap-3 text-sm text-[color:var(--text-muted)]">
         {navItems.map((item) => {

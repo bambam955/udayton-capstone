@@ -1,6 +1,8 @@
 -- ============================================================
 -- Local-development seed data (efficient, deterministic, idempotent)
 -- Loaded by the separate `db-seed` compose service.
+-- Keep this out of the Flyway migration path.
+-- The local admin password is injected by psql from ADMIN_SEED_PASSWORD.
 -- ============================================================
 
 -- Keep ON COMMIT DROP temp tables alive until all dependent inserts finish.
@@ -20,6 +22,36 @@ AS $$
     substr(md5(seed), 21, 12)
   )::uuid;
 $$;
+
+-- Admin roles and local admin bootstrap for the admin dashboard login flow.
+INSERT INTO admin_roles (role_id, name, description, created_at)
+VALUES
+  ('99999999-9999-9999-9999-999999999901', 'Operations Lead', 'Local development admin role', NOW())
+ON CONFLICT (role_id) DO NOTHING;
+
+INSERT INTO admins (admin_id, email, full_name, password_hash, is_active, created_at, updated_at)
+VALUES
+  (
+    '99999999-9999-9999-9999-999999999001',
+    'admin@bizrush.local',
+    'BizRush Admin',
+    crypt(:'admin_seed_password', gen_salt('bf', 10)),
+    TRUE,
+    NOW() - INTERVAL '12 days',
+    NOW()
+  )
+ON CONFLICT (admin_id) DO UPDATE
+SET
+  email = EXCLUDED.email,
+  full_name = EXCLUDED.full_name,
+  password_hash = EXCLUDED.password_hash,
+  is_active = EXCLUDED.is_active,
+  updated_at = NOW();
+
+INSERT INTO admin_profiles (admin_profile_id, admin_id, role_id, title, phone, last_login_at, updated_at)
+VALUES
+  ('99999999-9999-9999-9999-999999999101', '99999999-9999-9999-9999-999999999001', '99999999-9999-9999-9999-999999999901', 'Operations Manager', '+1-555-303-0001', NOW() - INTERVAL '2 hours', NOW())
+ON CONFLICT (admin_profile_id) DO NOTHING;
 
 -- Retailers (20 total)
 CREATE TEMP TABLE seed_retailers ON COMMIT DROP AS
@@ -561,7 +593,10 @@ INSERT INTO delivery_offers (
 )
 VALUES
   ('26262626-2626-4262-8262-262626262611', 'dddddddd-dddd-dddd-dddd-ddddddddddd5', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5', 'OFFERED', NOW() - INTERVAL '15 minutes', NULL, 300, NULL)
-ON CONFLICT (offer_id) DO NOTHING;
+-- Current delivery-offer modeling allows only one shared offer row per delivery.
+-- Conflict on delivery_id so reseeding stays idempotent even if an older local
+-- database already has a differently keyed offer for this delivery.
+ON CONFLICT (delivery_id) DO NOTHING;
 
 INSERT INTO payments (
   payment_id, order_id, customer_id, provider, provider_ref, amount_cents, currency, status, created_at
@@ -606,5 +641,12 @@ VALUES
   ('31313131-3131-4131-8131-313131313111', 'cccccccc-cccc-cccc-cccc-ccccccccccc1', 2500, 'USD', 'PENDING', 'mock', 'payout-10001', NOW() - INTERVAL '45 minutes'),
   ('31313131-3131-4131-8131-313131313112', 'cccccccc-cccc-cccc-cccc-ccccccccccc2', 2000, 'USD', 'PAID', 'mock', 'payout-10002', NOW() - INTERVAL '20 hours')
 ON CONFLICT (payout_id) DO NOTHING;
+
+INSERT INTO integration_health (health_id, integration, status, last_checked_at, error, details_json)
+VALUES
+  ('edededed-eded-eded-eded-ededededed01', 'Target Catalog Sync', 'HEALTHY', NOW() - INTERVAL '8 minutes', NULL, '{"latencyMs":120}'),
+  ('edededed-eded-eded-eded-ededededed02', 'Walmart Catalog Sync', 'DEGRADED', NOW() - INTERVAL '15 minutes', 'Slow upstream response times', '{"latencyMs":920}'),
+  ('edededed-eded-eded-eded-ededededed03', 'Mockoon Retailer Bridge', 'HEALTHY', NOW() - INTERVAL '3 minutes', NULL, '{"mode":"demo"}')
+ON CONFLICT (health_id) DO NOTHING;
 
 COMMIT;

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 
 import { HttpError } from '../../app/errors.js';
 import type { Database } from '../../platform/db/types.js';
@@ -10,6 +10,7 @@ import type { AuthUser, SessionRecord, SignupInput } from './types.js';
 // Contract used by AuthService so business logic is decoupled from SQL details.
 export interface AuthRepository {
   findUserByEmail(role: AuthRole, email: string): Promise<AuthUser | null>;
+  findUserByCredentials(role: AuthRole, email: string, password: string): Promise<AuthUser | null>;
   createCustomer(input: SignupInput): Promise<AuthUser>;
   createDriver(input: SignupInput): Promise<AuthUser>;
   createSession(session: SessionRecord): Promise<void>;
@@ -36,7 +37,6 @@ export class KyselyAuthRepository implements AuthRepository {
         userId: row.customer_id,
         role,
         email: row.email,
-        passwordHash: row.password_hash,
         isActive: true
       };
     }
@@ -54,7 +54,6 @@ export class KyselyAuthRepository implements AuthRepository {
         userId: row.driver_id,
         role,
         email: row.email,
-        passwordHash: row.password_hash,
         isActive: true
       };
     }
@@ -71,14 +70,76 @@ export class KyselyAuthRepository implements AuthRepository {
       userId: row.admin_id,
       role,
       email: row.email,
-      passwordHash: row.password_hash,
+      isActive: true
+    };
+  }
+
+  async findUserByCredentials(
+    role: AuthRole,
+    email: string,
+    password: string
+  ): Promise<AuthUser | null> {
+    if (role === 'customer') {
+      const row = await this.db
+        .selectFrom('customers')
+        .select(['customer_id', 'email', 'is_active'])
+        .where('email', '=', email)
+        .where(sql<boolean>`password_hash = crypt(${password}, password_hash)`)
+        .executeTakeFirst();
+
+      if (!row?.email || row.is_active !== true) {
+        return null;
+      }
+
+      return {
+        userId: row.customer_id,
+        role,
+        email: row.email,
+        isActive: true
+      };
+    }
+
+    if (role === 'driver') {
+      const row = await this.db
+        .selectFrom('drivers')
+        .select(['driver_id', 'email', 'is_active'])
+        .where('email', '=', email)
+        .where(sql<boolean>`password_hash = crypt(${password}, password_hash)`)
+        .executeTakeFirst();
+
+      if (!row?.email || row.is_active !== true) {
+        return null;
+      }
+
+      return {
+        userId: row.driver_id,
+        role,
+        email: row.email,
+        isActive: true
+      };
+    }
+
+    const row = await this.db
+      .selectFrom('admins')
+      .select(['admin_id', 'email', 'is_active'])
+      .where('email', '=', email)
+      .where(sql<boolean>`password_hash = crypt(${password}, password_hash)`)
+      .executeTakeFirst();
+
+    if (!row?.email || row.is_active !== true) {
+      return null;
+    }
+
+    return {
+      userId: row.admin_id,
+      role,
+      email: row.email,
       isActive: true
     };
   }
 
   async createCustomer(input: SignupInput): Promise<AuthUser> {
     try {
-      // Registration still stores the raw password until hashing is wired in.
       const row = await this.db
         .insertInto('customers')
         .values({
@@ -86,19 +147,18 @@ export class KyselyAuthRepository implements AuthRepository {
           email: input.email.toLowerCase(),
           phone: input.phone ?? null,
           full_name: input.fullName ?? null,
-          password_hash: input.password,
+          password_hash: sql<string>`crypt(${input.password}, gen_salt('bf', 10))`,
           is_active: true,
           created_at: new Date(),
           updated_at: new Date()
         })
-        .returning(['customer_id', 'email', 'password_hash'])
+        .returning(['customer_id', 'email'])
         .executeTakeFirstOrThrow();
 
       return {
         userId: row.customer_id,
         role: 'customer',
         email: row.email ?? input.email.toLowerCase(),
-        passwordHash: row.password_hash ?? input.password,
         isActive: true
       };
     } catch (error) {
@@ -128,20 +188,19 @@ export class KyselyAuthRepository implements AuthRepository {
           email: input.email.toLowerCase(),
           phone: input.phone ?? null,
           full_name: input.fullName ?? null,
-          password_hash: input.password,
+          password_hash: sql<string>`crypt(${input.password}, gen_salt('bf', 10))`,
           is_active: true,
           status: 'OFFLINE',
           created_at: new Date(),
           updated_at: new Date()
         })
-        .returning(['driver_id', 'email', 'password_hash'])
+        .returning(['driver_id', 'email'])
         .executeTakeFirstOrThrow();
 
       return {
         userId: row.driver_id,
         role: 'driver',
         email: row.email ?? input.email.toLowerCase(),
-        passwordHash: row.password_hash ?? input.password,
         isActive: true
       };
     } catch (error) {
