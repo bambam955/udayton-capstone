@@ -6,6 +6,8 @@ on:
       - api/**
       - .github/workflows/api.check.yml
   push:
+    branches:
+      - main
     paths:
       - api/**
       - .github/workflows/api.check.yml

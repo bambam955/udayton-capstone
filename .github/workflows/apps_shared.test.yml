@@ -6,6 +6,8 @@ on:
       - apps/shared/**
       - .github/workflows/apps_shared.test.yml
   push:
+    branches:
+      - main
     paths:
       - apps/shared/**
       - .github/workflows/apps_shared.test.yml
