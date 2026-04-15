@@ -1,0 +1,43 @@
+name: check:mocks
+
+on:
+  pull_request:
+    paths:
+      - mocks/**
+      - .github/workflows/mocks.check.yml
+  push:
+    paths:
+      - mocks/**
+      - .github/workflows/mocks.check.yml
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mocks
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mocks/package-lock.json
+      - run: npm ci
+      - run: npx --no-install eslint .
+
+  format:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mocks
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mocks/package-lock.json
+      - run: npm ci
+      - run: npx --no-install prettier --check .

@@ -9,7 +9,16 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.string().min(1).default('postgres://bizrush:bizrush@localhost:5432/bizrush'),
-  JWT_SECRET: z.string().min(16).default('bizrush-local-dev-secret')
+  JWT_SECRET: z.string().min(16).default('bizrush-local-dev-secret'),
+  CORS_ALLOWED_ORIGINS: z
+    .string()
+    .default('')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0)
+    )
 });
 
 export type Env = z.infer<typeof envSchema>;

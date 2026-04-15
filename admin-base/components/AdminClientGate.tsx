@@ -9,7 +9,9 @@ export default function AdminClientGate() {
   const router = useRouter();
 
   useEffect(() => {
-    const hasAuth = typeof window !== "undefined" && window.localStorage.getItem(AUTH_KEY) === "1";
+    const hasAuth =
+      typeof window !== "undefined" &&
+      window.localStorage.getItem(AUTH_KEY) === "1";
 
     if (!hasAuth) {
       router.replace("/login");

@@ -20,7 +20,7 @@ It includes:
 - Sessions and device registration
 - Driver profile and background verification
 - Vehicles and required documents
-- Availability tracking
+- Current driver availability status
 - Service area definitions
 - Real-time GPS location logging
 - Driver notifications
@@ -29,7 +29,7 @@ This ensures the platform can:
 
 - Authenticate drivers securely
 - Verify compliance requirements
-- Track active delivery readiness
+- Track whether a driver is currently online and ready for work
 - Route deliveries based on geography
 - Send real-time offer and status notifications
 

@@ -47,6 +47,17 @@ export function makeTestApp(options?: { repository?: ResourceRepository; authSer
 
   return createApp({
     authService: authService as never,
-    resourceService: new ResourceService(repository, allResourceDefinitions)
+    resourceService: new ResourceService(repository, allResourceDefinitions),
+    mobileService: {
+      getCustomerBootstrap: vi.fn(),
+      getCustomerCatalog: vi.fn(),
+      connectRetailer: vi.fn(),
+      disconnectRetailer: vi.fn(),
+      checkout: vi.fn(),
+      getDriverBootstrap: vi.fn(),
+      acceptDelivery: vi.fn(),
+      pickupDelivery: vi.fn(),
+      completeDelivery: vi.fn()
+    }
   });
 }

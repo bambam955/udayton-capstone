@@ -1,6 +1,7 @@
 import {
   adminOnly,
   booleanField,
+  decimalField,
   integerField,
   resource,
   stringField,
@@ -71,6 +72,8 @@ export const retailerResourceDefinitions = [
     createAccess: {
       admin: {},
       customer: {
+        // Customers may only create connection rows for themselves and only for
+        // the fields involved in connection state.
         injectPrincipalColumn: 'customer_id',
         writeColumns: ['retailer_id', 'is_connected']
       }
@@ -112,6 +115,50 @@ export const retailerResourceDefinitions = [
       external_category_id: stringField({ createable: true, updateable: true }),
       updated_at: timestampField({ createable: true, updateable: true })
     },
+    listAccess: {
+      // Product taxonomy is read by both mobile apps when building browse and
+      // delivery context, while writes stay admin-only.
+      admin: {},
+      customer: {},
+      driver: {}
+    },
+    getAccess: {
+      admin: {},
+      customer: {},
+      driver: {}
+    },
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
+  }),
+  resource({
+    name: 'retailer_locations',
+    path: 'retailer-locations',
+    table: 'retailer_locations',
+    idColumn: 'retailer_location_id',
+    fields: {
+      retailer_location_id: stringField({ filterable: true }),
+      retailer_id: stringField({
+        filterable: true,
+        createable: true,
+        updateable: true,
+        requiredOnCreate: true
+      }),
+      external_store_id: stringField({ filterable: true, createable: true, updateable: true }),
+      name: stringField({ filterable: true, createable: true, updateable: true }),
+      address_line1: stringField({ createable: true, updateable: true }),
+      address_line2: stringField({ createable: true, updateable: true }),
+      city: stringField({ filterable: true, createable: true, updateable: true }),
+      state: stringField({ filterable: true, createable: true, updateable: true }),
+      postal_code: stringField({ createable: true, updateable: true }),
+      country: stringField({ createable: true, updateable: true }),
+      lat: decimalField({ createable: true, updateable: true }),
+      lng: decimalField({ createable: true, updateable: true }),
+      is_active: booleanField({ filterable: true, createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true }),
+      updated_at: timestampField({ createable: true, updateable: true })
+    },
+    // Both mobile apps read from the partner-location catalog, while admin owns edits.
     listAccess: {
       admin: {},
       customer: {},

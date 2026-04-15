@@ -1,90 +1,101 @@
 import 'package:flutter/material.dart';
 
-/// Owns data types used by the customer home shell and tab sections.
+/// Owns view models used by the customer home shell and tab sections.
 class StoreOption {
   const StoreOption({
     required this.id,
+    required this.retailerId,
     required this.name,
-    required this.etaText,
-    required this.ratingText,
+    required this.subtitle,
+    required this.isConnected,
   });
 
   final String id;
+  final String retailerId;
   final String name;
-  final String etaText;
-  final String ratingText;
+  final String subtitle;
+  final bool isConnected;
 }
 
+/// Presentation model for products displayed in home/search cards.
 class CatalogItem {
   const CatalogItem({
     required this.id,
-    required this.storeId,
     required this.name,
     required this.category,
-    required this.price,
-    required this.unit,
+    required this.unitPriceCents,
     required this.badgeText,
     required this.gradient,
+    required this.isAvailable,
+    this.description,
+    this.externalSku,
   });
 
   final String id;
-  final String storeId;
   final String name;
   final String category;
-  final double price;
-  final String unit;
+  final String? description;
+  final String? externalSku;
+  final int unitPriceCents;
   final String badgeText;
   final List<Color> gradient;
+  final bool isAvailable;
 }
 
+/// Flattened cart item model tailored to the customer cart UI.
 class CartLine {
   const CartLine({
-    required this.itemId,
+    required this.cartItemId,
+    required this.productId,
     required this.name,
-    required this.unitPrice,
+    required this.unitPriceCents,
     required this.quantity,
   });
 
-  final String itemId;
+  final String cartItemId;
+  final String productId;
   final String name;
-  final double unitPrice;
+  final int unitPriceCents;
   final int quantity;
-
-  CartLine copyWith({
-    String? itemId,
-    String? name,
-    double? unitPrice,
-    int? quantity,
-  }) {
-    return CartLine(
-      itemId: itemId ?? this.itemId,
-      name: name ?? this.name,
-      unitPrice: unitPrice ?? this.unitPrice,
-      quantity: quantity ?? this.quantity,
-    );
-  }
 }
 
+/// Order summary shown in the orders tab and details sheet launcher.
 class OrderPreview {
   const OrderPreview({
     required this.id,
-    required this.businessName,
+    required this.retailerName,
     required this.storeName,
     required this.status,
     required this.etaText,
-    required this.total,
+    required this.totalCents,
     required this.itemCount,
   });
 
   final String id;
-  final String businessName;
-  final String storeName;
+  final String retailerName;
+  final String? storeName;
   final String status;
   final String etaText;
-  final double total;
+  final int totalCents;
   final int itemCount;
 }
 
+/// Timeline row loaded lazily when opening order details.
+class OrderTimelineEntry {
+  const OrderTimelineEntry({
+    required this.id,
+    required this.status,
+    required this.occurredAt,
+    required this.note,
+  });
+
+  final String id;
+  final String status;
+  final DateTime? occurredAt;
+  final String? note;
+}
+
+/// Support summary shown in the support tab.
 class SupportTicket {
   const SupportTicket({
     required this.id,
@@ -99,9 +110,54 @@ class SupportTicket {
   final String summary;
 }
 
+/// Compact address summary rendered on the account tab.
+class AddressPreview {
+  const AddressPreview({
+    required this.id,
+    required this.label,
+    required this.addressLine,
+    required this.isDefault,
+  });
+
+  final String id;
+  final String label;
+  final String addressLine;
+  final bool isDefault;
+}
+
+/// Account tab aggregate that combines customer identity, addresses, and store
+/// connection state into one render-friendly object.
+class CustomerAccountOverview {
+  const CustomerAccountOverview({
+    required this.customerName,
+    required this.customerEmail,
+    required this.connectedStoreCount,
+    required this.trackedOrderCount,
+    required this.addresses,
+    required this.stores,
+  });
+
+  final String customerName;
+  final String customerEmail;
+  final int connectedStoreCount;
+  final int trackedOrderCount;
+  final List<AddressPreview> addresses;
+  final List<StoreOption> stores;
+}
+
+/// Navigation item backing the customer's bottom navigation bar.
 class CustomerNavItem {
   const CustomerNavItem({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
 }
+
+/// Shared nav configuration so labels/icons stay aligned across shell and tests.
+const customerBottomNavItems = <CustomerNavItem>[
+  CustomerNavItem(icon: Icons.home_rounded, label: 'Home'),
+  CustomerNavItem(icon: Icons.search_rounded, label: 'Search'),
+  CustomerNavItem(icon: Icons.receipt_long_rounded, label: 'Orders'),
+  CustomerNavItem(icon: Icons.headset_mic_rounded, label: 'Support'),
+  CustomerNavItem(icon: Icons.person_outline_rounded, label: 'Account'),
+];

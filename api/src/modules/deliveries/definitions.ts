@@ -31,6 +31,7 @@ export const deliveryResourceDefinitions = [
     listAccess: {
       admin: {},
       customer: {
+        // Customers can read only deliveries tied to their own orders.
         scope: {
           kind: 'related',
           table: 'orders',
@@ -40,6 +41,7 @@ export const deliveryResourceDefinitions = [
         }
       },
       driver: {
+        // Drivers can read only deliveries explicitly assigned to them.
         scope: {
           kind: 'direct',
           column: 'driver_id'
@@ -65,16 +67,7 @@ export const deliveryResourceDefinitions = [
       }
     },
     createAccess: adminOnly(),
-    updateAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        },
-        writeColumns: ['status', 'pickup_location', 'assigned_at', 'picked_up_at', 'delivered_at']
-      }
-    },
+    updateAccess: adminOnly(),
     deleteAccess: adminOnly()
   }),
   resource({
@@ -96,47 +89,18 @@ export const deliveryResourceDefinitions = [
         updateable: true,
         requiredOnCreate: true
       }),
-      driver_id: stringField({
-        filterable: true,
-        createable: true,
-        updateable: true,
-        requiredOnCreate: true
-      }),
       status: stringField({ filterable: true, createable: true, updateable: true }),
       offered_at: timestampField({ createable: true, updateable: true }),
       responded_at: timestampField({ createable: true, updateable: true }),
       expires_in_sec: integerField({ createable: true, updateable: true }),
       decline_reason: stringField({ createable: true, updateable: true })
     },
-    listAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        }
-      }
-    },
-    getAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        }
-      }
-    },
+    // Shared offers are system-owned dispatch records; the driver app reads
+    // them through mobile bootstrap instead of raw CRUD routes.
+    listAccess: adminOnly(),
+    getAccess: adminOnly(),
     createAccess: adminOnly(),
-    updateAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'direct',
-          column: 'driver_id'
-        },
-        writeColumns: ['status', 'responded_at', 'decline_reason']
-      }
-    },
+    updateAccess: adminOnly(),
     deleteAccess: adminOnly()
   }),
   resource({
@@ -243,6 +207,8 @@ export const deliveryResourceDefinitions = [
     listAccess: {
       admin: {},
       driver: {
+        // Drivers read status events only for deliveries they own through the
+        // assignment table.
         scope: {
           kind: 'related',
           table: 'delivery_assignments',
@@ -264,43 +230,8 @@ export const deliveryResourceDefinitions = [
         }
       }
     },
-    createAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'related',
-          table: 'delivery_assignments',
-          localColumn: 'delivery_id',
-          relatedColumn: 'delivery_id',
-          ownerColumn: 'driver_id'
-        },
-        writeColumns: ['delivery_id', 'driver_id', 'status', 'event_time', 'note', 'lat', 'lng']
-      }
-    },
-    updateAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'related',
-          table: 'delivery_assignments',
-          localColumn: 'delivery_id',
-          relatedColumn: 'delivery_id',
-          ownerColumn: 'driver_id'
-        },
-        writeColumns: ['status', 'event_time', 'note', 'lat', 'lng']
-      }
-    },
-    deleteAccess: {
-      admin: {},
-      driver: {
-        scope: {
-          kind: 'related',
-          table: 'delivery_assignments',
-          localColumn: 'delivery_id',
-          relatedColumn: 'delivery_id',
-          ownerColumn: 'driver_id'
-        }
-      }
-    }
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
   })
 ];

@@ -12,12 +12,14 @@ class DriverTabNearby extends StatelessWidget {
     required this.onSearchChanged,
     required this.onAccept,
     required this.onViewDetails,
+    required this.isBusy,
   });
 
   final List<DriverJob> availableJobs;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onAccept;
   final ValueChanged<DriverJob> onViewDetails;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -44,14 +46,17 @@ class DriverTabNearby extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         if (availableJobs.isEmpty)
-          const SurfaceCard(child: Text('No available demo offers'))
+          const SurfaceCard(child: Text('No available offers right now.'))
         else
+          // Nearby offers reuse a simple repeating card because the list can
+          // refresh frequently as offers appear or expire.
           for (final job in availableJobs) ...[
             _OfferCard(
               key: Key('driver-nearby-card-${job.id}'),
               job: job,
               onAccept: () => onAccept(job.id),
               onViewDetails: () => onViewDetails(job),
+              isBusy: isBusy,
             ),
             const SizedBox(height: 12),
           ],
@@ -66,11 +71,13 @@ class _OfferCard extends StatelessWidget {
     required this.job,
     required this.onAccept,
     required this.onViewDetails,
+    required this.isBusy,
   });
 
   final DriverJob job;
   final VoidCallback onAccept;
   final VoidCallback onViewDetails;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +136,9 @@ class _OfferCard extends StatelessWidget {
                   children: [
                     FilledButton(
                       key: Key('driver-accept-${job.id}'),
-                      onPressed: onAccept,
+                      // Accept is disabled while another mutation is in flight
+                      // so the shell does not fire overlapping delivery actions.
+                      onPressed: isBusy ? null : onAccept,
                       child: const Text('Accept'),
                     ),
                     OutlinedButton(

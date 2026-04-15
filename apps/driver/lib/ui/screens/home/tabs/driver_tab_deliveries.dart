@@ -19,6 +19,7 @@ class DriverTabDeliveries extends StatelessWidget {
     required this.onCompleteDelivery,
     required this.onOpenMap,
     required this.onViewDetails,
+    required this.isBusy,
   });
 
   final int filterIndex;
@@ -31,11 +32,14 @@ class DriverTabDeliveries extends StatelessWidget {
   final ValueChanged<String> onCompleteDelivery;
   final ValueChanged<String> onOpenMap;
   final ValueChanged<DriverJob> onViewDetails;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final showingCompleted = filterIndex == 1;
+    // The shell pre-splits active and completed jobs, so the tab only needs a
+    // lightweight UI filter toggle.
     final jobs = showingCompleted ? completedJobs : activeJobs;
 
     return Column(
@@ -72,8 +76,8 @@ class DriverTabDeliveries extends StatelessWidget {
           SurfaceCard(
             child: Text(
               showingCompleted
-                  ? 'No completed demo deliveries'
-                  : 'No active demo deliveries',
+                  ? 'No completed deliveries yet.'
+                  : 'No active deliveries right now.',
             ),
           )
         else
@@ -87,6 +91,7 @@ class DriverTabDeliveries extends StatelessWidget {
               onCompleteDelivery: () => onCompleteDelivery(job.id),
               onOpenMap: () => onOpenMap(job.id),
               onViewDetails: () => onViewDetails(job),
+              isBusy: isBusy,
             ),
             const SizedBox(height: 12),
           ],
@@ -105,6 +110,7 @@ class _DeliveryCard extends StatelessWidget {
     required this.onCompleteDelivery,
     required this.onOpenMap,
     required this.onViewDetails,
+    required this.isBusy,
   });
 
   final DriverJob job;
@@ -114,6 +120,7 @@ class _DeliveryCard extends StatelessWidget {
   final VoidCallback onCompleteDelivery;
   final VoidCallback onOpenMap;
   final VoidCallback onViewDetails;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -162,10 +169,12 @@ class _DeliveryCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              // The primary action changes with delivery stage so the tab can
+              // advance the workflow without exposing invalid actions.
               if (primaryAction != null)
                 OutlinedButton(
                   key: primaryAction.key,
-                  onPressed: primaryAction.onPressed,
+                  onPressed: isBusy ? null : primaryAction.onPressed,
                   child: Text(primaryAction.label),
                 ),
               if (job.stage == DeliveryStage.assigned ||
