@@ -593,7 +593,10 @@ INSERT INTO delivery_offers (
 )
 VALUES
   ('26262626-2626-4262-8262-262626262611', 'dddddddd-dddd-dddd-dddd-ddddddddddd5', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5', 'OFFERED', NOW() - INTERVAL '15 minutes', NULL, 300, NULL)
-ON CONFLICT (offer_id) DO NOTHING;
+-- Current delivery-offer modeling allows only one shared offer row per delivery.
+-- Conflict on delivery_id so reseeding stays idempotent even if an older local
+-- database already has a differently keyed offer for this delivery.
+ON CONFLICT (delivery_id) DO NOTHING;
 
 INSERT INTO payments (
   payment_id, order_id, customer_id, provider, provider_ref, amount_cents, currency, status, created_at
