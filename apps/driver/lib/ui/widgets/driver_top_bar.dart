@@ -50,7 +50,8 @@ class DriverTopBar extends StatelessWidget {
                       // Fall back to text branding when the asset is unavailable
                       // in tests or partial builds.
                       'BizRush Driver',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -90,8 +91,9 @@ class DriverTopBar extends StatelessWidget {
         const SizedBox(height: 8),
         OutlinedButton.icon(
           key: const Key('driver-availability-toggle'),
-          onPressed:
-              isAvailabilityBusy ? null : () => onAvailabilityChanged(!isOnline),
+          onPressed: isAvailabilityBusy
+              ? null
+              : () => onAvailabilityChanged(!isOnline),
           icon: availabilityIcon,
           label: Text(isOnline ? 'Go offline' : 'Go online'),
         ),

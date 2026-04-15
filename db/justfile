@@ -4,6 +4,14 @@ default:
 
 # Seed the database with local sample data.
 seed:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -f ../.env.local ]; then
+        set -a
+        source ../.env.local
+        set +a
+    fi
+    : "${ADMIN_SEED_PASSWORD:?Set ADMIN_SEED_PASSWORD in ../.env.local before seeding.}"
     docker compose --project-name bizrush --profile dbseed -f ../docker-compose.yml up db-seed
 
 # Delete the local DB.

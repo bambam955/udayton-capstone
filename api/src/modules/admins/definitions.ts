@@ -16,6 +16,23 @@ const sessionFields = {
 
 export const adminResourceDefinitions = [
   resource({
+    name: 'admin_roles',
+    path: 'admin-roles',
+    table: 'admin_roles',
+    idColumn: 'role_id',
+    fields: {
+      role_id: stringField({ filterable: true }),
+      name: stringField({ filterable: true, createable: true, updateable: true }),
+      description: stringField({ createable: true, updateable: true }),
+      created_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: adminOnly(),
+    getAccess: adminOnly(),
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
+  }),
+  resource({
     name: 'admins',
     path: 'admins',
     table: 'admins',
@@ -27,6 +44,26 @@ export const adminResourceDefinitions = [
       password_hash: stringField({ readable: false, createable: true, updateable: true }),
       is_active: booleanField({ filterable: true, createable: true, updateable: true }),
       created_at: timestampField({ createable: true, updateable: true }),
+      updated_at: timestampField({ createable: true, updateable: true })
+    },
+    listAccess: adminOnly(),
+    getAccess: adminOnly(),
+    createAccess: adminOnly(),
+    updateAccess: adminOnly(),
+    deleteAccess: adminOnly()
+  }),
+  resource({
+    name: 'admin_profiles',
+    path: 'admin-profiles',
+    table: 'admin_profiles',
+    idColumn: 'admin_profile_id',
+    fields: {
+      admin_profile_id: stringField({ filterable: true }),
+      admin_id: stringField({ filterable: true, createable: true, requiredOnCreate: true }),
+      role_id: stringField({ filterable: true, createable: true, updateable: true }),
+      title: stringField({ createable: true, updateable: true }),
+      phone: stringField({ createable: true, updateable: true }),
+      last_login_at: timestampField({ createable: true, updateable: true }),
       updated_at: timestampField({ createable: true, updateable: true })
     },
     listAccess: adminOnly(),

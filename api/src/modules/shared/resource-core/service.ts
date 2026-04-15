@@ -149,11 +149,19 @@ export class ResourceService {
 
     const input = {
       ...parsed.data,
-      limit: Math.min(Math.max(parsed.data.limit, 1), 100)
+      limit: Math.min(Math.max(parsed.data.limit, 1), 100),
+      offset: Math.max(parsed.data.offset, 0)
     };
-    const data = await this.repository.list(definition, access, principal, input);
+    const page = await this.repository.list(definition, access, principal, input);
 
-    return { data };
+    return {
+      data: page.data,
+      meta: {
+        total: page.total,
+        limit: input.limit,
+        offset: input.offset
+      }
+    };
   }
 
   async get(

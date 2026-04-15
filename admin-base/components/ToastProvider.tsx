@@ -19,7 +19,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const toneClasses: Record<ToastTone, string> = {
   success: "border-l-[color:var(--accent)]",
   error: "border-l-[rgba(255,94,94,0.8)]",
-  info: "border-l-[rgba(255,255,255,0.3)]"
+  info: "border-l-[rgba(255,255,255,0.3)]",
 };
 
 const createToastId = () =>
