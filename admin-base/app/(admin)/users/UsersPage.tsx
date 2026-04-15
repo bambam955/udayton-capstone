@@ -17,7 +17,7 @@ export default async function UsersPage() {
   const [customers, drivers, admins] = await Promise.all([
     listResource<CustomerRecord>("customers", token, { limit: 1, offset: 0 }),
     listResource<DriverRecord>("drivers", token, { limit: 1, offset: 0 }),
-    listResource<AdminRecord>("admins", token, { limit: 1, offset: 0 })
+    listResource<AdminRecord>("admins", token, { limit: 1, offset: 0 }),
   ]);
 
   const userSegments: UserSegment[] = [
@@ -25,20 +25,20 @@ export default async function UsersPage() {
       label: "Customers",
       value: customers.meta.total.toLocaleString(),
       note: "Business owners placing supply orders",
-      href: "/users/customers"
+      href: "/users/customers",
     },
     {
       label: "Drivers",
       value: drivers.meta.total.toLocaleString(),
       note: "Pickup and delivery after store fulfillment",
-      href: "/users/drivers"
+      href: "/users/drivers",
     },
     {
       label: "Support admins",
       value: admins.meta.total.toLocaleString(),
       note: "Operations support on shift",
-      href: "/users/support-admins"
-    }
+      href: "/users/support-admins",
+    },
   ];
 
   return (
@@ -55,10 +55,14 @@ export default async function UsersPage() {
             className="glass-card animate-fade-up rounded-2xl p-6"
             style={{ animationDelay: `${0.05 + index * 0.07}s` }}
           >
-            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">{segment.label}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+              {segment.label}
+            </p>
             <p className="mt-4 font-display text-3xl font-semibold text-white">{segment.value}</p>
             <p className="mt-2 text-sm text-[color:var(--text-muted)]">{segment.note}</p>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]">Open</p>
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]">
+              Open
+            </p>
           </Link>
         ))}
       </div>

@@ -4,11 +4,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { AdminSessionProvider } from "@/components/AdminSessionProvider";
 import { requireAdminSession } from "@/lib/auth/session";
 
-export default async function AdminLayout({
-  children
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdminSession();
 
   return (
@@ -25,9 +21,7 @@ export default async function AdminLayout({
                   <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
                     Biz Rush Admin
                   </p>
-                  <p className="font-display text-lg font-semibold text-white">
-                    Operations Center
-                  </p>
+                  <p className="font-display text-lg font-semibold text-white">Operations Center</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="rounded-full border border-[rgba(255,255,255,0.18)] px-4 py-2 text-xs text-[color:var(--text-muted)]">

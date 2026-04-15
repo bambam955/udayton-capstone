@@ -10,14 +10,9 @@ type AdminSessionProviderProps = {
 
 const AdminSessionContext = createContext<AdminSession | null>(null);
 
-export function AdminSessionProvider({
-  initialAdmin,
-  children,
-}: AdminSessionProviderProps) {
+export function AdminSessionProvider({ initialAdmin, children }: AdminSessionProviderProps) {
   return (
-    <AdminSessionContext.Provider value={initialAdmin}>
-      {children}
-    </AdminSessionContext.Provider>
+    <AdminSessionContext.Provider value={initialAdmin}>{children}</AdminSessionContext.Provider>
   );
 }
 

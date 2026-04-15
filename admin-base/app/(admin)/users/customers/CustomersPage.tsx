@@ -30,11 +30,13 @@ export default async function CustomersPage() {
   const token = await requireAdminAccessToken();
   const [customers, orders] = await Promise.all([
     listResource<CustomerRecord>("customers", token, { limit: 100, offset: 0 }),
-    listResource<OrderRecord>("orders", token, { limit: 100, offset: 0 })
+    listResource<OrderRecord>("orders", token, { limit: 100, offset: 0 }),
   ]);
 
   const records: CustomerDashboardRecord[] = customers.data.map((customer) => {
-    const customerOrders = orders.data.filter((order) => order.customer_id === customer.customer_id);
+    const customerOrders = orders.data.filter(
+      (order) => order.customer_id === customer.customer_id
+    );
     const openOrders = customerOrders.filter((order) => order.status !== "DELIVERED").length;
     const primaryStore = customerOrders[0]?.retailer_id ?? "No linked retailer";
     const inactiveOrNeedsReview = customer.is_active !== true || openOrders > 1;
@@ -45,7 +47,7 @@ export default async function CustomersPage() {
       ownerName: customer.full_name ?? customer.email ?? customer.customer_id,
       primaryStore,
       openOrders,
-      status: inactiveOrNeedsReview ? "Needs follow-up" : "Active"
+      status: inactiveOrNeedsReview ? "Needs follow-up" : "Active",
     };
   });
 
@@ -55,18 +57,33 @@ export default async function CustomersPage() {
 
   return (
     <div className="space-y-8">
-      <AdminHeader title="Customers" subtitle="Business owners placing supply orders to partner stores." />
+      <AdminHeader
+        title="Customers"
+        subtitle="Business owners placing supply orders to partner stores."
+      />
       <div className="grid gap-6 md:grid-cols-3">
         <div className="glass-card animate-fade-up rounded-2xl p-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">Total business owners</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+            Total business owners
+          </p>
           <p className="mt-3 font-display text-3xl font-semibold text-white">{totalCustomers}</p>
         </div>
-        <div className="glass-card animate-fade-up rounded-2xl p-6" style={{ animationDelay: "0.1s" }}>
-          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">With open orders</p>
+        <div
+          className="glass-card animate-fade-up rounded-2xl p-6"
+          style={{ animationDelay: "0.1s" }}
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+            With open orders
+          </p>
           <p className="mt-3 font-display text-3xl font-semibold text-white">{activeOrders}</p>
         </div>
-        <div className="glass-card animate-fade-up rounded-2xl p-6" style={{ animationDelay: "0.16s" }}>
-          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">Needs follow-up</p>
+        <div
+          className="glass-card animate-fade-up rounded-2xl p-6"
+          style={{ animationDelay: "0.16s" }}
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+            Needs follow-up
+          </p>
           <p className="mt-3 font-display text-3xl font-semibold text-white">{needsFollowUp}</p>
         </div>
       </div>
@@ -74,7 +91,10 @@ export default async function CustomersPage() {
       <div className="glass-card animate-fade-up rounded-2xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <p className="font-display text-lg font-semibold text-white">All customer accounts</p>
-          <Link href="/users" className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]">
+          <Link
+            href="/users"
+            className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]"
+          >
             Back to users
           </Link>
         </div>
@@ -92,7 +112,10 @@ export default async function CustomersPage() {
             </thead>
             <tbody>
               {records.map((customer) => (
-                <tr key={customer.id} className="border-t border-[rgba(255,255,255,0.08)] text-[color:var(--text-muted)]">
+                <tr
+                  key={customer.id}
+                  className="border-t border-[rgba(255,255,255,0.08)] text-[color:var(--text-muted)]"
+                >
                   <td className="py-3 pr-4 text-white">{customer.businessName}</td>
                   <td className="py-3 pr-4">{customer.ownerName}</td>
                   <td className="py-3 pr-4">{customer.primaryStore}</td>
@@ -115,10 +138,18 @@ export default async function CustomersPage() {
               className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4"
             >
               <p className="text-sm font-semibold text-white">{customer.businessName}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Owner: {customer.ownerName}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Store: {customer.primaryStore}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Open orders: {customer.openOrders}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Status: {customer.status}</p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Owner: {customer.ownerName}
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Store: {customer.primaryStore}
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Open orders: {customer.openOrders}
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Status: {customer.status}
+              </p>
             </div>
           ))}
         </div>

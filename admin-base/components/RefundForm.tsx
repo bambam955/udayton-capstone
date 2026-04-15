@@ -36,7 +36,10 @@ export default function RefundForm({ orderId, maxAmountCents, currency }: Refund
         />
       </div>
       <div className="space-y-2">
-        <label htmlFor="reason" className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-subtle)]">
+        <label
+          htmlFor="reason"
+          className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-subtle)]"
+        >
           Reason
         </label>
         <textarea

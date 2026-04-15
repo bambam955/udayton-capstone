@@ -19,7 +19,10 @@ export default function OrderStatusForm({ orderId, currentStatus }: OrderStatusF
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="orderId" value={orderId} />
       <div className="space-y-2">
-        <label htmlFor="status" className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-subtle)]">
+        <label
+          htmlFor="status"
+          className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-subtle)]"
+        >
           Order status
         </label>
         <select
@@ -36,7 +39,10 @@ export default function OrderStatusForm({ orderId, currentStatus }: OrderStatusF
         </select>
       </div>
       <div className="space-y-2">
-        <label htmlFor="note" className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-subtle)]">
+        <label
+          htmlFor="note"
+          className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-subtle)]"
+        >
           Note
         </label>
         <textarea

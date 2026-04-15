@@ -16,16 +16,21 @@ type OrdersPageProps = {
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const token = await requireAdminAccessToken();
   const { status } = await searchParams;
-  const activeStatus = orderStatuses.includes(status as (typeof orderStatuses)[number]) ? status : undefined;
+  const activeStatus = orderStatuses.includes(status as (typeof orderStatuses)[number])
+    ? status
+    : undefined;
   const response = await listResource<OrderRecord>("orders", token, {
     limit: 50,
     offset: 0,
-    ...(activeStatus ? { status: activeStatus } : {})
+    ...(activeStatus ? { status: activeStatus } : {}),
   });
 
   return (
     <div className="space-y-8">
-      <AdminHeader title="Orders" subtitle="Monitor live order state and drill into refunds or status changes." />
+      <AdminHeader
+        title="Orders"
+        subtitle="Monitor live order state and drill into refunds or status changes."
+      />
 
       <div className="glass-card animate-fade-up rounded-2xl p-6">
         <div className="flex flex-wrap gap-3">
@@ -80,9 +85,15 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
             </thead>
             <tbody>
               {response.data.map((order) => (
-                <tr key={order.order_id} className="border-t border-[rgba(255,255,255,0.08)] text-[color:var(--text-muted)]">
+                <tr
+                  key={order.order_id}
+                  className="border-t border-[rgba(255,255,255,0.08)] text-[color:var(--text-muted)]"
+                >
                   <td className="py-3 pr-4 text-white">
-                    <Link href={`/orders/${order.order_id}`} className="hover:text-[color:var(--accent)]">
+                    <Link
+                      href={`/orders/${order.order_id}`}
+                      className="hover:text-[color:var(--accent)]"
+                    >
                       {order.external_order_id ?? order.order_id}
                     </Link>
                   </td>
@@ -93,7 +104,9 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                   </td>
                   <td className="py-3 pr-4">{formatDateTime(order.placed_at)}</td>
                   <td className="py-3 pr-4">{formatDateTime(order.updated_at)}</td>
-                  <td className="py-3 text-white">{formatMoney(order.total_cents, order.currency ?? "USD")}</td>
+                  <td className="py-3 text-white">
+                    {formatMoney(order.total_cents, order.currency ?? "USD")}
+                  </td>
                 </tr>
               ))}
             </tbody>

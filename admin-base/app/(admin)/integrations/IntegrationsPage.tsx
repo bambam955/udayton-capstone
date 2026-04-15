@@ -10,7 +10,10 @@ export default async function IntegrationsPage() {
 
   return (
     <div className="space-y-8">
-      <AdminHeader title="Integrations" subtitle="Backend integration health surfaced through the admin resource API." />
+      <AdminHeader
+        title="Integrations"
+        subtitle="Backend integration health surfaced through the admin resource API."
+      />
       <div className="glass-card animate-fade-up rounded-2xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
@@ -28,14 +31,18 @@ export default async function IntegrationsPage() {
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-white">{integration.integration ?? "Unknown integration"}</p>
+                  <p className="text-sm font-semibold text-white">
+                    {integration.integration ?? "Unknown integration"}
+                  </p>
                   <p className="mt-1 text-xs text-[color:var(--text-muted)]">
                     Last checked {formatDateTime(integration.last_checked_at)}
                   </p>
                 </div>
                 <StatusBadge value={integration.status} />
               </div>
-              <p className="mt-3 text-sm text-white">{integration.error || "No active error reported."}</p>
+              <p className="mt-3 text-sm text-white">
+                {integration.error || "No active error reported."}
+              </p>
               {integration.details_json ? (
                 <pre className="mt-3 overflow-x-auto rounded-2xl bg-[rgba(0,0,0,0.24)] px-4 py-3 text-xs text-[color:var(--text-muted)]">
                   {integration.details_json}

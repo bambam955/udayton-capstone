@@ -27,7 +27,7 @@ export async function updateOrderStatusAction(
 
   if (!orderId || !status) {
     return {
-      error: "Order ID and status are required."
+      error: "Order ID and status are required.",
     };
   }
 
@@ -38,17 +38,17 @@ export async function updateOrderStatusAction(
     revalidateOrderViews(orderId);
 
     return {
-      success: "Order status updated."
+      success: "Order status updated.",
     };
   } catch (error) {
     if (error instanceof ApiClientError) {
       return {
-        error: error.message
+        error: error.message,
       };
     }
 
     return {
-      error: "Unable to update the order status."
+      error: "Unable to update the order status.",
     };
   }
 }
@@ -63,7 +63,7 @@ export async function issueRefundAction(
 
   if (!orderId || !Number.isInteger(amountCents) || amountCents <= 0 || !reason) {
     return {
-      error: "Refund amount and reason are required."
+      error: "Refund amount and reason are required.",
     };
   }
 
@@ -74,17 +74,17 @@ export async function issueRefundAction(
     revalidateOrderViews(orderId);
 
     return {
-      success: "Refund recorded."
+      success: "Refund recorded.",
     };
   } catch (error) {
     if (error instanceof ApiClientError) {
       return {
-        error: error.message
+        error: error.message,
       };
     }
 
     return {
-      error: "Unable to record the refund."
+      error: "Unable to record the refund.",
     };
   }
 }

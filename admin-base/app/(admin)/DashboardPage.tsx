@@ -10,26 +10,26 @@ export default async function AdminDashboard() {
     listResource<OrderRecord>("orders", token, {
       status: "DELIVERED",
       limit: 1,
-      offset: 0
-    })
+      offset: 0,
+    }),
   ]);
 
   const stats = [
     {
       label: "Active drivers",
       value: dashboard.metrics.activeDrivers.toLocaleString(),
-      note: "Currently online"
+      note: "Currently online",
     },
     {
       label: "Ready pickups",
       value: dashboard.metrics.readyForPickupOrders.toLocaleString(),
-      note: "Awaiting dispatch"
+      note: "Awaiting dispatch",
     },
     {
       label: "Deliveries today",
       value: deliveredOrders.meta.total.toLocaleString(),
-      note: "Completed runs"
-    }
+      note: "Completed runs",
+    },
   ];
 
   const degradedIntegrations = dashboard.integrationHealth.filter(
@@ -38,19 +38,19 @@ export default async function AdminDashboard() {
   const activity = [
     {
       title: "Retailer queue",
-      detail: `${dashboard.metrics.readyForPickupOrders} staged orders need assignment`
+      detail: `${dashboard.metrics.readyForPickupOrders} staged orders need assignment`,
     },
     {
       title: "Support escalations",
-      detail: `${dashboard.metrics.integrationIssues} systems flagged for review`
+      detail: `${dashboard.metrics.integrationIssues} systems flagged for review`,
     },
     {
       title: "System health",
       detail:
         degradedIntegrations.length > 0
           ? `${degradedIntegrations.length} integration checks need attention`
-          : "All critical services operational"
-    }
+          : "All critical services operational",
+    },
   ];
 
   return (
@@ -63,7 +63,9 @@ export default async function AdminDashboard() {
             className="glass-card animate-fade-up rounded-2xl p-6"
             style={{ animationDelay: `${0.05 + index * 0.07}s` }}
           >
-            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">{item.label}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+              {item.label}
+            </p>
             <p className="mt-4 font-display text-3xl font-semibold text-white">{item.value}</p>
             <p className="mt-2 text-sm text-[color:var(--text-muted)]">{item.note}</p>
           </div>
@@ -71,7 +73,9 @@ export default async function AdminDashboard() {
       </div>
       <div className="glass-card animate-fade-up space-y-4 rounded-2xl p-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">Operations queue</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+            Operations queue
+          </p>
           <p className="mt-2 font-display text-lg font-semibold text-white">Attention needed</p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">

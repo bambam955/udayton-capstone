@@ -13,7 +13,7 @@ import type {
   OrderStatus,
   ResourceListResponse,
   ResourceMutationResponse,
-  UpdateOrderStatusResponse
+  UpdateOrderStatusResponse,
 } from "@/lib/api/types";
 
 const DEFAULT_API_BASE_URL = "http://localhost:3000";
@@ -80,9 +80,9 @@ async function requestJson<T>(path: string, options: ApiRequestOptions = {}) {
     cache: "no-store",
     headers: {
       ...(options.body === undefined ? {} : { "content-type": "application/json" }),
-      ...(options.token ? { authorization: `Bearer ${options.token}` } : {})
+      ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
     },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body)
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
 
   if (!response.ok) {
@@ -102,32 +102,28 @@ export async function loginAdmin(email: string, password: string) {
     body: {
       role: "admin",
       email,
-      password
-    }
+      password,
+    },
   });
 }
 
 export async function logoutAdmin(token: string) {
   return requestJson<void>("/v1/auth/logout", {
     method: "POST",
-    token
+    token,
   });
 }
 
-export async function listResource<T>(
-  resourcePath: string,
-  token: string,
-  query?: ResourceQuery
-) {
+export async function listResource<T>(resourcePath: string, token: string, query?: ResourceQuery) {
   return requestJson<ResourceListResponse<T>>(`/v1/${resourcePath}`, {
     token,
-    query
+    query,
   });
 }
 
 export async function getResource<T>(resourcePath: string, id: string, token: string) {
   return requestJson<ResourceMutationResponse<T>>(`/v1/${resourcePath}/${id}`, {
-    token
+    token,
   });
 }
 
@@ -139,7 +135,7 @@ export async function createResource<T>(
   return requestJson<ResourceMutationResponse<T>>(`/v1/${resourcePath}`, {
     method: "POST",
     token,
-    body
+    body,
   });
 }
 
@@ -152,42 +148,52 @@ export async function updateResource<T>(
   return requestJson<ResourceMutationResponse<T>>(`/v1/${resourcePath}/${id}`, {
     method: "PATCH",
     token,
-    body
+    body,
   });
 }
 
 export async function deleteResource(resourcePath: string, id: string, token: string) {
   return requestJson<void>(`/v1/${resourcePath}/${id}`, {
     method: "DELETE",
-    token
+    token,
   });
 }
 
 export async function getDashboard(token: string) {
   return requestJson<DashboardPayload>("/v1/admin/dashboard", {
-    token
+    token,
   });
 }
 
-export async function updateOrderStatus(token: string, orderId: string, status: OrderStatus, note?: string) {
+export async function updateOrderStatus(
+  token: string,
+  orderId: string,
+  status: OrderStatus,
+  note?: string
+) {
   return requestJson<UpdateOrderStatusResponse>(`/v1/admin/orders/${orderId}/status`, {
     method: "POST",
     token,
     body: {
       status,
-      ...(note ? { note } : {})
-    }
+      ...(note ? { note } : {}),
+    },
   });
 }
 
-export async function issueRefund(token: string, orderId: string, amountCents: number, reason: string) {
+export async function issueRefund(
+  token: string,
+  orderId: string,
+  amountCents: number,
+  reason: string
+) {
   return requestJson<IssueRefundResponse>(`/v1/admin/orders/${orderId}/refund`, {
     method: "POST",
     token,
     body: {
       amountCents,
-      reason
-    }
+      reason,
+    },
   });
 }
 
@@ -196,7 +202,7 @@ export async function getAdminSession(token: string): Promise<AdminSession | nul
 
   try {
     me = await requestJson<AuthMeResponse>("/v1/auth/me", {
-      token
+      token,
     });
   } catch (error) {
     if (error instanceof ApiClientError && (error.status === 401 || error.status === 403)) {
@@ -215,7 +221,7 @@ export async function getAdminSession(token: string): Promise<AdminSession | nul
   const adminProfiles = await listResource<AdminProfileRecord>("admin-profiles", token, {
     admin_id: adminId,
     limit: 1,
-    offset: 0
+    offset: 0,
   });
   const profile = adminProfiles.data[0];
 
@@ -234,13 +240,13 @@ export async function getAdminSession(token: string): Promise<AdminSession | nul
     email: admin.data.email,
     role: "admin",
     fullName: admin.data.full_name ?? undefined,
-    title: profile?.title ?? role?.name ?? undefined
+    title: profile?.title ?? role?.name ?? undefined,
   };
 }
 
 export async function listIntegrations(token: string) {
   return listResource<IntegrationHealthRecord>("integration-health", token, {
     limit: 50,
-    offset: 0
+    offset: 0,
   });
 }

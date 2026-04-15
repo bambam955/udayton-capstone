@@ -188,7 +188,7 @@ export const orderStatuses = [
   "PICKING",
   "READY_FOR_PICKUP",
   "OUT_FOR_DELIVERY",
-  "DELIVERED"
+  "DELIVERED",
 ] as const;
 
 export type OrderStatus = (typeof orderStatuses)[number];

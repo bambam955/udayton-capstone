@@ -27,13 +27,18 @@ export default async function DriversPage() {
   const token = await requireAdminAccessToken();
   const [drivers, deliveries] = await Promise.all([
     listResource<DriverRecord>("drivers", token, { limit: 100, offset: 0 }),
-    listResource<DeliveryAssignmentRecord>("delivery-assignments", token, { limit: 100, offset: 0 })
+    listResource<DeliveryAssignmentRecord>("delivery-assignments", token, {
+      limit: 100,
+      offset: 0,
+    }),
   ]);
 
   const driverRecords: DriverDashboardRecord[] = drivers.data.map((driver) => {
     const activeDelivery = deliveries.data.find(
       (delivery) =>
-        delivery.driver_id === driver.driver_id && delivery.status && delivery.status !== "DELIVERED"
+        delivery.driver_id === driver.driver_id &&
+        delivery.status &&
+        delivery.status !== "DELIVERED"
     );
 
     const availability: DriverDashboardRecord["availability"] =
@@ -49,7 +54,7 @@ export default async function DriversPage() {
       serviceZone: zoneFromPickup(activeDelivery?.pickup_location),
       activePickup: activeDelivery?.pickup_location ?? "None",
       availability,
-      verificationStatus: driver.is_active === true ? "Verified" : "Review"
+      verificationStatus: driver.is_active === true ? "Verified" : "Review",
     };
   });
 
@@ -65,15 +70,27 @@ export default async function DriversPage() {
       />
       <div className="grid gap-6 md:grid-cols-3">
         <div className="glass-card animate-fade-up rounded-2xl p-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">Total drivers</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+            Total drivers
+          </p>
           <p className="mt-3 font-display text-3xl font-semibold text-white">{totalDrivers}</p>
         </div>
-        <div className="glass-card animate-fade-up rounded-2xl p-6" style={{ animationDelay: "0.1s" }}>
-          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">Available now</p>
+        <div
+          className="glass-card animate-fade-up rounded-2xl p-6"
+          style={{ animationDelay: "0.1s" }}
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+            Available now
+          </p>
           <p className="mt-3 font-display text-3xl font-semibold text-white">{availableNow}</p>
         </div>
-        <div className="glass-card animate-fade-up rounded-2xl p-6" style={{ animationDelay: "0.16s" }}>
-          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">On delivery</p>
+        <div
+          className="glass-card animate-fade-up rounded-2xl p-6"
+          style={{ animationDelay: "0.16s" }}
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+            On delivery
+          </p>
           <p className="mt-3 font-display text-3xl font-semibold text-white">{onDelivery}</p>
         </div>
       </div>
@@ -81,7 +98,10 @@ export default async function DriversPage() {
       <div className="glass-card animate-fade-up rounded-2xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <p className="font-display text-lg font-semibold text-white">All driver accounts</p>
-          <Link href="/users" className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]">
+          <Link
+            href="/users"
+            className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]"
+          >
             Back to users
           </Link>
         </div>
@@ -99,7 +119,10 @@ export default async function DriversPage() {
             </thead>
             <tbody>
               {driverRecords.map((driver) => (
-                <tr key={driver.id} className="border-t border-[rgba(255,255,255,0.08)] text-[color:var(--text-muted)]">
+                <tr
+                  key={driver.id}
+                  className="border-t border-[rgba(255,255,255,0.08)] text-[color:var(--text-muted)]"
+                >
                   <td className="py-3 pr-4 text-white">{driver.name}</td>
                   <td className="py-3 pr-4">{driver.serviceZone}</td>
                   <td className="py-3 pr-4">{driver.activePickup}</td>
@@ -122,10 +145,18 @@ export default async function DriversPage() {
               className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4"
             >
               <p className="text-sm font-semibold text-white">{driver.name}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Zone: {driver.serviceZone}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Active pickup: {driver.activePickup}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Availability: {driver.availability}</p>
-              <p className="mt-1 text-xs text-[color:var(--text-muted)]">Verification: {driver.verificationStatus}</p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Zone: {driver.serviceZone}
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Active pickup: {driver.activePickup}
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Availability: {driver.availability}
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Verification: {driver.verificationStatus}
+              </p>
             </div>
           ))}
         </div>

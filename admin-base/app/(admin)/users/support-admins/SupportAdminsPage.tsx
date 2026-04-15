@@ -10,7 +10,7 @@ export default async function SupportAdminsPage() {
   const [admins, profiles, dashboard] = await Promise.all([
     listResource<AdminRecord>("admins", token, { limit: 100, offset: 0 }),
     listResource<AdminProfileRecord>("admin-profiles", token, { limit: 100, offset: 0 }),
-    getDashboard(token)
+    getDashboard(token),
   ]);
 
   const profileByAdminId = new Map(profiles.data.map((profile) => [profile.admin_id, profile]));
@@ -19,21 +19,17 @@ export default async function SupportAdminsPage() {
     { label: "Open escalations", value: dashboard.metrics.integrationIssues.toLocaleString() },
     {
       label: "Awaiting handoff",
-      value: admins.data.filter((admin) => admin.is_active !== true).length.toLocaleString()
-    }
+      value: admins.data.filter((admin) => admin.is_active !== true).length.toLocaleString(),
+    },
   ];
 
   const supportQueue = admins.data.slice(0, 3).map((admin, index) => {
     const profile = profileByAdminId.get(admin.admin_id);
-    const focusAreas = [
-      "Delivery escalation desk",
-      "Billing support desk",
-      "Driver support desk"
-    ];
+    const focusAreas = ["Delivery escalation desk", "Billing support desk", "Driver support desk"];
 
     return {
       name: admin.full_name ?? admin.email ?? admin.admin_id,
-      focus: profile?.title ?? focusAreas[index] ?? "Operations support desk"
+      focus: profile?.title ?? focusAreas[index] ?? "Operations support desk",
     };
   });
 
@@ -47,7 +43,9 @@ export default async function SupportAdminsPage() {
             className="glass-card animate-fade-up rounded-2xl p-6"
             style={{ animationDelay: `${0.05 + index * 0.07}s` }}
           >
-            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">{item.label}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+              {item.label}
+            </p>
             <p className="mt-3 font-display text-3xl font-semibold text-white">{item.value}</p>
           </div>
         ))}
@@ -55,7 +53,10 @@ export default async function SupportAdminsPage() {
       <div className="glass-card animate-fade-up rounded-2xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <p className="font-display text-lg font-semibold text-white">Support roster</p>
-          <Link href="/users" className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]">
+          <Link
+            href="/users"
+            className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]"
+          >
             Back to users
           </Link>
         </div>

@@ -7,7 +7,7 @@ export default async function TeamPage() {
   const token = await requireAdminAccessToken();
   const [dashboard, admins] = await Promise.all([
     getDashboard(token),
-    listResource<AdminRecord>("admins", token, { limit: 100, offset: 0 })
+    listResource<AdminRecord>("admins", token, { limit: 100, offset: 0 }),
   ]);
 
   const leadNames = admins.data.map((admin) => admin.full_name ?? admin.email ?? admin.admin_id);
@@ -15,18 +15,18 @@ export default async function TeamPage() {
     {
       name: "Dispatch Operations",
       owner: leadNames[0] ?? "Unassigned",
-      status: dashboard.metrics.readyForPickupOrders > 0 ? "Reviewing backlog" : "Healthy"
+      status: dashboard.metrics.readyForPickupOrders > 0 ? "Reviewing backlog" : "Healthy",
     },
     {
       name: "Driver Onboarding",
       owner: leadNames[1] ?? leadNames[0] ?? "Unassigned",
-      status: dashboard.metrics.activeDrivers > 0 ? "Healthy" : "Needs coverage"
+      status: dashboard.metrics.activeDrivers > 0 ? "Healthy" : "Needs coverage",
     },
     {
       name: "Support Escalations",
       owner: leadNames[2] ?? leadNames[0] ?? "Unassigned",
-      status: dashboard.metrics.integrationIssues > 0 ? "High priority" : "Healthy"
-    }
+      status: dashboard.metrics.integrationIssues > 0 ? "High priority" : "Healthy",
+    },
   ];
 
   return (

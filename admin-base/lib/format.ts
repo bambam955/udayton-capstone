@@ -5,7 +5,7 @@ export function formatDateTime(value: string | null | undefined) {
 
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
-    timeStyle: "short"
+    timeStyle: "short",
   }).format(new Date(value));
 }
 
@@ -15,7 +15,7 @@ export function formatDate(value: string | null | undefined) {
   }
 
   return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium"
+    dateStyle: "medium",
   }).format(new Date(value));
 }
 
@@ -26,6 +26,6 @@ export function formatMoney(amountCents: number | null | undefined, currency = "
 
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency
+    currency,
   }).format(amountCents / 100);
 }

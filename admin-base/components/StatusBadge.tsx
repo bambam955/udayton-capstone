@@ -16,7 +16,7 @@ const toneByStatus: Record<string, string> = {
   ACTIVE: "border-emerald-400/30 text-emerald-200",
   INACTIVE: "border-white/20 text-[color:var(--text-muted)]",
   COMPLETED: "border-emerald-400/30 text-emerald-200",
-  CAPTURED: "border-emerald-400/30 text-emerald-200"
+  CAPTURED: "border-emerald-400/30 text-emerald-200",
 };
 
 export default function StatusBadge({ value }: StatusBadgeProps) {
@@ -24,7 +24,9 @@ export default function StatusBadge({ value }: StatusBadgeProps) {
   const tone = toneByStatus[label] ?? "border-white/15 text-white";
 
   return (
-    <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${tone}`}>
+    <span
+      className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${tone}`}
+    >
       {label.replaceAll("_", " ")}
     </span>
   );

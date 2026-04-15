@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { ApiClientError, loginAdmin, logoutAdmin } from "@/lib/api/client";
 import {
   ADMIN_ACCESS_TOKEN_COOKIE,
-  ADMIN_ACCESS_TOKEN_MAX_AGE_SECONDS
+  ADMIN_ACCESS_TOKEN_MAX_AGE_SECONDS,
 } from "@/lib/auth/constants";
 
 export type AuthActionState = {
@@ -17,12 +17,14 @@ export async function loginAction(
   _previousState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
     return {
-      error: "Email and password are required."
+      error: "Email and password are required.",
     };
   }
 
@@ -36,17 +38,17 @@ export async function loginAction(
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: ADMIN_ACCESS_TOKEN_MAX_AGE_SECONDS,
-      expires: new Date(result.expiresAt)
+      expires: new Date(result.expiresAt),
     });
   } catch (error) {
     if (error instanceof ApiClientError) {
       return {
-        error: error.message
+        error: error.message,
       };
     }
 
     return {
-      error: "Unable to sign in right now."
+      error: "Unable to sign in right now.",
     };
   }
 
