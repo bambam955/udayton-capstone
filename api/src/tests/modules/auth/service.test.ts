@@ -9,6 +9,7 @@ function makeRepo(): AuthRepository {
     findUserByEmail: vi.fn(),
     findUserByCredentials: vi.fn(),
     createCustomer: vi.fn(),
+    createDriver: vi.fn(),
     createSession: vi.fn().mockResolvedValue(undefined),
     revokeSession: vi.fn().mockResolvedValue(undefined),
     hasActiveSession: vi.fn().mockResolvedValue(true)
@@ -74,6 +75,7 @@ describe('AuthService', () => {
     const service = new AuthService(repo);
 
     const result = await service.signup({
+      role: 'customer',
       email: 'new@example.com',
       password: 'secret123',
       fullName: 'New Customer'
@@ -85,6 +87,38 @@ describe('AuthService', () => {
       expect.objectContaining({
         email: 'new@example.com',
         fullName: 'New Customer'
+      })
+    );
+    expect(repo.createSession).toHaveBeenCalledOnce();
+  });
+
+  it('creates a driver session as part of driver signup', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.findUserByEmail).mockResolvedValue(null);
+    vi.mocked(repo.createDriver).mockResolvedValue({
+      userId: 'driver-2',
+      role: 'driver',
+      email: 'driver@example.com',
+      isActive: true
+    });
+    const service = new AuthService(repo);
+
+    const result = await service.signup({
+      role: 'driver',
+      email: 'driver@example.com',
+      password: 'secret123',
+      fullName: 'New Driver',
+      phone: '555-202-0006'
+    });
+
+    expect(result.user.id).toBe('driver-2');
+    expect(result.user.role).toBe('driver');
+    expect(repo.createDriver).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'driver',
+        email: 'driver@example.com',
+        fullName: 'New Driver',
+        phone: '555-202-0006'
       })
     );
     expect(repo.createSession).toHaveBeenCalledOnce();

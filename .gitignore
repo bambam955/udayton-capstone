@@ -1,3 +1,4 @@
 *.orig
 .env.local
 .env.*.local
+PLAN.md

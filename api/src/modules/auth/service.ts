@@ -52,15 +52,24 @@ export class AuthService {
   }
 
   async signup(input: SignupInput): Promise<SignupResult> {
-    const existing = await this.repo.findUserByEmail('customer', input.email.toLowerCase());
+    const normalizedEmail = input.email.toLowerCase();
+    const existing = await this.repo.findUserByEmail(input.role, normalizedEmail);
     if (existing) {
       throw new HttpError(409, 'CONFLICT', 'An account with that email already exists.');
     }
 
-    const user = await this.repo.createCustomer({
-      ...input,
-      email: input.email.toLowerCase()
-    });
+    // Signup can now provision either customer or driver identities, but admin
+    // accounts remain out of band.
+    const user =
+      input.role === 'driver'
+        ? await this.repo.createDriver({
+            ...input,
+            email: normalizedEmail
+          })
+        : await this.repo.createCustomer({
+            ...input,
+            email: normalizedEmail
+          });
 
     return this.createSessionResult(user);
   }

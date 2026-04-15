@@ -74,6 +74,26 @@ export interface RetailerAccountsTable {
   updated_at: DBTimestamp | null;
 }
 
+export interface RetailerLocationsTable {
+  retailer_location_id: string;
+  retailer_id: string;
+  external_store_id: string | null;
+  name: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string | null;
+  lat: DBNumeric | null;
+  lng: DBNumeric | null;
+  is_active: boolean | null;
+  created_at: DBTimestamp | null;
+  updated_at: DBTimestamp | null;
+}
+
+// The product/catalog tables below back the new mobile browse and checkout
+// flows added on this branch.
 export interface ProductCategoriesTable {
   category_id: string;
   retailer_id: string;
@@ -108,6 +128,8 @@ export interface CartsTable {
   cart_id: string;
   customer_id: string;
   retailer_id: string;
+  retailer_location_id: string | null;
+  checked_out_order_id: string | null;
   status: string | null;
   created_at: DBTimestamp | null;
   updated_at: DBTimestamp | null;
@@ -130,6 +152,7 @@ export interface OrdersTable {
   order_id: string;
   customer_id: string;
   retailer_id: string;
+  retailer_location_id: string | null;
   address_id: string;
   external_order_id: string | null;
   status: string | null;
@@ -145,6 +168,8 @@ export interface OrdersTable {
   updated_at: DBTimestamp | null;
 }
 
+// Delivery and earnings tables below power the driver bootstrap and delivery
+// lifecycle endpoints.
 export interface OrderItemsTable {
   order_item_id: string;
   order_id: string;
@@ -314,15 +339,6 @@ export interface DriverDocumentsTable {
   created_at: DBTimestamp | null;
 }
 
-export interface DriverAvailabilityTable {
-  availability_id: string;
-  driver_id: string;
-  is_available: boolean | null;
-  reason: string | null;
-  started_at: DBTimestamp | null;
-  ended_at: DBTimestamp | null;
-}
-
 export interface DriverServiceAreasTable {
   service_area_id: string;
   driver_id: string;
@@ -422,7 +438,6 @@ export interface DeliveryOffersTable {
   offer_id: string;
   order_id: string;
   delivery_id: string;
-  driver_id: string;
   status: string | null;
   offered_at: DBTimestamp | null;
   responded_at: DBTimestamp | null;
@@ -657,6 +672,7 @@ export interface Database {
   customer_sessions: CustomerSessionsTable;
   retailers: RetailersTable;
   retailer_accounts: RetailerAccountsTable;
+  retailer_locations: RetailerLocationsTable;
   product_categories: ProductCategoriesTable;
   products: ProductsTable;
   favorites: FavoritesTable;
@@ -679,7 +695,6 @@ export interface Database {
   driver_profiles: DriverProfilesTable;
   driver_vehicles: DriverVehiclesTable;
   driver_documents: DriverDocumentsTable;
-  driver_availability: DriverAvailabilityTable;
   driver_service_areas: DriverServiceAreasTable;
   driver_locations: DriverLocationsTable;
   driver_notifications: DriverNotificationsTable;

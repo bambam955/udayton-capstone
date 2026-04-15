@@ -22,8 +22,12 @@ export default async function AdminLayout({
             <div className="flex-1 space-y-8">
               <div className="glass-card animate-fade-up flex flex-col gap-4 rounded-3xl px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">Biz Rush Admin</p>
-                  <p className="font-display text-lg font-semibold text-white">Operations Center</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--text-subtle)]">
+                    Biz Rush Admin
+                  </p>
+                  <p className="font-display text-lg font-semibold text-white">
+                    Operations Center
+                  </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="rounded-full border border-[rgba(255,255,255,0.18)] px-4 py-2 text-xs text-[color:var(--text-muted)]">

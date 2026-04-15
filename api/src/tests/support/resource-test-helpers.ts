@@ -52,6 +52,19 @@ export function makeTestApp(options?: {
   return createApp({
     authService: authService as never,
     resourceService: new ResourceService(repository, allResourceDefinitions),
-    adminOperationsService: options?.adminOperationsService as never
+    adminOperationsService: options?.adminOperationsService as never,
+    // Resource route tests do not exercise mobile behavior, but wiring a small
+    // mock keeps the optional mobile route available for integration-style tests.
+    mobileService: {
+      getCustomerBootstrap: vi.fn(),
+      getCustomerCatalog: vi.fn(),
+      connectRetailer: vi.fn(),
+      disconnectRetailer: vi.fn(),
+      checkout: vi.fn(),
+      getDriverBootstrap: vi.fn(),
+      acceptDelivery: vi.fn(),
+      pickupDelivery: vi.fn(),
+      completeDelivery: vi.fn()
+    }
   });
 }

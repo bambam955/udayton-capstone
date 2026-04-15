@@ -1,6 +1,8 @@
 import express from 'express';
 
+import { env } from '../config/env.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { createCorsMiddleware } from './middleware/cors.js';
 import { createAdminOperationsRouter } from '../modules/admins/operations-routes.js';
 import type { AdminOperationsService } from '../modules/admins/operations-service.js';
 import { createAdminsRouter } from '../modules/admins/routes.js';
@@ -10,6 +12,8 @@ import { createCustomersRouter } from '../modules/customers/routes.js';
 import { createDeliveriesRouter } from '../modules/deliveries/routes.js';
 import { createDriversRouter } from '../modules/drivers/routes.js';
 import { healthRouter } from '../modules/health/routes.js';
+import { createMobileRouter } from '../modules/mobile/routes.js';
+import type { MobileServiceContract } from '../modules/mobile/types.js';
 import { createOrdersRouter } from '../modules/orders/routes.js';
 import { createPaymentsRouter } from '../modules/payments/routes.js';
 import { createRetailersRouter } from '../modules/retailers/routes.js';
@@ -19,22 +23,41 @@ export interface AppServices {
   authService: AuthService;
   resourceService: ResourceService;
   adminOperationsService?: AdminOperationsService;
+  mobileService?: MobileServiceContract;
 }
 
+/**
+ * Builds the single Express app used by every deployment target.
+ *
+ * The branch adds mobile-specific routes, but the app still needs to boot in
+ * environments where only the resource/admin surface is present. Keeping the
+ * `mobileService` dependency optional lets tests and smaller compositions opt
+ * into the new mobile API surface deliberately instead of forcing every caller
+ * to wire it immediately.
+ */
 export function createApp(services: AppServices) {
   const app = express();
 
   // Global middleware before route registration.
+  app.use(createCorsMiddleware(env));
   app.use(express.json());
   app.use('/health', healthRouter);
 
   // Versioned API surface for mobile apps and admin dashboard.
   app.use('/v1/auth', createAuthRouter(services.authService));
   if (services.adminOperationsService) {
+    // Keep the admin operations API optional so resource-only tests can build a small app.
     app.use(
       '/v1/admin',
       createAdminOperationsRouter(services.adminOperationsService, services.authService)
     );
+  }
+
+  if (services.mobileService) {
+    // Register the mobile surface only when its service is wired. This keeps
+    // the application composition tolerant of older tests or tools that still
+    // exercise only the resource endpoints.
+    app.use('/v1/mobile', createMobileRouter(services.mobileService, services.authService));
   }
   app.use('/v1', createAdminsRouter(services.resourceService, services.authService));
   app.use('/v1', createCustomersRouter(services.resourceService, services.authService));

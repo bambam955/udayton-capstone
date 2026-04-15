@@ -14,6 +14,9 @@ const loginSchema = z.object({
 });
 
 const signupSchema = z.object({
+  // Admin accounts stay controlled, but customer and driver apps both need a
+  // self-service registration path.
+  role: z.enum(['customer', 'driver']).default('customer'),
   email: z.email(),
   password: z.string().min(1),
   fullName: z.string().min(1).optional(),
@@ -27,7 +30,8 @@ export function createAuthRouter(service: AuthService): Router {
 
   router.post('/signup', async (req, res, next) => {
     try {
-      // Customer sign-up is kept explicit so admin/driver creation remains controlled.
+      // Route validation handles the public-signup roles explicitly so the
+      // service only sees typed, supported registrations.
       const parsed = signupSchema.safeParse(req.body);
       if (!parsed.success) {
         throw new HttpError(
