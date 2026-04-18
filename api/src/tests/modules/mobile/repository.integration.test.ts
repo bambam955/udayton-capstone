@@ -268,11 +268,11 @@ describeIfDatabase('mobile repository integration', () => {
     });
 
     try {
-      await expect(repository.cancelOrder(fixture.customerId, fixture.orderId)).rejects.toMatchObject(
-        {
-          code: 'CONFLICT'
-        }
-      );
+      await expect(
+        repository.cancelOrder(fixture.customerId, fixture.orderId)
+      ).rejects.toMatchObject({
+        code: 'CONFLICT'
+      });
     } finally {
       await cleanupFixture(db, fixture);
     }
@@ -783,11 +783,7 @@ async function createCancelableOrderFixture(
   };
 }
 
-async function createCancelableFixtureProduct(
-  db: Kysely<Database>,
-  retailerId: string,
-  now: Date
-) {
+async function createCancelableFixtureProduct(db: Kysely<Database>, retailerId: string, now: Date) {
   const categoryId = randomUUID();
   const productId = randomUUID();
 

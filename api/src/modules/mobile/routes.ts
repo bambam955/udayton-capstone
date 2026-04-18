@@ -124,10 +124,7 @@ export function createMobileRouter(
 
   router.post('/customer/orders/:orderId/cancel', async (req, res, next) => {
     try {
-      const result = await service.cancelOrder(
-        requirePrincipal(req.principal),
-        req.params.orderId
-      );
+      const result = await service.cancelOrder(requirePrincipal(req.principal), req.params.orderId);
       res.status(200).json(result);
     } catch (error) {
       next(error);
