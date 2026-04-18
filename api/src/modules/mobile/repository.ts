@@ -693,6 +693,109 @@ export class KyselyMobileRepository implements MobileRepository {
     };
   }
 
+  async cancelOrder(customerId: string, orderId: string): Promise<CustomerOrderSummary> {
+    return this.db.transaction().execute(async (tx) => {
+      const order = await tx
+        .selectFrom('orders as o')
+        .innerJoin('delivery_assignments as da', 'da.order_id', 'o.order_id')
+        .select([
+          'o.order_id as orderId',
+          'o.status as orderStatus',
+          'da.delivery_id as deliveryId',
+          'da.status as deliveryStatus'
+        ])
+        .where('o.order_id', '=', orderId)
+        .where('o.customer_id', '=', customerId)
+        .forUpdate()
+        .executeTakeFirst();
+
+      if (!order) {
+        throw new HttpError(404, 'NOT_FOUND', 'Order not found.');
+      }
+
+      const orderStatus = normalizeStatus(order.orderStatus);
+      if (orderStatus === 'CANCELED') {
+        return this.getCustomerOrderSummaryByOrderId(tx, customerId, orderId);
+      }
+
+      if (orderStatus !== 'SUBMITTED') {
+        throw new HttpError(409, 'CONFLICT', 'Order can no longer be canceled.');
+      }
+
+      const deliveryStatus = normalizeStatus(order.deliveryStatus);
+      if (deliveryStatus !== 'PENDING_ASSIGNMENT') {
+        throw new HttpError(409, 'CONFLICT', 'Order can no longer be canceled.');
+      }
+
+      await tx
+        .selectFrom('delivery_offers')
+        .select('offer_id')
+        .where('delivery_id', '=', order.deliveryId)
+        .forUpdate()
+        .execute();
+
+      await tx
+        .selectFrom('payments')
+        .select('payment_id')
+        .where('order_id', '=', orderId)
+        .forUpdate()
+        .execute();
+
+      const now = new Date();
+
+      await tx
+        .updateTable('orders')
+        .set({
+          status: 'CANCELED',
+          updated_at: now
+        })
+        .where('order_id', '=', orderId)
+        .where('customer_id', '=', customerId)
+        .execute();
+
+      await tx
+        .updateTable('delivery_assignments')
+        .set({
+          status: 'CANCELED'
+        })
+        .where('delivery_id', '=', order.deliveryId)
+        .where('status', '=', 'PENDING_ASSIGNMENT')
+        .execute();
+
+      await tx
+        .updateTable('delivery_offers')
+        .set({
+          status: 'CANCELED',
+          responded_at: now
+        })
+        .where('delivery_id', '=', order.deliveryId)
+        .where('status', '=', 'OFFERED')
+        .execute();
+
+      await tx
+        .updateTable('payments')
+        .set({
+          status: 'VOIDED'
+        })
+        .where('order_id', '=', orderId)
+        .where('status', '=', 'AUTHORIZED')
+        .execute();
+
+      await tx
+        .insertInto('order_status_history')
+        .values({
+          order_status_history_id: randomUUID(),
+          order_id: orderId,
+          status: 'CANCELED',
+          status_time: now,
+          note: 'Canceled by customer from mobile app.'
+        })
+        .execute();
+
+      return this.getCustomerOrderSummaryByOrderId(tx, customerId, orderId);
+    });
+  }
+
   async checkout(
     customerId: string,
     input: CustomerCheckoutInput
@@ -1082,6 +1185,43 @@ export class KyselyMobileRepository implements MobileRepository {
         pickupLocation: row.pickupLocation ?? 'Partner pickup'
       }
     };
+  }
+
+  private async getCustomerOrderSummaryByOrderId(
+    tx: DbExecutor,
+    customerId: string,
+    orderId: string
+  ): Promise<CustomerOrderSummary> {
+    const row = await tx
+      .selectFrom('orders as o')
+      .innerJoin('retailers as r', 'r.retailer_id', 'o.retailer_id')
+      .leftJoin('retailer_locations as rl', 'rl.retailer_location_id', 'o.retailer_location_id')
+      .select([
+        'o.order_id as orderId',
+        'o.external_order_id as externalOrderId',
+        'o.retailer_id as retailerId',
+        'r.name as retailerName',
+        'o.retailer_location_id as retailerLocationId',
+        'rl.name as retailerLocationName',
+        'o.status',
+        'o.placed_at as placedAt',
+        'o.total_cents as totalCents',
+        'o.currency',
+        sql<number>`(
+          select count(*)::int
+          from order_items oi
+          where oi.order_id = o.order_id
+        )`.as('itemCount')
+      ])
+      .where('o.customer_id', '=', customerId)
+      .where('o.order_id', '=', orderId)
+      .executeTakeFirst();
+
+    if (!row) {
+      throw new HttpError(404, 'NOT_FOUND', 'Order not found.');
+    }
+
+    return buildCustomerOrderSummary(row);
   }
 
   async getDriverBootstrap(driverId: string): Promise<DriverBootstrapResult> {

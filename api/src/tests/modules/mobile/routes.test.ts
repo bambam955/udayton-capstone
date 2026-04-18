@@ -48,6 +48,19 @@ function makeMobileService() {
       isConnected: false,
       connectedAt: '2026-03-30T12:00:00.000Z'
     }),
+    cancelOrder: vi.fn().mockResolvedValue({
+      orderId: 'order-1',
+      externalOrderId: 'ORD-10001',
+      retailerId: 'ret-1',
+      retailerName: 'FreshMart',
+      retailerLocationId: 'loc-1',
+      retailerLocationName: 'FreshMart Downtown',
+      status: 'CANCELED',
+      placedAt: '2026-03-30T12:00:00.000Z',
+      totalCents: 4599,
+      currency: 'USD',
+      itemCount: 3
+    }),
     checkout: vi.fn().mockResolvedValue({
       order: {
         orderId: 'order-1',
@@ -163,6 +176,19 @@ function makeRepository(): MobileRepository {
       retailerId: 'ret-1',
       isConnected: true,
       connectedAt: '2026-03-30T12:00:00.000Z'
+    }),
+    cancelOrder: vi.fn().mockResolvedValue({
+      orderId: 'order-1',
+      externalOrderId: 'ORD-10001',
+      retailerId: 'ret-1',
+      retailerName: 'FreshMart',
+      retailerLocationId: 'loc-1',
+      retailerLocationName: 'FreshMart Downtown',
+      status: 'CANCELED',
+      placedAt: '2026-03-30T12:00:00.000Z',
+      totalCents: 4599,
+      currency: 'USD',
+      itemCount: 3
     }),
     checkout: vi.fn().mockResolvedValue({
       order: {
@@ -293,6 +319,55 @@ describe('mobile routes', () => {
       expect.objectContaining({ userId: 'cust-1', role: 'customer' }),
       'ret-1'
     );
+  });
+
+  it('forwards customer cancel requests to the mobile service', async () => {
+    const mobileService = makeMobileService();
+
+    const response = await request(makeApp(mobileService))
+      .post('/v1/mobile/customer/orders/order-1/cancel')
+      .set('authorization', makeBearer('cust-1', 'customer'));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ orderId: 'order-1', status: 'CANCELED' });
+    expect(mobileService.cancelOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'cust-1', role: 'customer' }),
+      'order-1'
+    );
+  });
+
+  it('returns not found when the requested order does not exist', async () => {
+    const mobileService = makeMobileService();
+    mobileService.cancelOrder.mockRejectedValueOnce(
+      new HttpError(404, 'NOT_FOUND', 'Order not found.')
+    );
+
+    const response = await request(makeApp(mobileService))
+      .post('/v1/mobile/customer/orders/missing-order/cancel')
+      .set('authorization', makeBearer('cust-1', 'customer'));
+
+    expect(response.status).toBe(404);
+    expect(response.body).toMatchObject({
+      error: 'NOT_FOUND',
+      message: 'Order not found.'
+    });
+  });
+
+  it('returns conflict when the order can no longer be canceled', async () => {
+    const mobileService = makeMobileService();
+    mobileService.cancelOrder.mockRejectedValueOnce(
+      new HttpError(409, 'CONFLICT', 'Order can no longer be canceled.')
+    );
+
+    const response = await request(makeApp(mobileService))
+      .post('/v1/mobile/customer/orders/order-1/cancel')
+      .set('authorization', makeBearer('cust-1', 'customer'));
+
+    expect(response.status).toBe(409);
+    expect(response.body).toMatchObject({
+      error: 'CONFLICT',
+      message: 'Order can no longer be canceled.'
+    });
   });
 
   it('returns driver bootstrap payloads for authenticated drivers', async () => {

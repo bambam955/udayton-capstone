@@ -222,6 +222,7 @@ export interface MobileRepository {
     retailerId: string,
     isConnected: boolean
   ): Promise<CustomerRetailerConnectionResult>;
+  cancelOrder(customerId: string, orderId: string): Promise<CustomerOrderSummary>;
   checkout(customerId: string, input: CustomerCheckoutInput): Promise<CustomerCheckoutResult>;
   // Driver-facing aggregated reads and delivery lifecycle transitions.
   getDriverBootstrap(driverId: string): Promise<DriverBootstrapResult>;
@@ -246,6 +247,7 @@ export interface MobileServiceContract {
     principal: AuthPrincipal,
     retailerId: string
   ): Promise<CustomerRetailerConnectionResult>;
+  cancelOrder(principal: AuthPrincipal, orderId: string): Promise<CustomerOrderSummary>;
   checkout(principal: AuthPrincipal, input: CustomerCheckoutInput): Promise<CustomerCheckoutResult>;
   getDriverBootstrap(principal: AuthPrincipal): Promise<DriverBootstrapResult>;
   acceptDelivery(principal: AuthPrincipal, deliveryId: string): Promise<DriverJobSummary>;

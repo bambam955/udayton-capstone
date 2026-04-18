@@ -191,6 +191,31 @@ void main() {
       expect(disconnected.isConnected, isFalse);
     });
 
+    test('cancelOrder posts to the customer cancel endpoint', () async {
+      final client = RecordingApiClient((request) => <String, Object?>{
+            'orderId': 'ord-1',
+            'externalOrderId': 'external-1',
+            'retailerId': 'ret-1',
+            'retailerName': 'Fresh Market',
+            'retailerLocationId': 'loc-1',
+            'retailerLocationName': 'Downtown Market',
+            'status': 'CANCELED',
+            'placedAt': '2099-01-01T00:00:00.000Z',
+            'totalCents': 4550,
+            'currency': 'USD',
+            'itemCount': 3,
+          });
+      final api = CustomerMobileApi(client);
+
+      final order = await api.cancelOrder('ord-1');
+
+      expect(client.requests.single.path,
+          '/v1/mobile/customer/orders/ord-1/cancel');
+      expect(client.requests.single.method, 'POST');
+      expect(order.orderId, 'ord-1');
+      expect(order.status, 'CANCELED');
+    });
+
     test('checkout sends order input and decodes the checkout summary',
         () async {
       final client = RecordingApiClient((request) => _customerCheckoutJson());
@@ -325,7 +350,7 @@ Map<String, Object?> _customerBootstrapJson() {
         'retailerName': 'Fresh Market',
         'retailerLocationId': 'loc-1',
         'retailerLocationName': 'Downtown Market',
-        'status': 'PLACED',
+        'status': 'SUBMITTED',
         'placedAt': '2099-01-01T00:00:00.000Z',
         'totalCents': 4550,
         'currency': 'USD',
@@ -403,7 +428,7 @@ Map<String, Object?> _customerCheckoutJson() {
       'retailerName': 'Fresh Market',
       'retailerLocationId': 'loc-1',
       'retailerLocationName': 'Downtown Market',
-      'status': 'PLACED',
+      'status': 'SUBMITTED',
       'placedAt': '2099-01-01T00:00:00.000Z',
       'totalCents': 4550,
       'currency': 'USD',
