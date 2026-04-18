@@ -80,6 +80,7 @@ just test
 
 - Run `just check` before submitting changes
 - Run `just format` to auto-format code
+- SQL migrations/seeds are linted with SQLFluff (run `just --justfile db/justfile check` and auto-fix with `just --justfile db/justfile format`)
 - Follow [Dart style guidelines](https://dart.dev/guides/language/effective-dart/style)
 
 ## Submitting Changes

@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 ROOT_DC := "docker compose --project-name bizrush -f docker-compose.yml"
-ALL_COMPONENTS := "main driver apps_shared admin mocks api"
+ALL_COMPONENTS := "main driver apps_shared admin mocks api db"
 ALL_UP_SERVICE_HELP := "main-web (or main), driver-web (or driver), main-android, driver-android, admin"
 
 # ---------- Main commands ---------- #
@@ -222,6 +222,9 @@ _run-for recipe component:
             ;;
         api)
             just --justfile api/justfile "{{recipe}}"
+            ;;
+        db)
+            just --justfile db/justfile "{{recipe}}"
             ;;
         *)
             echo "❌ Unknown component: {{component}}"

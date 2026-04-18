@@ -1,6 +1,30 @@
+set shell := ["bash", "-cu"]
+
+SQLFLUFF_IMAGE := "sqlfluff/sqlfluff:3.4.2"
+SQL_PATHS := "migrations seed"
+
 # List available recipes.
 default:
     @just --list --unsorted
+
+# Run SQL linting for DB schema and seed scripts.
+check:
+    just _sqlfluff lint {{SQL_PATHS}}
+
+# Auto-fix lint violations where possible.
+format:
+    just _sqlfluff fix {{SQL_PATHS}}
+
+# Run lint checks as the DB quality gate.
+test: check
+
+# SQLFluff runs in Docker; no local dependency install required.
+deps:
+    @echo "No DB dependencies to install."
+
+# No local build artifacts to clean in db/.
+clean:
+    @echo "No DB artifacts to clean."
 
 # Seed the database with local sample data.
 seed:
@@ -20,3 +44,14 @@ clear:
 
 # Reset the local DB by clearing it and seeding it again.
 reset: clear seed
+
+[private]
+_sqlfluff cmd *paths:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    docker run --rm \
+      --user "$(id -u):$(id -g)" \
+      -v ".:/work" \
+      -w /work \
+      {{SQLFLUFF_IMAGE}} \
+      {{cmd}} --config .sqlfluff {{paths}}
