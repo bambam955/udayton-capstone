@@ -263,10 +263,6 @@ Future<void> _selectMainTab(WidgetTester tester, int index) async {
   await tester.pumpAndSettle();
 }
 
-Map<String, Object?> _bootstrapJson() {
-  return _bootstrapJsonWithStatus('SUBMITTED');
-}
-
 Map<String, Object?> _bootstrapJsonWithStatus(String orderStatus) {
   return <String, Object?>{
     'customer': <String, Object?>{
