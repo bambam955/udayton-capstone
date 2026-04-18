@@ -29,6 +29,10 @@ Frontend orchestration for Flutter lives in local tooling:
 # One-time setup (deps + backend dependencies)
 just setup
 
+# Create a local-only admin seed password for db seeding
+cp .env.local.example .env.local
+# then edit .env.local and choose your own ADMIN_SEED_PASSWORD
+
 # Start services
 just run main-web
 just run driver-web
@@ -49,6 +53,9 @@ To load just the database seed workflow directly:
 ```bash
 just db/seed
 ```
+
+The local seed expects `ADMIN_SEED_PASSWORD` to be present in `.env.local`.
+That password is not stored in git; it is injected only when the local seed runs.
 
 ## Environment Variables
 

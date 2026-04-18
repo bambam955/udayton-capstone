@@ -5,7 +5,6 @@ export interface AuthUser {
   userId: string;
   role: AuthRole;
   email: string;
-  passwordHash: string;
   isActive: boolean;
 }
 

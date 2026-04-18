@@ -2,6 +2,8 @@ import { createServer } from 'node:http';
 
 import { createApp } from './app/createApp.js';
 import { env } from './config/env.js';
+import { KyselyAdminOperationsRepository } from './modules/admins/operations-repository.js';
+import { AdminOperationsService } from './modules/admins/operations-service.js';
 import { KyselyAuthRepository } from './modules/auth/repository.js';
 import { AuthService } from './modules/auth/service.js';
 import { KyselyMobileRepository } from './modules/mobile/repository.js';
@@ -21,6 +23,7 @@ const db = getDb();
 const app = createApp({
   authService: new AuthService(new KyselyAuthRepository(db)),
   resourceService: new ResourceService(new PgResourceRepository(getPool()), allResourceDefinitions),
+  adminOperationsService: new AdminOperationsService(new KyselyAdminOperationsRepository(db)),
   mobileService: new MobileService(new KyselyMobileRepository(db))
 });
 

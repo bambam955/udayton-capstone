@@ -3,11 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Biz Rush Admin",
-  description: "Biz Rush operations center dashboard."
+  description: "Biz Rush operations center dashboard.",
 };
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {

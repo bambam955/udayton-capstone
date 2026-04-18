@@ -4,6 +4,7 @@ import type { AuthPrincipal } from '../../../app/types.js';
 import type {
   ResourceDefinition,
   ResourceListInput,
+  ResourceListPage,
   ResourceOperationAccess,
   ResourceRepository
 } from './types.js';
@@ -99,7 +100,7 @@ export class PgResourceRepository implements ResourceRepository {
     access: ResourceOperationAccess,
     principal: AuthPrincipal,
     input: ResourceListInput
-  ): Promise<Record<string, unknown>[]> {
+  ): Promise<ResourceListPage> {
     const params: unknown[] = [];
     const whereClauses: string[] = [];
 
@@ -113,21 +114,32 @@ export class PgResourceRepository implements ResourceRepository {
       whereClauses.push(`base.${quoteIdentifier(column)} = $${params.length}`);
     }
 
-    params.push(input.limit);
     const orderBy = definition.defaultOrderBy
       .map(({ column, direction }) => `base.${quoteIdentifier(column)} ${direction}`)
       .join(', ');
     const whereSql = whereClauses.length > 0 ? `where ${whereClauses.join(' and ')}` : '';
+    const countQuery = `
+      select count(*)::int as total
+      from ${quoteIdentifier(definition.table)} as base
+      ${whereSql}
+    `;
+    const countResult = await this.pool.query<{ total: number }>(countQuery, params);
+
+    const dataParams = [...params, input.limit, input.offset];
     const query = `
       select ${selectList(definition, 'base')}
       from ${quoteIdentifier(definition.table)} as base
       ${whereSql}
       order by ${orderBy}
-      limit $${params.length}
+      limit $${dataParams.length - 1}
+      offset $${dataParams.length}
     `;
-    const result = await this.pool.query(query, params);
+    const result = await this.pool.query(query, dataParams);
 
-    return result.rows;
+    return {
+      data: result.rows,
+      total: Number(countResult.rows[0]?.total ?? 0)
+    };
   }
 
   async get(

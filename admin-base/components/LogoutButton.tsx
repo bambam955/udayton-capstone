@@ -1,28 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useFormStatus } from "react-dom";
 
-const AUTH_KEY = "admin-auth";
+import { logoutAction } from "@/lib/actions/auth";
 
 export default function LogoutButton() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  return (
+    <form action={logoutAction}>
+      <SubmitButton />
+    </form>
+  );
+}
 
-  const handleLogout = () => {
-    setLoading(true);
-    window.localStorage.removeItem(AUTH_KEY);
-    router.replace("/login");
-  };
+function SubmitButton() {
+  const { pending } = useFormStatus();
 
   return (
     <button
-      type="button"
-      onClick={handleLogout}
-      disabled={loading}
+      type="submit"
+      disabled={pending}
       className="rounded-full border border-[rgba(255,255,255,0.18)] px-4 py-2 text-xs font-semibold text-white transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] disabled:opacity-60"
     >
-      {loading ? "Signing out..." : "Sign out"}
+      {pending ? "Signing out..." : "Sign out"}
     </button>
   );
 }
