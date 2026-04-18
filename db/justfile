@@ -1,7 +1,7 @@
 set shell := ["bash", "-cu"]
 
 SQLFLUFF_IMAGE := "sqlfluff/sqlfluff:3.4.2"
-SQL_PATHS := "db/migrations db/seed"
+SQL_PATHS := "migrations seed"
 
 # List available recipes.
 default:
@@ -49,9 +49,9 @@ reset: clear seed
 _sqlfluff cmd *paths:
     #!/usr/bin/env bash
     set -euo pipefail
-    root_dir="$(cd "{{justfile_directory()}}/.." && pwd)"
     docker run --rm \
-      -v "${root_dir}:/work" \
+      --user "$(id -u):$(id -g)" \
+      -v ".:/work" \
       -w /work \
       {{SQLFLUFF_IMAGE}} \
       {{cmd}} --config .sqlfluff {{paths}}
