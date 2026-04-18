@@ -3,6 +3,8 @@ import express from 'express';
 import { env } from '../config/env.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { createCorsMiddleware } from './middleware/cors.js';
+import { createAdminOperationsRouter } from '../modules/admins/operations-routes.js';
+import type { AdminOperationsService } from '../modules/admins/operations-service.js';
 import { createAdminsRouter } from '../modules/admins/routes.js';
 import { createAuthRouter } from '../modules/auth/routes.js';
 import type { AuthService } from '../modules/auth/service.js';
@@ -20,6 +22,7 @@ import type { ResourceService } from '../modules/shared/resource-core/service.js
 export interface AppServices {
   authService: AuthService;
   resourceService: ResourceService;
+  adminOperationsService?: AdminOperationsService;
   mobileService?: MobileServiceContract;
 }
 
@@ -42,6 +45,14 @@ export function createApp(services: AppServices) {
 
   // Versioned API surface for mobile apps and admin dashboard.
   app.use('/v1/auth', createAuthRouter(services.authService));
+  if (services.adminOperationsService) {
+    // Keep the admin operations API optional so resource-only tests can build a small app.
+    app.use(
+      '/v1/admin',
+      createAdminOperationsRouter(services.adminOperationsService, services.authService)
+    );
+  }
+
   if (services.mobileService) {
     // Register the mobile surface only when its service is wired. This keeps
     // the application composition tolerant of older tests or tools that still

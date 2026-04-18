@@ -8,7 +8,7 @@ const navItems = [
   { href: "/team", label: "Team" },
   { href: "/users", label: "Users" },
   { href: "/reports", label: "Reports" },
-  { href: "/settings", label: "Settings" }
+  { href: "/settings", label: "Settings" },
 ];
 
 export default function Sidebar() {

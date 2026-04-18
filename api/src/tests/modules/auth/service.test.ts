@@ -7,6 +7,7 @@ import { AuthService } from '../../../modules/auth/service.js';
 function makeRepo(): AuthRepository {
   return {
     findUserByEmail: vi.fn(),
+    findUserByCredentials: vi.fn(),
     createCustomer: vi.fn(),
     createDriver: vi.fn(),
     createSession: vi.fn().mockResolvedValue(undefined),
@@ -18,11 +19,10 @@ function makeRepo(): AuthRepository {
 describe('AuthService', () => {
   it('returns access token on valid credentials', async () => {
     const repo = makeRepo();
-    vi.mocked(repo.findUserByEmail).mockResolvedValue({
+    vi.mocked(repo.findUserByCredentials).mockResolvedValue({
       userId: 'cust-1',
       role: 'customer',
       email: 'customer@example.com',
-      passwordHash: 'secret123',
       isActive: true
     });
     const service = new AuthService(repo);
@@ -40,7 +40,7 @@ describe('AuthService', () => {
 
   it('throws for invalid credentials', async () => {
     const repo = makeRepo();
-    vi.mocked(repo.findUserByEmail).mockResolvedValue(null);
+    vi.mocked(repo.findUserByCredentials).mockResolvedValue(null);
     const service = new AuthService(repo);
 
     await expect(
@@ -70,7 +70,6 @@ describe('AuthService', () => {
       userId: 'cust-2',
       role: 'customer',
       email: 'new@example.com',
-      passwordHash: 'secret123',
       isActive: true
     });
     const service = new AuthService(repo);
@@ -100,7 +99,6 @@ describe('AuthService', () => {
       userId: 'driver-2',
       role: 'driver',
       email: 'driver@example.com',
-      passwordHash: 'secret123',
       isActive: true
     });
     const service = new AuthService(repo);

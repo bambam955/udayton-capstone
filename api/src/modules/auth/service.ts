@@ -5,11 +5,6 @@ import { signAccessToken } from '../../platform/auth/jwt.js';
 import type { AuthRepository } from './repository.js';
 import type { AuthUser, LoginInput, LoginResult, SignupInput, SignupResult } from './types.js';
 
-function constantTimeEquals(expected: string, given: string): boolean {
-  // TODO: replace with secure hash verification once password hashing is wired.
-  return expected === given;
-}
-
 export class AuthService {
   constructor(private readonly repo: AuthRepository) {}
 
@@ -43,10 +38,13 @@ export class AuthService {
   }
 
   async login(input: LoginInput): Promise<LoginResult> {
-    // Email lookup is normalized to avoid duplicate identities by casing.
-    const user = await this.repo.findUserByEmail(input.role, input.email.toLowerCase());
+    const user = await this.repo.findUserByCredentials(
+      input.role,
+      input.email.toLowerCase(),
+      input.password
+    );
 
-    if (!user || !constantTimeEquals(user.passwordHash, input.password)) {
+    if (!user) {
       throw new HttpError(401, 'INVALID_CREDENTIALS', 'Email or password is invalid.');
     }
 

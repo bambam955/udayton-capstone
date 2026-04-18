@@ -18,7 +18,7 @@ function definition(path: string) {
 function makeRepository(): ResourceRepository {
   return {
     canCreate: vi.fn().mockResolvedValue(true),
-    list: vi.fn().mockResolvedValue([]),
+    list: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     get: vi.fn().mockResolvedValue({}),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
@@ -204,18 +204,23 @@ describe('ResourceService', () => {
     const repository = makeRepository();
     const service = new ResourceService(repository, allResourceDefinitions);
 
-    await service.list(
+    const result = await service.list(
       definition('orders'),
       { userId: 'admin-1', role: 'admin', sessionId: 's1' },
-      { limit: 999 }
+      { limit: 999, offset: 3 }
     );
 
     expect(repository.list).toHaveBeenCalledWith(
       expect.any(Object),
       expect.any(Object),
       expect.objectContaining({ role: 'admin' }),
-      expect.objectContaining({ limit: 100 })
+      expect.objectContaining({ limit: 100, offset: 3 })
     );
+    expect(result.meta).toEqual({
+      total: 0,
+      limit: 100,
+      offset: 3
+    });
   });
 
   it('requires at least one field on patch requests', async () => {

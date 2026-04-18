@@ -44,6 +44,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   bool _isLoading = true;
   bool _isMutating = false;
   bool _isSubmittingSupport = false;
+  String? _cancelingOrderId;
   String? _loadError;
 
   @override
@@ -748,7 +749,44 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       loadTimeline: _loadOrderTimeline,
       orderStatusTone: _orderStatusTone,
       formatPrice: _formatPrice,
+      canCancel: _canCancelOrder(order),
+      isBusy: _cancelingOrderId == order.id,
+      onCancel: () => _cancelOrder(order),
     );
+  }
+
+  bool _canCancelOrder(OrderPreview order) {
+    return order.status.toUpperCase() == 'SUBMITTED';
+  }
+
+  Future<bool> _cancelOrder(OrderPreview order) async {
+    if (_cancelingOrderId != null) {
+      return false;
+    }
+
+    setState(() {
+      _cancelingOrderId = order.id;
+    });
+
+    try {
+      await widget.customerApi.cancelOrder(order.id);
+      await _refreshBootstrap();
+      if (!mounted) {
+        return false;
+      }
+
+      _showMessage('Order ${order.id} canceled.');
+      return true;
+    } on ApiError catch (error) {
+      await _handleApiError(error, fallbackMessage: 'Unable to cancel order.');
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _cancelingOrderId = null;
+        });
+      }
+    }
   }
 
   Future<List<OrderTimelineEntry>> _loadOrderTimeline(String orderId) async {
@@ -793,6 +831,9 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
 
   static StatusBadgeTone _orderStatusTone(String status) {
     final normalized = status.toUpperCase();
+    if (normalized.contains('CANCEL')) {
+      return StatusBadgeTone.neutral;
+    }
     if (normalized.contains('PICKING') || normalized.contains('SUBMITTED')) {
       return StatusBadgeTone.info;
     }
@@ -836,18 +877,32 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
 
   static String _orderEtaText(CustomerOrderSummary order) {
     final status = order.status ?? 'UNKNOWN';
+    final normalized = status.toUpperCase();
     final placedAt = order.placedAt;
+    if (normalized == 'CANCELED') {
+      return 'Canceled';
+    }
     if (placedAt == null) {
-      return status.replaceAll('_', ' ');
+      return _humanizeStatus(status);
     }
 
     final elapsed =
         DateTime.now().toUtc().difference(placedAt.toUtc()).inMinutes;
-    if (status.toUpperCase() == 'DELIVERED') {
+    if (normalized == 'DELIVERED') {
       return 'Delivered $elapsed min ago';
     }
 
     return 'Placed $elapsed min ago';
+  }
+
+  static String _humanizeStatus(String status) {
+    return status.toLowerCase().split('_').map((segment) {
+      if (segment.isEmpty) {
+        return segment;
+      }
+
+      return '${segment[0].toUpperCase()}${segment.substring(1)}';
+    }).join(' ');
   }
 
   static List<Color> _gradientForSeed(String seed) {

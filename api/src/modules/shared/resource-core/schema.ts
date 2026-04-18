@@ -112,7 +112,8 @@ export function buildResourceCreateSchema(
 
 export function buildResourceSchemas(definition: ResourceDefinition): ResourceSchemaSet {
   const listShape: Record<string, z.ZodTypeAny> = {
-    limit: z.coerce.number().int().positive().default(20)
+    limit: z.coerce.number().int().positive().default(20),
+    offset: z.coerce.number().int().nonnegative().default(0)
   };
   const createShape: Record<string, z.ZodTypeAny> = {};
   const updateShape: Record<string, z.ZodTypeAny> = {};
@@ -135,13 +136,14 @@ export function buildResourceSchemas(definition: ResourceDefinition): ResourceSc
     .object(listShape)
     .strict()
     .transform((value): ResourceListInput => {
-      const { limit, ...rest } = value;
+      const { limit, offset, ...rest } = value;
       const filters = Object.fromEntries(
         Object.entries(rest).filter(([, entry]) => entry !== undefined)
       ) as Record<string, string | number | boolean>;
 
       return {
         limit: Number(limit),
+        offset: Number(offset),
         filters
       };
     });
