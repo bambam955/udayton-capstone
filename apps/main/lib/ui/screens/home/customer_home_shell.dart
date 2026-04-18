@@ -12,6 +12,10 @@ import 'tabs/customer_tab_orders.dart';
 import 'tabs/customer_tab_search.dart';
 import 'tabs/customer_tab_support.dart';
 
+// Keep transient customer messages brief so repeated cart actions do not cover
+// important bottom-of-screen controls like checkout for the default 4 seconds.
+const Duration _customerSnackBarDuration = Duration(milliseconds: 1500);
+
 /// Owns state coordination for customer home tabs and API-backed actions.
 class CustomerHomeShell extends StatefulWidget {
   const CustomerHomeShell({
@@ -885,9 +889,16 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   }
 
   void _showMessage(String message) {
+    // Drop queued messages so rapid cart taps keep only the latest feedback
+    // visible instead of making the checkout area wait through old snackbars.
     ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          duration: _customerSnackBarDuration,
+          content: Text(message),
+        ),
+      );
   }
 
   void _showOrderDetails(OrderPreview order) {
