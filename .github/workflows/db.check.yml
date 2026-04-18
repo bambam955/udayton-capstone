@@ -1,0 +1,31 @@
+name: check:db
+
+on:
+  pull_request:
+    paths:
+      - db/**
+      - .github/workflows/db.check.yml
+  push:
+    branches:
+      - main
+    paths:
+      - db/**
+      - .github/workflows/db.check.yml
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: db
+    steps:
+      - uses: actions/checkout@v6
+      # Keep this command aligned with db/justfile's SQLFLUFF_IMAGE and SQL_PATHS.
+      - run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -v "${PWD}:/work" \
+            -w /work \
+            sqlfluff/sqlfluff:3.4.2 \
+            lint --config .sqlfluff migrations seed
