@@ -5,6 +5,7 @@ import type {
   CustomerCatalogResult,
   CustomerCheckoutInput,
   CustomerCheckoutResult,
+  CustomerOrderSummary,
   CustomerRetailerConnectionResult,
   DriverBootstrapResult,
   DriverJobSummary,
@@ -59,6 +60,11 @@ export class MobileService implements MobileServiceContract {
   ): Promise<CustomerRetailerConnectionResult> {
     requireRole(principal, 'customer');
     return this.repository.setRetailerConnection(principal.userId, retailerId, false);
+  }
+
+  async cancelOrder(principal: AuthPrincipal, orderId: string): Promise<CustomerOrderSummary> {
+    requireRole(principal, 'customer');
+    return this.repository.cancelOrder(principal.userId, orderId);
   }
 
   async checkout(

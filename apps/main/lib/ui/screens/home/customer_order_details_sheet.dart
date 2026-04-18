@@ -14,6 +14,9 @@ void showCustomerOrderDetailsSheet({
       loadTimeline,
   required StatusBadgeTone Function(String status) orderStatusTone,
   required String Function(int cents) formatPrice,
+  required bool canCancel,
+  required bool isBusy,
+  required Future<bool> Function() onCancel,
 }) {
   showModalBottomSheet<void>(
     context: context,
@@ -25,77 +28,197 @@ void showCustomerOrderDetailsSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
-      // Load order history only when the sheet is opened so bootstrap stays
-      // small and the orders tab can remain responsive.
-      return FutureBuilder<List<OrderTimelineEntry>>(
-        future: loadTimeline(order.id),
-        builder: (context, snapshot) {
-          return DetailsSheetScaffold(
-            title: 'Order details',
-            subtitle: order.id,
-            badge: StatusBadge(
-              label: order.status,
-              tone: orderStatusTone(order.status),
-            ),
-            sections: [
-              SurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(order.retailerName,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    if (order.storeName != null) ...[
-                      const SizedBox(height: 4),
-                      Text('Store: ${order.storeName}'),
-                    ],
-                  ],
-                ),
-              ),
-              SurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Order metrics',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    MetaInfoRow(
-                      items: [
-                        MetaInfo(
-                          icon: Icons.shopping_bag_outlined,
-                          text: '${order.itemCount} items',
-                        ),
-                        MetaInfo(
-                          icon: Icons.attach_money_rounded,
-                          text: formatPrice(order.totalCents),
-                        ),
-                        MetaInfo(
-                          icon: Icons.schedule_rounded,
-                          text: order.etaText,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              _buildTimelineSection(
-                context: context,
-                snapshot: snapshot,
-                orderStatusTone: orderStatusTone,
-              ),
-            ],
-            onClose: () => Navigator.of(context).pop(),
-            footer: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ),
-          );
-        },
+      return _CustomerOrderDetailsSheet(
+        order: order,
+        loadTimeline: loadTimeline,
+        orderStatusTone: orderStatusTone,
+        formatPrice: formatPrice,
+        canCancel: canCancel,
+        isBusy: isBusy,
+        onCancel: onCancel,
       );
     },
   );
+}
+
+class _CustomerOrderDetailsSheet extends StatefulWidget {
+  const _CustomerOrderDetailsSheet({
+    required this.order,
+    required this.loadTimeline,
+    required this.orderStatusTone,
+    required this.formatPrice,
+    required this.canCancel,
+    required this.isBusy,
+    required this.onCancel,
+  });
+
+  final OrderPreview order;
+  final Future<List<OrderTimelineEntry>> Function(String orderId) loadTimeline;
+  final StatusBadgeTone Function(String status) orderStatusTone;
+  final String Function(int cents) formatPrice;
+  final bool canCancel;
+  final bool isBusy;
+  final Future<bool> Function() onCancel;
+
+  @override
+  State<_CustomerOrderDetailsSheet> createState() =>
+      _CustomerOrderDetailsSheetState();
+}
+
+class _CustomerOrderDetailsSheetState
+    extends State<_CustomerOrderDetailsSheet> {
+  late final Future<List<OrderTimelineEntry>> _timelineFuture;
+  late bool _isBusy;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load order history only when the sheet is opened so bootstrap stays
+    // small and the orders tab can remain responsive.
+    _timelineFuture = widget.loadTimeline(widget.order.id);
+    _isBusy = widget.isBusy;
+  }
+
+  Future<void> _handleCancel() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel order?'),
+        content: const Text(
+          'You can only cancel before a driver accepts the delivery.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('order-cancel-dismiss'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep order'),
+          ),
+          FilledButton(
+            key: const Key('order-cancel-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Cancel order'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    setState(() {
+      _isBusy = true;
+    });
+
+    final shouldClose = await widget.onCancel();
+    if (!mounted) {
+      return;
+    }
+
+    if (shouldClose) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      _isBusy = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<OrderTimelineEntry>>(
+      future: _timelineFuture,
+      builder: (context, snapshot) {
+        return DetailsSheetScaffold(
+          title: 'Order details',
+          subtitle: widget.order.id,
+          badge: StatusBadge(
+            label: widget.order.status,
+            tone: widget.orderStatusTone(widget.order.status),
+          ),
+          sections: [
+            SurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.order.retailerName,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  if (widget.order.storeName != null) ...[
+                    const SizedBox(height: 4),
+                    Text('Store: ${widget.order.storeName}'),
+                  ],
+                ],
+              ),
+            ),
+            SurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Order metrics',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  MetaInfoRow(
+                    items: [
+                      MetaInfo(
+                        icon: Icons.shopping_bag_outlined,
+                        text: '${widget.order.itemCount} items',
+                      ),
+                      MetaInfo(
+                        icon: Icons.attach_money_rounded,
+                        text: widget.formatPrice(widget.order.totalCents),
+                      ),
+                      MetaInfo(
+                        icon: Icons.schedule_rounded,
+                        text: widget.order.etaText,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            _buildTimelineSection(
+              context: context,
+              snapshot: snapshot,
+              orderStatusTone: widget.orderStatusTone,
+            ),
+          ],
+          onClose: () => Navigator.of(context).pop(),
+          footer: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _isBusy ? null : () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ),
+              if (widget.canCancel) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    key: const Key('order-cancel-action'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFB3261E),
+                    ),
+                    onPressed: _isBusy ? null : _handleCancel,
+                    child: _isBusy
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Cancel order'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 Widget _buildTimelineSection({
