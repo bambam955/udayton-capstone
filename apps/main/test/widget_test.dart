@@ -151,6 +151,56 @@ void main() {
     expect(find.text('Instructions: Ring the loading dock'), findsOneWidget);
   });
 
+  testWidgets('Customer can add an address without custom instructions', (
+    WidgetTester tester,
+  ) async {
+    final apiClient = _FakeApiClient();
+    await _pumpApp(tester, apiClient: apiClient);
+
+    await _login(tester);
+    await _openAccountTab(tester);
+    await _tapWhenVisible(
+      tester,
+      find.byKey(const Key('address-add-button')),
+    );
+
+    final submitFinder = find.byKey(const Key('address-dialog-submit'));
+    expect(find.text('Add address'), findsOneWidget);
+    expect(find.text('Instructions (optional)'), findsOneWidget);
+    expect(tester.widget<FilledButton>(submitFinder).onPressed, isNull);
+
+    await tester.enterText(
+      find.byKey(const Key('address-label-field')),
+      'Warehouse',
+    );
+    await tester.enterText(
+      find.byKey(const Key('address-line1-field')),
+      '300 Cedar St',
+    );
+    await tester.enterText(
+      find.byKey(const Key('address-city-field')),
+      'Charlotte',
+    );
+    await tester.enterText(
+      find.byKey(const Key('address-state-field')),
+      'NC',
+    );
+    await tester.enterText(
+      find.byKey(const Key('address-postal-code-field')),
+      '28204',
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<FilledButton>(submitFinder).onPressed, isNotNull);
+    await _tapWhenVisible(tester, submitFinder);
+
+    expect(find.text('Address saved.'), findsOneWidget);
+    expect(apiClient.lastAddressCreateBody?['instructions'], isNull);
+    expect(find.byKey(const Key('account-address-addr-3')), findsOneWidget);
+    expect(find.text('Warehouse'), findsOneWidget);
+    expect(find.textContaining('300 Cedar St'), findsOneWidget);
+  });
+
   testWidgets('Customer can delete a non-default address from the account tab',
       (WidgetTester tester) async {
     await _pumpApp(tester, apiClient: _FakeApiClient());
@@ -285,6 +335,7 @@ class _FakeApiClient implements ApiClient {
   final Set<String> _undeletableAddressIds;
   final List<_FakeAddressRecord> _addresses;
   late int _nextAddressNumber;
+  Map<String, Object?>? lastAddressCreateBody;
 
   @override
   Future<ApiResponse<T>> send<T>(
@@ -388,6 +439,9 @@ class _FakeApiClient implements ApiClient {
   }
 
   Object _createAddress(Map<String, Object?> body) {
+    // Keep the raw create payload visible to widget tests so they can assert
+    // the app sends optional fields in the shape expected by the API.
+    lastAddressCreateBody = Map<String, Object?>.from(body);
     final nextAddressNumber = _nextAddressNumber++;
     final address = _FakeAddressRecord(
       id: 'addr-$nextAddressNumber',

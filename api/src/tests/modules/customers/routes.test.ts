@@ -103,6 +103,36 @@ describe('customer routes', () => {
     });
   });
 
+  it('allows customers to create addresses with null instructions', async () => {
+    const repository = makeRepository();
+    const app = makeTestApp({
+      repository,
+      authService: makeAuthService(true)
+    });
+
+    const response = await request(app)
+      .post('/v1/addresses')
+      .set('authorization', makeBearer('cust-1', 'customer'))
+      .send({
+        label: 'Warehouse',
+        line1: '99 Water St',
+        city: 'Charlotte',
+        state: 'NC',
+        postal_code: '28202',
+        country: 'US',
+        // The Customer app sends `null` when the optional instructions field is blank.
+        instructions: null
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      customer_id: 'cust-1',
+      label: 'Warehouse',
+      line1: '99 Water St',
+      instructions: null
+    });
+  });
+
   it('blocks customers from admin-only customer session endpoints', async () => {
     const repository = makeRepository();
     const app = makeTestApp({

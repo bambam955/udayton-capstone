@@ -118,6 +118,7 @@ class CustomerTabAccount extends StatelessWidget {
                         style: textTheme.titleMedium),
                   ),
                   TextButton(
+                    key: const Key('address-add-button'),
                     onPressed: isBusy ? null : onAddAddress,
                     child: const Text('Add'),
                   ),
