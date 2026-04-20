@@ -1404,6 +1404,11 @@ class _AddressDialogState extends State<_AddressDialog> {
   String? _errorText;
 
   bool get _isEditing => widget.initialAddress != null;
+  bool get _hasRequiredAddressFields =>
+      _line1Controller.text.trim().isNotEmpty &&
+      _cityController.text.trim().isNotEmpty &&
+      _stateController.text.trim().isNotEmpty &&
+      _postalCodeController.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -1426,10 +1431,19 @@ class _AddressDialogState extends State<_AddressDialog> {
       text: initialAddress?.instructions ?? '',
     );
     _isDefault = initialAddress?.isDefault ?? true;
+
+    // Required fields drive the Save button state, so changes need to rebuild
+    // the dialog immediately instead of waiting for submit-time validation.
+    for (final controller in _requiredFieldControllers) {
+      controller.addListener(_handleRequiredFieldChanged);
+    }
   }
 
   @override
   void dispose() {
+    for (final controller in _requiredFieldControllers) {
+      controller.removeListener(_handleRequiredFieldChanged);
+    }
     _labelController.dispose();
     _line1Controller.dispose();
     _line2Controller.dispose();
@@ -1441,11 +1455,29 @@ class _AddressDialogState extends State<_AddressDialog> {
     super.dispose();
   }
 
+  List<TextEditingController> get _requiredFieldControllers => [
+        _line1Controller,
+        _cityController,
+        _stateController,
+        _postalCodeController,
+      ];
+
+  void _handleRequiredFieldChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      // Once the user has supplied the required fields, clear the submit-time
+      // guidance so the dialog does not keep showing stale validation text.
+      if (_hasRequiredAddressFields) {
+        _errorText = null;
+      }
+    });
+  }
+
   void _submit() {
-    if (_line1Controller.text.trim().isEmpty ||
-        _cityController.text.trim().isEmpty ||
-        _stateController.text.trim().isEmpty ||
-        _postalCodeController.text.trim().isEmpty) {
+    if (!_hasRequiredAddressFields) {
       setState(() {
         _errorText = 'Line 1, city, state, and postal code are required.';
       });
@@ -1526,7 +1558,8 @@ class _AddressDialogState extends State<_AddressDialog> {
             TextField(
               key: const Key('address-instructions-field'),
               controller: _instructionsController,
-              decoration: const InputDecoration(labelText: 'Instructions'),
+              decoration:
+                  const InputDecoration(labelText: 'Instructions (optional)'),
               maxLines: 2,
             ),
             const SizedBox(height: 8),
@@ -1557,7 +1590,7 @@ class _AddressDialogState extends State<_AddressDialog> {
         ),
         FilledButton(
           key: const Key('address-dialog-submit'),
-          onPressed: _submit,
+          onPressed: _hasRequiredAddressFields ? _submit : null,
           child: Text(_isEditing ? 'Save changes' : 'Save'),
         ),
       ],
