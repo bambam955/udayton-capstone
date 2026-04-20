@@ -24,6 +24,8 @@ class DriverHomeShell extends StatefulWidget {
     required this.resourceApi,
     required this.onSignedOut,
     this.geocodingService = const DriverGeocodingService(),
+    this.initialRoutePath = driverDefaultRoutePath,
+    this.onRouteChanged,
   });
 
   final ApiSession session;
@@ -32,6 +34,8 @@ class DriverHomeShell extends StatefulWidget {
   final ResourceApi resourceApi;
   final VoidCallback onSignedOut;
   final DriverGeocodingService geocodingService;
+  final String initialRoutePath;
+  final ValueChanged<String>? onRouteChanged;
 
   @override
   State<DriverHomeShell> createState() => _DriverHomeShellState();
@@ -41,7 +45,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   DriverBootstrap? _bootstrap;
   List<ResourceDriverEarning> _earnings = const <ResourceDriverEarning>[];
   List<ResourceDriverPayout> _payouts = const <ResourceDriverPayout>[];
-  int _selectedNavIndex = 0;
+  late int _selectedNavIndex;
   int _deliveriesFilterIndex = 0;
   String _searchQueryNearby = '';
   bool _isLoading = true;
@@ -52,7 +56,28 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   @override
   void initState() {
     super.initState();
+    _selectedNavIndex = driverNavIndexForRoutePath(widget.initialRoutePath);
     _refreshData();
+  }
+
+  @override
+  void didUpdateWidget(covariant DriverHomeShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.initialRoutePath == oldWidget.initialRoutePath) {
+      return;
+    }
+
+    final nextIndex = driverNavIndexForRoutePath(widget.initialRoutePath);
+    if (nextIndex == _selectedNavIndex) {
+      return;
+    }
+
+    // Browser back/forward updates arrive as route changes from the root
+    // router, so the selected tab needs to follow the incoming route.
+    setState(() {
+      _selectedNavIndex = nextIndex;
+    });
   }
 
   // The Nearby tab filters only the available-offer lane, leaving active and
@@ -650,9 +675,14 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   }
 
   void _onNavSelected(int index) {
-    setState(() {
-      _selectedNavIndex = index;
-    });
+    final safeIndex = index.clamp(0, driverBottomNavItems.length - 1).toInt();
+    if (_selectedNavIndex != safeIndex) {
+      setState(() {
+        _selectedNavIndex = safeIndex;
+      });
+    }
+
+    widget.onRouteChanged?.call(driverBottomNavItems[safeIndex].routePath);
   }
 
   @override

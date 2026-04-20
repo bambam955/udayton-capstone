@@ -175,17 +175,72 @@ class DriverPayoutRecord {
 
 /// Navigation item backing the driver's bottom navigation bar.
 class DriverNavItem {
-  const DriverNavItem({required this.icon, required this.label});
+  const DriverNavItem({
+    required this.icon,
+    required this.label,
+    required this.routePath,
+  });
 
   final IconData icon;
   final String label;
+  final String routePath;
 }
+
+const String driverDefaultRoutePath = '/home';
 
 /// Shared nav configuration so the shell and tests derive labels from one list.
 const driverBottomNavItems = <DriverNavItem>[
-  DriverNavItem(icon: Icons.home_rounded, label: 'Home'),
-  DriverNavItem(icon: Icons.place_rounded, label: 'Nearby'),
-  DriverNavItem(icon: Icons.local_shipping_rounded, label: 'Deliveries'),
-  DriverNavItem(icon: Icons.payments_rounded, label: 'Earnings'),
-  DriverNavItem(icon: Icons.headset_mic_rounded, label: 'Support'),
+  DriverNavItem(
+    icon: Icons.home_rounded,
+    label: 'Home',
+    routePath: driverDefaultRoutePath,
+  ),
+  DriverNavItem(
+    icon: Icons.place_rounded,
+    label: 'Nearby',
+    routePath: '/nearby',
+  ),
+  DriverNavItem(
+    icon: Icons.local_shipping_rounded,
+    label: 'Deliveries',
+    routePath: '/deliveries',
+  ),
+  DriverNavItem(
+    icon: Icons.payments_rounded,
+    label: 'Earnings',
+    routePath: '/earnings',
+  ),
+  DriverNavItem(
+    icon: Icons.headset_mic_rounded,
+    label: 'Support',
+    routePath: '/support',
+  ),
 ];
+
+/// Keeps browser URLs, startup routes, and tab indexes aligned.
+String driverNormalizeRoutePath(String? routePath) {
+  final path = routePath == null ? '' : Uri.tryParse(routePath)?.path ?? '';
+  if (path.isEmpty || path == '/') {
+    return driverDefaultRoutePath;
+  }
+
+  for (final item in driverBottomNavItems) {
+    if (item.routePath == path) {
+      return path;
+    }
+  }
+
+  // Unknown app routes should land on a useful page instead of a blank shell.
+  return driverDefaultRoutePath;
+}
+
+int driverNavIndexForRoutePath(String? routePath) {
+  final normalizedRoutePath = driverNormalizeRoutePath(routePath);
+  for (var index = 0; index < driverBottomNavItems.length; index += 1) {
+    if (driverBottomNavItems[index].routePath == normalizedRoutePath) {
+      return index;
+    }
+  }
+
+  return 0;
+}

@@ -142,6 +142,39 @@ void main() {
     });
   });
 
+  testWidgets('Driver app opens the nearby tab from the /nearby route', (
+    WidgetTester tester,
+  ) async {
+    final platformDispatcher = tester.binding.platformDispatcher;
+    platformDispatcher.defaultRouteNameTestValue = '/nearby';
+    addTearDown(platformDispatcher.clearDefaultRouteNameTestValue);
+
+    final sessionStore = InMemorySessionStore();
+    final apiClient = _FakeDriverApiClient();
+    final dependencies = DriverAppDependencies(
+      authApi: AuthApi(apiClient, sessionStore),
+      driverApi: DriverMobileApi(apiClient),
+      resourceApi: ResourceApi(apiClient),
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-email')),
+      'driver@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-password')),
+      'secret',
+    );
+    await tester.tap(find.byKey(const Key('driver-auth-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('driver-tab-nearby')), findsOneWidget);
+    expect(find.byKey(const Key('driver-nearby-card-del-1')), findsOneWidget);
+  });
+
   testWidgets('Driver app toggles online status and refreshes shared offers', (
     WidgetTester tester,
   ) async {

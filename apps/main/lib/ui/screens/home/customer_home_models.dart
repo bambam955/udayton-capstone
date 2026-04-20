@@ -161,17 +161,72 @@ class CustomerAccountOverview {
 
 /// Navigation item backing the customer's bottom navigation bar.
 class CustomerNavItem {
-  const CustomerNavItem({required this.icon, required this.label});
+  const CustomerNavItem({
+    required this.icon,
+    required this.label,
+    required this.routePath,
+  });
 
   final IconData icon;
   final String label;
+  final String routePath;
 }
+
+const String customerDefaultRoutePath = '/home';
 
 /// Shared nav configuration so labels/icons stay aligned across shell and tests.
 const customerBottomNavItems = <CustomerNavItem>[
-  CustomerNavItem(icon: Icons.home_rounded, label: 'Home'),
-  CustomerNavItem(icon: Icons.search_rounded, label: 'Search'),
-  CustomerNavItem(icon: Icons.receipt_long_rounded, label: 'Orders'),
-  CustomerNavItem(icon: Icons.headset_mic_rounded, label: 'Support'),
-  CustomerNavItem(icon: Icons.person_outline_rounded, label: 'Account'),
+  CustomerNavItem(
+    icon: Icons.home_rounded,
+    label: 'Home',
+    routePath: customerDefaultRoutePath,
+  ),
+  CustomerNavItem(
+    icon: Icons.search_rounded,
+    label: 'Search',
+    routePath: '/search',
+  ),
+  CustomerNavItem(
+    icon: Icons.receipt_long_rounded,
+    label: 'Orders',
+    routePath: '/orders',
+  ),
+  CustomerNavItem(
+    icon: Icons.headset_mic_rounded,
+    label: 'Support',
+    routePath: '/support',
+  ),
+  CustomerNavItem(
+    icon: Icons.person_outline_rounded,
+    label: 'Account',
+    routePath: '/account',
+  ),
 ];
+
+/// Keeps browser URLs, startup routes, and tab indexes aligned.
+String customerNormalizeRoutePath(String? routePath) {
+  final path = routePath == null ? '' : Uri.tryParse(routePath)?.path ?? '';
+  if (path.isEmpty || path == '/') {
+    return customerDefaultRoutePath;
+  }
+
+  for (final item in customerBottomNavItems) {
+    if (item.routePath == path) {
+      return path;
+    }
+  }
+
+  // Unknown app routes should land on a useful page instead of a blank shell.
+  return customerDefaultRoutePath;
+}
+
+int customerNavIndexForRoutePath(String? routePath) {
+  final normalizedRoutePath = customerNormalizeRoutePath(routePath);
+  for (var index = 0; index < customerBottomNavItems.length; index += 1) {
+    if (customerBottomNavItems[index].routePath == normalizedRoutePath) {
+      return index;
+    }
+  }
+
+  return 0;
+}
