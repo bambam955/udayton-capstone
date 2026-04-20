@@ -307,6 +307,31 @@ void main() {
 
     expect(find.byKey(const Key('order-cancel-action')), findsNothing);
   });
+
+  testWidgets('Add-to-cart snackbar uses a short display duration', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(tester, apiClient: _FakeApiClient());
+    await _login(tester);
+
+    final addButton = find.byKey(const Key('add-to-cart-prod-1'));
+    await tester.ensureVisible(addButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addButton);
+
+    // The add-to-cart flow performs several immediate fake API calls before
+    // showing the snackbar, so pump a few frames without settling through the
+    // snackbar timeout.
+    for (var i = 0; i < 5; i += 1) {
+      await tester.pump();
+    }
+
+    expect(find.text('Fuji Apple added to cart.'), findsOneWidget);
+    expect(
+      tester.widget<SnackBar>(find.byType(SnackBar)).duration,
+      const Duration(milliseconds: 1500),
+    );
+  });
 }
 
 // Small fake client that mirrors the handful of routes exercised by the widget
@@ -336,6 +361,7 @@ class _FakeApiClient implements ApiClient {
   final List<_FakeAddressRecord> _addresses;
   late int _nextAddressNumber;
   Map<String, Object?>? lastAddressCreateBody;
+  int _cartQuantity = 2;
 
   @override
   Future<ApiResponse<T>> send<T>(
@@ -359,6 +385,19 @@ class _FakeApiClient implements ApiClient {
       return ApiResponse<T>(statusCode: 200, data: data);
     }
 
+    if (request.method == 'PATCH' &&
+        request.path.startsWith('/v1/cart-items/')) {
+      final body = Map<String, Object?>.from(
+        request.body! as Map<Object?, Object?>,
+      );
+      _cartQuantity = (body['quantity'] as num?)?.toInt() ?? _cartQuantity;
+      final raw = <String, Object?>{
+        'data': _cartItemJson(quantity: _cartQuantity),
+      };
+      final data = decoder == null ? raw as T : decoder(raw);
+      return ApiResponse<T>(statusCode: 200, data: data);
+    }
+
     final raw = switch ('${request.method} ${request.path}') {
       'POST /v1/auth/login' => <String, Object?>{
           'accessToken': 'token-1',
@@ -377,19 +416,7 @@ class _FakeApiClient implements ApiClient {
         ),
       'GET /v1/mobile/customer/catalog' => _catalogJson(),
       'GET /v1/cart-items' => <String, Object?>{
-          'data': <Object?>[
-            <String, Object?>{
-              'cart_item_id': 'cart-item-1',
-              'cart_id': 'cart-1',
-              'product_id': 'prod-1',
-              'external_sku': 'sku-1',
-              'name_snapshot': 'Fuji Apple',
-              'unit_price_cents': 250,
-              'quantity': 2,
-              'substitution_allowed': true,
-              'notes': null,
-            },
-          ],
+          'data': <Object?>[_cartItemJson(quantity: _cartQuantity)],
         },
       'GET /v1/order-status-history' => _orderTimelineResponse(),
       'POST /v1/addresses' => _createAddress(
@@ -402,6 +429,20 @@ class _FakeApiClient implements ApiClient {
 
     final data = decoder == null ? raw as T : decoder(raw);
     return ApiResponse<T>(statusCode: 200, data: data);
+  }
+
+  Map<String, Object?> _cartItemJson({required int quantity}) {
+    return <String, Object?>{
+      'cart_item_id': 'cart-item-1',
+      'cart_id': 'cart-1',
+      'product_id': 'prod-1',
+      'external_sku': 'sku-1',
+      'name_snapshot': 'Fuji Apple',
+      'unit_price_cents': 250,
+      'quantity': quantity,
+      'substitution_allowed': true,
+      'notes': null,
+    };
   }
 
   Object _orderTimelineResponse() {
