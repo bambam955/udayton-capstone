@@ -72,6 +72,21 @@ void main() {
     );
   });
 
+  testWidgets('Customer app opens the support tab from the /support route', (
+    WidgetTester tester,
+  ) async {
+    await _pumpApp(
+      tester,
+      apiClient: _FakeApiClient(),
+      initialRoutePath: '/support',
+    );
+
+    await _login(tester);
+
+    expect(find.byKey(const Key('main-tab-support')), findsOneWidget);
+    expect(find.byKey(const Key('support-ticket-ticket-1')), findsOneWidget);
+  });
+
   testWidgets('Customer order details show an error state on timeline failure',
       (
     WidgetTester tester,
@@ -538,7 +553,14 @@ class _FakeApiClient implements ApiClient {
 Future<void> _pumpApp(
   WidgetTester tester, {
   required ApiClient apiClient,
+  String? initialRoutePath,
 }) async {
+  if (initialRoutePath != null) {
+    final platformDispatcher = tester.binding.platformDispatcher;
+    platformDispatcher.defaultRouteNameTestValue = initialRoutePath;
+    addTearDown(platformDispatcher.clearDefaultRouteNameTestValue);
+  }
+
   final sessionStore = InMemorySessionStore();
   final dependencies = CustomerAppDependencies(
     authApi: AuthApi(apiClient, sessionStore),

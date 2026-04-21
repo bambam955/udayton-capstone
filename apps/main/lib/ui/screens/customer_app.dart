@@ -10,9 +10,13 @@ class CustomerApp extends StatefulWidget {
   const CustomerApp({
     super.key,
     required this.dependencies,
+    required this.initialRoutePath,
+    required this.onRouteChanged,
   });
 
   final CustomerAppDependencies dependencies;
+  final String initialRoutePath;
+  final ValueChanged<String> onRouteChanged;
 
   @override
   State<CustomerApp> createState() => _CustomerAppState();
@@ -104,6 +108,8 @@ class _CustomerAppState extends State<CustomerApp> {
       customerApi: widget.dependencies.customerApi,
       resourceApi: widget.dependencies.resourceApi,
       onSignedOut: _handleSignedOut,
+      initialRoutePath: widget.initialRoutePath,
+      onRouteChanged: widget.onRouteChanged,
     );
   }
 }

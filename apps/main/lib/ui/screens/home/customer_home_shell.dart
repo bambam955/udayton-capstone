@@ -25,6 +25,8 @@ class CustomerHomeShell extends StatefulWidget {
     required this.customerApi,
     required this.resourceApi,
     required this.onSignedOut,
+    this.initialRoutePath = customerDefaultRoutePath,
+    this.onRouteChanged,
   });
 
   final ApiSession session;
@@ -32,6 +34,8 @@ class CustomerHomeShell extends StatefulWidget {
   final CustomerMobileApi customerApi;
   final ResourceApi resourceApi;
   final VoidCallback onSignedOut;
+  final String initialRoutePath;
+  final ValueChanged<String>? onRouteChanged;
 
   @override
   State<CustomerHomeShell> createState() => _CustomerHomeShellState();
@@ -44,7 +48,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   String? _selectedStoreId;
   String _selectedCatalogCategory = 'All';
   String _catalogSearchQuery = '';
-  int _selectedNavIndex = 0;
+  late int _selectedNavIndex;
   bool _isLoading = true;
   bool _isMutating = false;
   bool _isSubmittingSupport = false;
@@ -54,7 +58,39 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   @override
   void initState() {
     super.initState();
+    _selectedNavIndex = customerNavIndexForRoutePath(widget.initialRoutePath);
     _refreshBootstrap();
+  }
+
+  @override
+  void didUpdateWidget(covariant CustomerHomeShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.initialRoutePath == oldWidget.initialRoutePath) {
+      return;
+    }
+
+    final nextIndex = customerNavIndexForRoutePath(widget.initialRoutePath);
+    if (nextIndex == _selectedNavIndex) {
+      return;
+    }
+
+    // Browser back/forward updates arrive as route changes from the root
+    // router, so the selected tab needs to follow the incoming route.
+    setState(() {
+      _selectedNavIndex = nextIndex;
+    });
+  }
+
+  void _selectNavIndex(int index) {
+    final safeIndex = index.clamp(0, customerBottomNavItems.length - 1).toInt();
+    if (_selectedNavIndex != safeIndex) {
+      setState(() {
+        _selectedNavIndex = safeIndex;
+      });
+    }
+
+    widget.onRouteChanged?.call(customerBottomNavItems[safeIndex].routePath);
   }
 
   // Store options are derived from the bootstrap payload so the rest of the
@@ -404,9 +440,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     if (!selectedStore.isConnected) {
       // Store connections are a prerequisite for checkout, so redirect the user
       // toward the account tab instead of silently failing.
-      setState(() {
-        _selectedNavIndex = 4;
-      });
+      _selectNavIndex(4);
       _showMessage(
           'Connect ${selectedStore.name} in Account before adding items.');
       return;
@@ -565,9 +599,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
     if (addressId == null) {
       // Checkout requires an address, so move the user to the account tab where
       // address creation lives.
-      setState(() {
-        _selectedNavIndex = 4;
-      });
+      _selectNavIndex(4);
       _showMessage('Add a delivery address in Account before checking out.');
       return;
     }
@@ -589,9 +621,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
         return;
       }
 
-      setState(() {
-        _selectedNavIndex = 2;
-      });
+      _selectNavIndex(2);
       _showMessage('Order ${checkout.order.orderId} placed successfully.');
     } on ApiError catch (error) {
       await _handleApiError(error,
@@ -846,9 +876,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
   Future<void> _onProfileAction(String action) async {
     switch (action) {
       case 'view_account':
-        setState(() {
-          _selectedNavIndex = 4;
-        });
+        _selectNavIndex(4);
       case 'sign_out':
         // Sign-out is best effort on the network side, but the local shell
         // should always transition back to auth.
@@ -1259,11 +1287,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
           },
           onAddToCart: _addToCart,
           quantityInCartForItem: _quantityInCartForItem,
-          onGoToHome: () {
-            setState(() {
-              _selectedNavIndex = 0;
-            });
-          },
+          onGoToHome: () => _selectNavIndex(0),
           formatPrice: _formatPrice,
         ),
       2 => CustomerTabOrders(
@@ -1319,11 +1343,7 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
       bottomNavigationBar: _BottomNavBar(
         items: customerBottomNavItems,
         selectedIndex: _selectedNavIndex,
-        onSelected: (index) {
-          setState(() {
-            _selectedNavIndex = index;
-          });
-        },
+        onSelected: _selectNavIndex,
       ),
     );
   }

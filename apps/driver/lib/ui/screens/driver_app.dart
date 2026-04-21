@@ -10,9 +10,13 @@ class DriverApp extends StatefulWidget {
   const DriverApp({
     super.key,
     required this.dependencies,
+    required this.initialRoutePath,
+    required this.onRouteChanged,
   });
 
   final DriverAppDependencies dependencies;
+  final String initialRoutePath;
+  final ValueChanged<String> onRouteChanged;
 
   @override
   State<DriverApp> createState() => _DriverAppState();
@@ -106,6 +110,8 @@ class _DriverAppState extends State<DriverApp> {
       driverApi: widget.dependencies.driverApi,
       resourceApi: widget.dependencies.resourceApi,
       onSignedOut: _handleSignedOut,
+      initialRoutePath: widget.initialRoutePath,
+      onRouteChanged: widget.onRouteChanged,
     );
   }
 }
