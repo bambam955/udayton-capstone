@@ -10,26 +10,53 @@ class DriverTabNearby extends StatelessWidget {
     super.key,
     required this.availableJobs,
     required this.onSearchChanged,
+    required this.onRefreshOffers,
     required this.onAccept,
     required this.onViewDetails,
     required this.isBusy,
+    required this.isRefreshingOffers,
   });
 
   final List<DriverJob> availableJobs;
   final ValueChanged<String> onSearchChanged;
+  final VoidCallback onRefreshOffers;
   final ValueChanged<String> onAccept;
   final ValueChanged<DriverJob> onViewDetails;
   final bool isBusy;
+  final bool isRefreshingOffers;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final isRefreshDisabled = isBusy || isRefreshingOffers;
+    final refreshIcon = isRefreshingOffers
+        ? const SizedBox(
+            key: Key('driver-nearby-refresh-spinner'),
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.refresh_rounded);
 
     return Column(
       key: const Key('driver-tab-nearby'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Nearby Offers', style: textTheme.headlineSmall),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text('Nearby Offers', style: textTheme.headlineSmall),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
+              key: const Key('driver-nearby-refresh'),
+              onPressed: isRefreshDisabled ? null : onRefreshOffers,
+              icon: refreshIcon,
+              label: const Text('Refresh'),
+            ),
+          ],
+        ),
         const SizedBox(height: 6),
         Text(
           'Find the best nearby route and tap to accept.',

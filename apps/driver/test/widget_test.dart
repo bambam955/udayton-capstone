@@ -222,12 +222,106 @@ void main() {
     expect(find.text('ONLINE'), findsOneWidget);
     expect(find.byKey(const Key('driver-nearby-card-del-1')), findsOneWidget);
   });
+
+  testWidgets('Driver app manually refreshes nearby offers', (
+    WidgetTester tester,
+  ) async {
+    final sessionStore = InMemorySessionStore();
+    final apiClient = _FakeDriverApiClient();
+    final dependencies = DriverAppDependencies(
+      authApi: AuthApi(apiClient, sessionStore),
+      driverApi: DriverMobileApi(apiClient),
+      resourceApi: ResourceApi(apiClient),
+    );
+    const refreshDelay = Duration(milliseconds: 200);
+
+    Future<void> selectDriverTab(int index) async {
+      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      navBar.onDestinationSelected?.call(index);
+      await tester.pumpAndSettle();
+    }
+
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-email')),
+      'driver@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const Key('driver-auth-password')),
+      'secret',
+    );
+    await tester.tap(find.byKey(const Key('driver-auth-submit')));
+    await tester.pumpAndSettle();
+
+    await selectDriverTab(1);
+
+    expect(find.byKey(const Key('driver-nearby-refresh')), findsOneWidget);
+    expect(find.byKey(const Key('driver-nearby-card-del-1')), findsOneWidget);
+    expect(find.byKey(const Key('driver-nearby-card-del-2')), findsNothing);
+
+    apiClient.bootstrapDelay = refreshDelay;
+    apiClient.replaceAvailableJobs(
+      <Map<String, Object?>>[
+        _jobJson(
+          'available',
+          deliveryId: 'del-2',
+          orderId: 'ord-2',
+          title: 'Airport Express Run',
+          pickupName: 'Airport Market',
+          pickupAddressLine: '200 Skyway Blvd',
+          dropoffName: 'Southside Cafe',
+          dropoffAddressLine: '22 Cedar Ave',
+          zone: 'Airport',
+          payoutEstimateCents: 1825,
+          distanceMiles: 6.1,
+          etaMinutes: 24,
+        ),
+      ],
+    );
+
+    final enabledRefreshButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('driver-nearby-refresh')),
+    );
+    expect(enabledRefreshButton.onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const Key('driver-nearby-refresh')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('driver-nearby-card-del-1')), findsOneWidget);
+    expect(
+        find.byKey(const Key('driver-nearby-refresh-spinner')), findsOneWidget);
+
+    final disabledRefreshButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('driver-nearby-refresh')),
+    );
+    expect(disabledRefreshButton.onPressed, isNull);
+
+    await tester.pump(refreshDelay);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('driver-nearby-card-del-1')), findsNothing);
+    expect(find.byKey(const Key('driver-nearby-card-del-2')), findsOneWidget);
+    expect(find.text('Airport Express Run'), findsOneWidget);
+    expect(
+        find.byKey(const Key('driver-nearby-refresh-spinner')), findsNothing);
+
+    final reenabledRefreshButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('driver-nearby-refresh')),
+    );
+    expect(reenabledRefreshButton.onPressed, isNotNull);
+  });
 }
 
 class _FakeDriverApiClient implements ApiClient {
   String _stage = 'available';
   String _driverStatus = 'ONLINE';
+  Duration bootstrapDelay = Duration.zero;
   Map<String, Object?>? lastSignupBody;
+  List<Map<String, Object?>> _availableJobs = <Map<String, Object?>>[
+    _jobJson('available'),
+  ];
   final List<Map<String, Object?>> _supportTickets = <Map<String, Object?>>[
     <String, Object?>{
       'ticketId': 'ticket-1',
@@ -243,75 +337,92 @@ class _FakeDriverApiClient implements ApiClient {
     ApiRequest request, {
     ApiDecoder<T>? decoder,
   }) async {
+    final requestKey = '${request.method} ${request.path}';
+
     if (request.method == 'POST' && request.path == '/v1/auth/signup') {
       lastSignupBody = Map<String, Object?>.from(
         request.body! as Map<Object?, Object?>,
       );
     }
 
-    final raw = switch ('${request.method} ${request.path}') {
-      'POST /v1/auth/signup' => <String, Object?>{
-          'accessToken': 'driver-signup-token',
-          'expiresAt': '2099-01-01T00:00:00.000Z',
-          'user': <String, Object?>{
-            'id': 'driver-2',
-            'role': 'driver',
-            'email': 'newdriver@example.com',
-          },
-        },
-      'POST /v1/auth/login' => <String, Object?>{
-          'accessToken': 'driver-token',
-          'expiresAt': '2099-01-01T00:00:00.000Z',
-          'user': <String, Object?>{
-            'id': 'driver-1',
-            'role': 'driver',
-            'email': 'driver@example.com',
-          },
-        },
-      'GET /v1/mobile/driver/bootstrap' =>
-        _bootstrapJson(_stage, _supportTickets, _driverStatus),
-      'POST /v1/mobile/driver/deliveries/del-1/accept' =>
-        _transition('assigned'),
-      'POST /v1/mobile/driver/deliveries/del-1/pickup' =>
-        _transition('out_for_delivery'),
-      'POST /v1/mobile/driver/deliveries/del-1/complete' =>
-        _transition('delivered'),
-      'PATCH /v1/drivers/driver-1' => _updateDriverStatus(request.body),
-      'GET /v1/driver-earnings' => <String, Object?>{
-          'data': <Object?>[
-            <String, Object?>{
-              'earning_id': 'earn-1',
-              'driver_id': 'driver-1',
-              'delivery_id': 'del-1',
-              'base_pay_cents': 800,
-              'bonus_cents': 200,
-              'tip_cents': 450,
-              'total_pay_cents': 1450,
-              'currency': 'USD',
-              'status': 'POSTED',
+    late final Object? raw;
+    if (requestKey == 'GET /v1/mobile/driver/bootstrap') {
+      if (bootstrapDelay > Duration.zero) {
+        await Future<void>.delayed(bootstrapDelay);
+      }
+      raw = _bootstrapJson(
+        _stage,
+        _supportTickets,
+        _driverStatus,
+        _availableJobs,
+      );
+    } else {
+      raw = switch (requestKey) {
+        'POST /v1/auth/signup' => <String, Object?>{
+            'accessToken': 'driver-signup-token',
+            'expiresAt': '2099-01-01T00:00:00.000Z',
+            'user': <String, Object?>{
+              'id': 'driver-2',
+              'role': 'driver',
+              'email': 'newdriver@example.com',
             },
-          ],
-        },
-      'GET /v1/driver-payouts' => <String, Object?>{
-          'data': <Object?>[
-            <String, Object?>{
-              'payout_id': 'payout-1',
-              'driver_id': 'driver-1',
-              'amount_cents': 1450,
-              'currency': 'USD',
-              'status': 'PENDING',
-              'provider': 'Stripe',
-              'provider_ref': 'ref-1',
+          },
+        'POST /v1/auth/login' => <String, Object?>{
+            'accessToken': 'driver-token',
+            'expiresAt': '2099-01-01T00:00:00.000Z',
+            'user': <String, Object?>{
+              'id': 'driver-1',
+              'role': 'driver',
+              'email': 'driver@example.com',
             },
-          ],
-        },
-      'POST /v1/driver-support-tickets' => _createSupportTicket(),
-      _ => throw StateError(
-          'Unexpected request: ${request.method} ${request.path}'),
-    };
+          },
+        'POST /v1/mobile/driver/deliveries/del-1/accept' =>
+          _transition('assigned'),
+        'POST /v1/mobile/driver/deliveries/del-1/pickup' =>
+          _transition('out_for_delivery'),
+        'POST /v1/mobile/driver/deliveries/del-1/complete' =>
+          _transition('delivered'),
+        'PATCH /v1/drivers/driver-1' => _updateDriverStatus(request.body),
+        'GET /v1/driver-earnings' => <String, Object?>{
+            'data': <Object?>[
+              <String, Object?>{
+                'earning_id': 'earn-1',
+                'driver_id': 'driver-1',
+                'delivery_id': 'del-1',
+                'base_pay_cents': 800,
+                'bonus_cents': 200,
+                'tip_cents': 450,
+                'total_pay_cents': 1450,
+                'currency': 'USD',
+                'status': 'POSTED',
+              },
+            ],
+          },
+        'GET /v1/driver-payouts' => <String, Object?>{
+            'data': <Object?>[
+              <String, Object?>{
+                'payout_id': 'payout-1',
+                'driver_id': 'driver-1',
+                'amount_cents': 1450,
+                'currency': 'USD',
+                'status': 'PENDING',
+                'provider': 'Stripe',
+                'provider_ref': 'ref-1',
+              },
+            ],
+          },
+        'POST /v1/driver-support-tickets' => _createSupportTicket(),
+        _ => throw StateError(
+            'Unexpected request: ${request.method} ${request.path}'),
+      };
+    }
 
     final data = decoder == null ? raw as T : decoder(raw);
     return ApiResponse<T>(statusCode: 200, data: data);
+  }
+
+  void replaceAvailableJobs(List<Map<String, Object?>> jobs) {
+    _availableJobs = jobs;
   }
 
   Map<String, Object?> _transition(String stage) {
@@ -366,6 +477,7 @@ Map<String, Object?> _bootstrapJson(
   String stage,
   List<Map<String, Object?>> supportTickets,
   String driverStatus,
+  List<Map<String, Object?>> availableJobs,
 ) {
   return <String, Object?>{
     'driver': <String, Object?>{
@@ -375,7 +487,7 @@ Map<String, Object?> _bootstrapJson(
       'status': driverStatus,
     },
     'availableJobs': stage == 'available' && driverStatus == 'ONLINE'
-        ? <Object?>[_jobJson('available')]
+        ? <Object?>[...availableJobs]
         : <Object?>[],
     'activeJobs': stage == 'assigned' || stage == 'out_for_delivery'
         ? <Object?>[_jobJson(stage)]
@@ -392,28 +504,46 @@ Map<String, Object?> _bootstrapJson(
   };
 }
 
-Map<String, Object?> _jobJson(String stage) {
+Map<String, Object?> _jobJson(
+  String stage, {
+  String deliveryId = 'del-1',
+  String orderId = 'ord-1',
+  String title = 'Downtown Pantry Run',
+  String pickupLocationId = 'loc-1',
+  String pickupName = 'Downtown Market',
+  String pickupAddressLine = '100 Main St',
+  double pickupLat = 35.2271,
+  double pickupLng = -80.8431,
+  String dropoffName = 'Northside Deli',
+  String dropoffAddressLine = '1 Elm St',
+  String zone = 'Uptown',
+  int payoutEstimateCents = 1450,
+  double distanceMiles = 4.2,
+  int etaMinutes = 18,
+  int basePayCents = 800,
+  int tipCents = 450,
+}) {
   return <String, Object?>{
-    'deliveryId': 'del-1',
-    'orderId': 'ord-1',
-    'title': 'Downtown Pantry Run',
-    'pickupLocationId': 'loc-1',
-    'pickupName': 'Downtown Market',
-    'pickupAddressLine': '100 Main St',
-    'pickupLat': 35.2271,
-    'pickupLng': -80.8431,
-    'dropoffName': 'Northside Deli',
-    'dropoffAddressLine': '1 Elm St',
-    'zone': 'Uptown',
-    'payoutEstimateCents': 1450,
-    'distanceMiles': 4.2,
-    'etaMinutes': 18,
+    'deliveryId': deliveryId,
+    'orderId': orderId,
+    'title': title,
+    'pickupLocationId': pickupLocationId,
+    'pickupName': pickupName,
+    'pickupAddressLine': pickupAddressLine,
+    'pickupLat': pickupLat,
+    'pickupLng': pickupLng,
+    'dropoffName': dropoffName,
+    'dropoffAddressLine': dropoffAddressLine,
+    'zone': zone,
+    'payoutEstimateCents': payoutEstimateCents,
+    'distanceMiles': distanceMiles,
+    'etaMinutes': etaMinutes,
     'stage': stage,
     'detailLines': <Object?>[
       'Pickup window: ASAP',
       'Proof required: Photo',
     ],
-    'basePayCents': 800,
-    'tipCents': 450,
+    'basePayCents': basePayCents,
+    'tipCents': tipCents,
   };
 }
