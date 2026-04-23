@@ -40,7 +40,19 @@ export class ApiClientError extends Error {
 }
 
 function getApiBaseUrl() {
-  return process.env.BIZRUSH_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  // Prefer an explicit full URL when one is configured. Render Blueprints
+  // cannot interpolate "http://" with a referenced host:port, so production
+  // deploys can instead provide the internal hostport and let the admin app
+  // derive the private-network base URL itself.
+  if (process.env.BIZRUSH_API_BASE_URL) {
+    return process.env.BIZRUSH_API_BASE_URL;
+  }
+
+  if (process.env.BIZRUSH_API_HOSTPORT) {
+    return `http://${process.env.BIZRUSH_API_HOSTPORT}`;
+  }
+
+  return DEFAULT_API_BASE_URL;
 }
 
 function buildUrl(path: string, query?: ResourceQuery) {
