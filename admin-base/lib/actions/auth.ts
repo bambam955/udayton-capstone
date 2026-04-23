@@ -30,16 +30,16 @@ export async function loginAction(
 
   try {
     const result = await loginAdmin(email, password);
-    const cookieStore = await cookies();
+    // const cookieStore = await cookies();
 
-    cookieStore.set(ADMIN_ACCESS_TOKEN_COOKIE, result.accessToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: ADMIN_ACCESS_TOKEN_MAX_AGE_SECONDS,
-      expires: new Date(result.expiresAt),
-    });
+    // cookieStore.set(ADMIN_ACCESS_TOKEN_COOKIE, result.accessToken, {
+    //   httpOnly: true,
+    //   sameSite: "lax",
+    //   secure: process.env.NODE_ENV === "production",
+    //   path: "/",
+    //   maxAge: ADMIN_ACCESS_TOKEN_MAX_AGE_SECONDS,
+    //   expires: new Date(result.expiresAt),
+    // });
   } catch (error) {
     if (error instanceof ApiClientError) {
       return {
