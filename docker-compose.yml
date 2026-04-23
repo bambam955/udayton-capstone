@@ -10,7 +10,8 @@ services:
 
   api:
     build:
-      context: ./api
+      context: .
+      dockerfile: ./api/Dockerfile
       target: dev
     volumes:
       - ./api:/workspace

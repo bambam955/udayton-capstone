@@ -4,27 +4,27 @@
 
 services:
   - type: web
-    runtime: node
+    runtime: docker
     name: bizrush-beta-api
     plan: free
     region: ohio
     autoDeploy: true
-    buildCommand: cd api && npm ci --no-audit --no-fund && npm run build
-    # Free web services do not support Render's pre-deploy command, so the API
-    # runs Flyway and the beta-only seed during process startup instead. Flyway
-    # keeps the sequence idempotent across restarts and redeploys.
-    startCommand: ./scripts/render/install_flyway.sh && node ./scripts/render/run_api_migrations.mjs --include-beta-seed && cd api && npm run start
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     buildFilter:
       paths:
+        - .dockerignore
         - api/**
         - db/**
         - scripts/**
     envVars:
-      - key: NODE_VERSION
-        value: 22.22.0
       - key: NODE_ENV
         value: production
+      # Free web services do not support a separate pre-deploy step, so the
+      # Docker entrypoint runs Flyway and the beta-only seed during startup.
+      - key: BIZRUSH_INCLUDE_BETA_SEED
+        value: "true"
       - key: DATABASE_URL
         fromDatabase:
           name: bizrush-beta-db
@@ -35,20 +35,18 @@ services:
         sync: false
 
   - type: web
-    runtime: node
+    runtime: docker
     name: bizrush-beta-admin
     plan: free
     region: ohio
     autoDeploy: true
-    buildCommand: cd admin-base && npm ci --no-audit --no-fund && npm run build
-    startCommand: cd admin-base && npm run start
+    dockerfilePath: ./admin-base/Dockerfile
+    dockerContext: ./admin-base
     healthCheckPath: /login
     buildFilter:
       paths:
         - admin-base/**
     envVars:
-      - key: NODE_VERSION
-        value: 22.22.0
       - key: NODE_ENV
         value: production
       # Render Blueprints do not support interpolating "http://" with a
