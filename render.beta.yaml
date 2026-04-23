@@ -1,0 +1,69 @@
+# Render Blueprint for the seeded beta/demo environment.
+# This file provisions the API, admin dashboard, and a managed PostgreSQL
+# database together so the presentation environment can be recreated from git.
+
+services:
+  - type: web
+    runtime: node
+    name: bizrush-beta-api
+    plan: free
+    region: ohio
+    autoDeploy: true
+    buildCommand: cd api && npm ci --no-audit --no-fund && npm run build
+    # Free web services do not support Render's pre-deploy command, so the API
+    # runs Flyway and the beta-only seed during process startup instead. Flyway
+    # keeps the sequence idempotent across restarts and redeploys.
+    startCommand: ./scripts/render/install_flyway.sh && node ./scripts/render/run_api_migrations.mjs --include-beta-seed && cd api && npm run start
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - api/**
+        - db/**
+        - scripts/**
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bizrush-beta-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BETA_ADMIN_SEED_PASSWORD
+        sync: false
+
+  - type: web
+    runtime: node
+    name: bizrush-beta-admin
+    plan: free
+    region: ohio
+    autoDeploy: true
+    buildCommand: cd admin-base && npm ci --no-audit --no-fund && npm run build
+    startCommand: cd admin-base && npm run start
+    healthCheckPath: /login
+    buildFilter:
+      paths:
+        - admin-base/**
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: NODE_ENV
+        value: production
+      # Render Blueprints do not support interpolating "http://" with a
+      # referenced hostport value, so the admin app derives the full base URL at
+      # runtime from this internal host:port pair.
+      - key: BIZRUSH_API_HOSTPORT
+        fromService:
+          type: web
+          name: bizrush-beta-api
+          property: hostport
+
+databases:
+  - name: bizrush-beta-db
+    plan: free
+    region: ohio
+    postgresMajorVersion: "16"
+    databaseName: bizrush
+    user: bizrush
