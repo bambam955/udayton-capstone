@@ -60,6 +60,9 @@ export function makeTestApp(options?: {
       getCustomerCatalog: vi.fn(),
       connectRetailer: vi.fn(),
       disconnectRetailer: vi.fn(),
+      // Keep the test double aligned with the full mobile contract so
+      // production builds do not fail when the service surface expands.
+      cancelOrder: vi.fn(),
       checkout: vi.fn(),
       getDriverBootstrap: vi.fn(),
       acceptDelivery: vi.fn(),
