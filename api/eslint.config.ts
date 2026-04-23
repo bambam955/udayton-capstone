@@ -19,7 +19,10 @@ export default defineConfig(
     files: ['src/**/*.ts'],
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.json',
+        // Lint both application code and the test tree with the tsconfig
+        // that actually includes each file. Otherwise ESLint fails on
+        // `src/tests/**` because the app tsconfig intentionally excludes it.
+        project: ['./tsconfig.json', './tsconfig.test.json'],
         tsconfigRootDir: configDir
       }
     },
