@@ -40,16 +40,10 @@ export class ApiClientError extends Error {
 }
 
 function getApiBaseUrl() {
-  // Prefer an explicit full URL when one is configured. Render Blueprints
-  // cannot interpolate "http://" with a referenced host:port, so production
-  // deploys can instead provide the internal hostport and let the admin app
-  // derive the private-network base URL itself.
+  // Keep the admin service on a single explicit API base URL contract across
+  // local Docker, local production smoke tests, and Render deploys.
   if (process.env.BIZRUSH_API_BASE_URL) {
     return process.env.BIZRUSH_API_BASE_URL;
-  }
-
-  if (process.env.BIZRUSH_API_HOSTPORT) {
-    return `http://${process.env.BIZRUSH_API_HOSTPORT}`;
   }
 
   return DEFAULT_API_BASE_URL;

@@ -43,11 +43,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: BIZRUSH_API_HOSTPORT
-        fromService:
-          type: web
-          name: bizrush-prod-api
-          property: hostport
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-prod-api.onrender.com
 
 databases:
   - name: bizrush-prod-db

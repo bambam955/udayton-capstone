@@ -49,14 +49,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Render Blueprints do not support interpolating "http://" with a
-      # referenced hostport value, so the admin app derives the full base URL at
-      # runtime from this internal host:port pair.
-      - key: BIZRUSH_API_HOSTPORT
-        fromService:
-          type: web
-          name: bizrush-beta-api
-          property: hostport
+      # Keep the admin service on the public API URL contract that matches the
+      # working beta deployment path.
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-beta-api.onrender.com
 
 databases:
   - name: bizrush-beta-db
