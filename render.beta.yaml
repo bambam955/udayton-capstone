@@ -1,0 +1,63 @@
+# Render Blueprint for the seeded beta/demo environment.
+# This file provisions the API, admin dashboard, and a managed PostgreSQL
+# database together so the presentation environment can be recreated from git.
+
+services:
+  - type: web
+    runtime: docker
+    name: bizrush-beta-api
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - .dockerignore
+        - api/**
+        - db/**
+        - scripts/**
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Free web services do not support a separate pre-deploy step, so the
+      # Docker entrypoint runs Flyway and the beta-only seed during startup.
+      - key: BIZRUSH_INCLUDE_BETA_SEED
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bizrush-beta-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BETA_ADMIN_SEED_PASSWORD
+        sync: false
+
+  - type: web
+    runtime: docker
+    name: bizrush-beta-admin
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./admin-base/Dockerfile
+    dockerContext: ./admin-base
+    healthCheckPath: /login
+    buildFilter:
+      paths:
+        - admin-base/**
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Keep the admin service on the public API URL contract that matches the
+      # working beta deployment path.
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-beta-api.onrender.com
+
+databases:
+  - name: bizrush-beta-db
+    plan: free
+    region: ohio
+    postgresMajorVersion: "16"
+    databaseName: bizrush
+    user: bizrush

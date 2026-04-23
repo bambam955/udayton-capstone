@@ -17,7 +17,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3001"]
 
 # =============================================================================
-# Prod deps: install all dependencies for build
+# Build deps: install the full dependency set for the Next.js build stage
 # =============================================================================
 FROM node:22-bookworm AS deps
 
@@ -26,7 +26,7 @@ COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 
 # =============================================================================
-# Prod build: compile standalone Next.js output
+# Prod build: compile standalone Next.js output for the runtime image
 # =============================================================================
 FROM node:22-bookworm AS builder
 
@@ -38,7 +38,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # =============================================================================
-# Prod runtime: minimal, non-root
+# Prod runtime: Render runs this stage, while local Compose stays on `dev`
 # =============================================================================
 FROM node:22-bookworm-slim AS prod
 

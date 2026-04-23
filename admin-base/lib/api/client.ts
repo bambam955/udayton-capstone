@@ -40,7 +40,13 @@ export class ApiClientError extends Error {
 }
 
 function getApiBaseUrl() {
-  return process.env.BIZRUSH_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  // Keep the admin service on a single explicit API base URL contract across
+  // local Docker, local production smoke tests, and Render deploys.
+  if (process.env.BIZRUSH_API_BASE_URL) {
+    return process.env.BIZRUSH_API_BASE_URL;
+  }
+
+  return DEFAULT_API_BASE_URL;
 }
 
 function buildUrl(path: string, query?: ResourceQuery) {
