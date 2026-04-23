@@ -40,7 +40,8 @@ seed:
 
 # Delete the local DB.
 clear:
-    docker volume rm -f bizrush_db-data
+    docker compose --project-name bizrush -f ../docker-compose.yml down
+    docker volume rm -f bizrush_pgdata
 
 # Reset the local DB by clearing it and seeding it again.
 reset: clear seed
