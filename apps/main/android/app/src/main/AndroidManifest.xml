@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Release builds need network access for the deployed API as well as
+         debug/profile builds that call the local API from an emulator. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="BizRush"
         android:name="${applicationName}"
