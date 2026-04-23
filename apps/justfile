@@ -3,6 +3,8 @@
 
 set shell := ["bash", "-cu"]
 
+BETA_API_BASE_URL := "https://bizrush-beta-api.onrender.com"
+
 # List available recipes
 default:
     @just --list
@@ -24,6 +26,9 @@ clean app: (_in-app app "flutter clean")
 
 # Build APK (e.g. just build main --release)
 build app *args: (_in-app app "flutter build apk " + args)
+
+# Build release APK against the seeded beta API
+build-beta app *args: (_in-app app "flutter build apk --release --dart-define=BIZRUSH_API_BASE_URL=" + BETA_API_BASE_URL + " " + args)
 
 # Run flutter doctor
 doctor: (_in-app "main" "flutter doctor -v")
