@@ -31,6 +31,13 @@ void main() {
     await tester.tap(find.byKey(const Key('order-view-ord-1')));
     await tester.pumpAndSettle();
     expect(find.text('Order details'), findsOneWidget);
+    expect(find.byKey(const Key('order-receipt-section')), findsOneWidget);
+    expect(find.byKey(const Key('order-receipt-items')), findsOneWidget);
+    expect(find.text('3 items'), findsWidgets);
+    expect(find.byKey(const Key('order-receipt-total')), findsOneWidget);
+    expect(find.text(r'$45.50'), findsWidgets);
+    expect(find.byKey(const Key('order-receipt-status')), findsOneWidget);
+    expect(find.text('SUBMITTED'), findsWidgets);
     expect(
         find.byKey(const Key('order-timeline-status-hist-1')), findsOneWidget);
     expect(find.text('Submitted'), findsOneWidget);
