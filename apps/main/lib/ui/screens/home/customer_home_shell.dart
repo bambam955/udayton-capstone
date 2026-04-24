@@ -1650,7 +1650,7 @@ class _AddressDialogState extends State<_AddressDialog> {
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               key: const Key('address-state-field'),
-              value: _selectedState,
+              initialValue: _selectedState,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'State'),
               items: [

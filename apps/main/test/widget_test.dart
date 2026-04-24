@@ -631,6 +631,15 @@ Future<void> _selectDropdownItem(
   await tester.pumpAndSettle();
   await tester.tap(field);
   await tester.pumpAndSettle();
+  final option = find.text(label);
+  if (option.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      option,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+  }
   await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
 }
