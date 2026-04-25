@@ -62,7 +62,7 @@ CPS 491 - Spring 2026
 
 ## Client Information <a name="client-info"></a>
 
-Shirley Mayo-Mitchell
+Shelley Mayo-Mitchell
 
 # Project: BizRush <a name="project"></a>
 
