@@ -45,5 +45,5 @@ Tidiane:
 
 Bennett:
 
-- Finalize reliable localhost passthrough and deployment workflow for Android testing and backend connectivity.
+- Finalize deployment of backend web services, frontend apps (deployed as web apps for now), and admin dashboard.
 - Continue frontend-backend bug fixes and UX refinements identified during integration.
