@@ -1,0 +1,15 @@
+server {
+    # Render routes public traffic to the port the container binds here.
+    listen       ${PORT};
+    listen  [::]:${PORT};
+    server_name  _;
+
+    root   /usr/share/nginx/html;
+    index  index.html;
+
+    # Flutter web uses client-side routing, so unknown paths must fall back to
+    # the shell entrypoint instead of returning nginx's default 404 page.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

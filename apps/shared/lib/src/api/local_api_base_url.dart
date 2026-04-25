@@ -1,13 +1,15 @@
 import 'package:flutter/foundation.dart';
 
-/// Resolves the local development API URL for host-run Flutter apps.
+/// Compile-time variable used by mobile builds to target a deployed API.
+const _configuredApiBaseUrl = String.fromEnvironment('BIZRUSH_API_BASE_URL');
+
+/// Resolves the API URL shared by all Flutter app builds.
 ///
-/// Android emulators cannot reach services on the host machine through
-/// `localhost`, so they need the special `10.0.2.2` alias instead. All other
-/// current local targets can keep using `localhost` unless a caller supplies an
-/// explicit override through `--dart-define`.
-String resolveLocalApiBaseUrl({
-  String configuredBaseUrl = '',
+/// Production/demo builds should pass `BIZRUSH_API_BASE_URL` through
+/// `--dart-define`. Local Android emulator builds fall back to the host-machine
+/// alias so the app can reach the API published on the host's port 3000.
+String resolveApiBaseUrl({
+  String configuredBaseUrl = _configuredApiBaseUrl,
   bool isWeb = kIsWeb,
   TargetPlatform? targetPlatform,
 }) {

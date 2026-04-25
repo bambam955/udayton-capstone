@@ -1,0 +1,60 @@
+FROM ubuntu:24.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV MISE_DATA_DIR=/opt/mise
+ENV PATH="/opt/mise/shims:${PATH}"
+ENV CI=true
+ENV FLUTTER_SUPPRESS_ANALYTICS=true
+
+# Render exposes service env vars as Docker build args, which lets the web
+# bundle lock its API target at build time.
+ARG BIZRUSH_API_BASE_URL
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    unzip \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# Copy the repo tool manifest before installing Flutter so the image uses the
+# same declared SDK version as local development and CI.
+COPY mise.toml ./mise.toml
+
+RUN curl https://mise.run | MISE_VERSION=v2026.2.0 sh
+
+RUN /root/.local/bin/mise install flutter && \
+    /root/.local/bin/mise reshim
+
+RUN flutter config --no-analytics \
+    --no-enable-linux-desktop \
+    --no-enable-macos-desktop \
+    --no-enable-windows-desktop \
+    --no-enable-ios \
+    --no-enable-android
+
+# The driver app depends on the shared package via a relative path, so both
+# packages need to be present in the build context.
+COPY apps/shared ./apps/shared
+COPY apps/driver ./apps/driver
+
+WORKDIR /workspace/apps/driver
+
+RUN flutter pub get
+
+RUN flutter build web --release \
+    --dart-define=BIZRUSH_API_BASE_URL=${BIZRUSH_API_BASE_URL}
+
+FROM nginx:1.29-alpine AS runtime
+
+ENV PORT=10000
+
+# Render's nginx base image expands templates at container startup, which lets
+# the service bind to the platform-provided port without a wrapper script.
+COPY apps/nginx.web.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=builder /workspace/apps/driver/build/web /usr/share/nginx/html
+
+EXPOSE 10000

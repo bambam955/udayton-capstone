@@ -170,6 +170,20 @@ build component *args:
             ;;
     esac
 
+# Build a beta release for the specified components
+build-beta component *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{component}}" in
+        main|driver)
+            just apps/build-beta "{{component}}" {{args}}
+            ;;
+        *)
+            echo "❌ Beta builds are only available for main and driver"
+            exit 1
+            ;;
+    esac
+
 # ---------- Dev environment ---------- #
 
 # Open a local shell

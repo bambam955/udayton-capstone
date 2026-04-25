@@ -31,6 +31,10 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      # Production API deploys must explicitly whitelist the public web origins
+      # that are allowed to issue browser requests to the shared backend.
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://bizrush-beta.onrender.com,https://bizrush-beta-driver.onrender.com,https://bizrush-beta-admin.onrender.com
       - key: BETA_ADMIN_SEED_PASSWORD
         sync: false
 
@@ -51,6 +55,42 @@ services:
         value: production
       # Keep the admin service on the public API URL contract that matches the
       # working beta deployment path.
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-beta-api.onrender.com
+
+  - type: web
+    runtime: docker
+    name: bizrush-beta
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./apps/main/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - .dockerignore
+        - mise.toml
+        - apps/**
+    envVars:
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-beta-api.onrender.com
+
+  - type: web
+    runtime: docker
+    name: bizrush-beta-driver
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./apps/driver/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - .dockerignore
+        - mise.toml
+        - apps/**
+    envVars:
       - key: BIZRUSH_API_BASE_URL
         value: https://bizrush-beta-api.onrender.com
 

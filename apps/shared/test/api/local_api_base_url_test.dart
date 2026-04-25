@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('resolveLocalApiBaseUrl', () {
-    test('prefers an explicit configured base URL', () {
-      final baseUrl = resolveLocalApiBaseUrl(
+  group('resolveApiBaseUrl', () {
+    test('prefers the configured BIZRUSH_API_BASE_URL value', () {
+      final baseUrl = resolveApiBaseUrl(
         configuredBaseUrl: 'http://192.168.1.25:3000',
         targetPlatform: TargetPlatform.android,
       );
@@ -14,7 +14,7 @@ void main() {
     });
 
     test('uses the Android emulator host alias by default', () {
-      final baseUrl = resolveLocalApiBaseUrl(
+      final baseUrl = resolveApiBaseUrl(
         targetPlatform: TargetPlatform.android,
       );
 
@@ -22,10 +22,10 @@ void main() {
     });
 
     test('keeps localhost for non-Android local targets', () {
-      final iOSUrl = resolveLocalApiBaseUrl(
+      final iOSUrl = resolveApiBaseUrl(
         targetPlatform: TargetPlatform.iOS,
       );
-      final desktopUrl = resolveLocalApiBaseUrl(
+      final desktopUrl = resolveApiBaseUrl(
         targetPlatform: TargetPlatform.macOS,
       );
 
@@ -34,7 +34,7 @@ void main() {
     });
 
     test('keeps localhost for web development runs', () {
-      final baseUrl = resolveLocalApiBaseUrl(
+      final baseUrl = resolveApiBaseUrl(
         isWeb: true,
         targetPlatform: TargetPlatform.android,
       );

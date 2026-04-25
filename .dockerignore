@@ -4,6 +4,14 @@
 **/dist
 **/.next
 **/coverage
+**/.dart_tool
+**/build
+**/.gradle
+**/.kotlin
+**/.idea
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
 .env
 .env.*
 npm-debug.log*

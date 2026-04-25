@@ -27,6 +27,10 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      # Mirror the public web origins so production browser preflight requests
+      # reach the API instead of failing before the auth routes run.
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://bizrush-prod.onrender.com,https://bizrush-prod-driver.onrender.com,https://bizrush-prod-admin.onrender.com
 
   - type: web
     runtime: docker
@@ -43,6 +47,42 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-prod-api.onrender.com
+
+  - type: web
+    runtime: docker
+    name: bizrush-prod
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./apps/main/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - .dockerignore
+        - mise.toml
+        - apps/**
+    envVars:
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-prod-api.onrender.com
+
+  - type: web
+    runtime: docker
+    name: bizrush-prod-driver
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./apps/driver/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - .dockerignore
+        - mise.toml
+        - apps/**
+    envVars:
       - key: BIZRUSH_API_BASE_URL
         value: https://bizrush-prod-api.onrender.com
 
