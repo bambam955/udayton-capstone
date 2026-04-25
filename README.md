@@ -58,7 +58,7 @@ CPS 491 - Spring 2026
 
 1. Alex Testa, testaa2@udayton.edu
 2. Bennett Moore, mooreb26@udayton.edu
-3. Tidiane Dia, Diat01@udayton.edu
+3. Tidiane Dia, diat01@udayton.edu
 
 ## Client Information <a name="client-info"></a>
 
