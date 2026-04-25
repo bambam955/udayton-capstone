@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/details_sheet_scaffold.dart';
-import '../../widgets/meta_info_row.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/surface_card.dart';
 import 'customer_home_models.dart';
@@ -151,29 +150,11 @@ class _CustomerOrderDetailsSheetState
               ),
             ),
             SurfaceCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Order metrics',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  MetaInfoRow(
-                    items: [
-                      MetaInfo(
-                        icon: Icons.shopping_bag_outlined,
-                        text: '${widget.order.itemCount} items',
-                      ),
-                      MetaInfo(
-                        icon: Icons.attach_money_rounded,
-                        text: widget.formatPrice(widget.order.totalCents),
-                      ),
-                      MetaInfo(
-                        icon: Icons.schedule_rounded,
-                        text: widget.order.etaText,
-                      ),
-                    ],
-                  ),
-                ],
+              key: const Key('order-receipt-section'),
+              child: _buildReceiptSection(
+                context: context,
+                order: widget.order,
+                formatPrice: widget.formatPrice,
               ),
             ),
             _buildTimelineSection(
@@ -217,6 +198,83 @@ class _CustomerOrderDetailsSheetState
           ),
         );
       },
+    );
+  }
+}
+
+Widget _buildReceiptSection({
+  required BuildContext context,
+  required OrderPreview order,
+  required String Function(int cents) formatPrice,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Receipt', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 10),
+      _ReceiptRow(
+        label: 'Items',
+        value: '${order.itemCount} items',
+        valueKey: const Key('order-receipt-items'),
+      ),
+      const SizedBox(height: 8),
+      _ReceiptRow(
+        label: 'Order total',
+        value: formatPrice(order.totalCents),
+        valueKey: const Key('order-receipt-total'),
+      ),
+      const SizedBox(height: 8),
+      _ReceiptRow(
+        label: 'Status',
+        value: order.status,
+        valueKey: const Key('order-receipt-status'),
+      ),
+      if (order.storeName != null) ...[
+        const SizedBox(height: 8),
+        _ReceiptRow(label: 'Store', value: order.storeName!),
+      ],
+    ],
+  );
+}
+
+class _ReceiptRow extends StatelessWidget {
+  const _ReceiptRow({
+    required this.label,
+    required this.value,
+    this.valueKey,
+  });
+
+  final String label;
+  final String value;
+  final Key? valueKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF546269),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            key: valueKey,
+            textAlign: TextAlign.end,
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
