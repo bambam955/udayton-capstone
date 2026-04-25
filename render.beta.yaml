@@ -31,6 +31,10 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      # Production API deploys must explicitly whitelist the public web origins
+      # that are allowed to issue browser requests to the shared backend.
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://bizrush-beta.onrender.com,https://bizrush-beta-driver.onrender.com,https://bizrush-beta-admin.onrender.com
       - key: BETA_ADMIN_SEED_PASSWORD
         sync: false
 
