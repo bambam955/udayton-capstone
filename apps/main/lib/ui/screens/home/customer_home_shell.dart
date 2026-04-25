@@ -15,6 +15,100 @@ import 'tabs/customer_tab_support.dart';
 // Keep transient customer messages brief so repeated cart actions do not cover
 // important bottom-of-screen controls like checkout for the default 4 seconds.
 const Duration _customerSnackBarDuration = Duration(milliseconds: 1500);
+const String _defaultAddressCountry = 'US';
+
+const List<_UsStateOption> _usStateOptions = <_UsStateOption>[
+  _UsStateOption('AL', 'Alabama'),
+  _UsStateOption('AK', 'Alaska'),
+  _UsStateOption('AZ', 'Arizona'),
+  _UsStateOption('AR', 'Arkansas'),
+  _UsStateOption('CA', 'California'),
+  _UsStateOption('CO', 'Colorado'),
+  _UsStateOption('CT', 'Connecticut'),
+  _UsStateOption('DE', 'Delaware'),
+  _UsStateOption('DC', 'District of Columbia'),
+  _UsStateOption('FL', 'Florida'),
+  _UsStateOption('GA', 'Georgia'),
+  _UsStateOption('HI', 'Hawaii'),
+  _UsStateOption('ID', 'Idaho'),
+  _UsStateOption('IL', 'Illinois'),
+  _UsStateOption('IN', 'Indiana'),
+  _UsStateOption('IA', 'Iowa'),
+  _UsStateOption('KS', 'Kansas'),
+  _UsStateOption('KY', 'Kentucky'),
+  _UsStateOption('LA', 'Louisiana'),
+  _UsStateOption('ME', 'Maine'),
+  _UsStateOption('MD', 'Maryland'),
+  _UsStateOption('MA', 'Massachusetts'),
+  _UsStateOption('MI', 'Michigan'),
+  _UsStateOption('MN', 'Minnesota'),
+  _UsStateOption('MS', 'Mississippi'),
+  _UsStateOption('MO', 'Missouri'),
+  _UsStateOption('MT', 'Montana'),
+  _UsStateOption('NE', 'Nebraska'),
+  _UsStateOption('NV', 'Nevada'),
+  _UsStateOption('NH', 'New Hampshire'),
+  _UsStateOption('NJ', 'New Jersey'),
+  _UsStateOption('NM', 'New Mexico'),
+  _UsStateOption('NY', 'New York'),
+  _UsStateOption('NC', 'North Carolina'),
+  _UsStateOption('ND', 'North Dakota'),
+  _UsStateOption('OH', 'Ohio'),
+  _UsStateOption('OK', 'Oklahoma'),
+  _UsStateOption('OR', 'Oregon'),
+  _UsStateOption('PA', 'Pennsylvania'),
+  _UsStateOption('RI', 'Rhode Island'),
+  _UsStateOption('SC', 'South Carolina'),
+  _UsStateOption('SD', 'South Dakota'),
+  _UsStateOption('TN', 'Tennessee'),
+  _UsStateOption('TX', 'Texas'),
+  _UsStateOption('UT', 'Utah'),
+  _UsStateOption('VT', 'Vermont'),
+  _UsStateOption('VA', 'Virginia'),
+  _UsStateOption('WA', 'Washington'),
+  _UsStateOption('WV', 'West Virginia'),
+  _UsStateOption('WI', 'Wisconsin'),
+  _UsStateOption('WY', 'Wyoming'),
+];
+
+class _UsStateOption {
+  const _UsStateOption(this.abbreviation, this.name);
+
+  final String abbreviation;
+  final String name;
+
+  String get label => '$name ($abbreviation)';
+}
+
+String _formatAddressLine({
+  required String? line1,
+  required String? line2,
+  required String? city,
+  required String? state,
+  required String? postalCode,
+}) {
+  return <String?>[line1, line2, city, state, postalCode]
+      .map((part) => part?.trim())
+      .where((part) => part != null && part.isNotEmpty)
+      .cast<String>()
+      .join(', ');
+}
+
+String? _normalizeUsState(String? rawState) {
+  final normalized = rawState?.trim().toUpperCase();
+  if (normalized == null || normalized.isEmpty) {
+    return null;
+  }
+
+  for (final state in _usStateOptions) {
+    if (state.abbreviation == normalized ||
+        state.name.toUpperCase() == normalized) {
+      return state.abbreviation;
+    }
+  }
+
+  return null;
+}
 
 /// Owns state coordination for customer home tabs and API-backed actions.
 class CustomerHomeShell extends StatefulWidget {
@@ -234,10 +328,16 @@ class _CustomerHomeShellState extends State<CustomerHomeShell> {
             state: address.state?.trim() ?? '',
             postalCode: address.postalCode?.trim() ?? '',
             country: address.country?.trim().isEmpty ?? true
-                ? 'US'
+                ? _defaultAddressCountry
                 : address.country!.trim(),
             instructions: address.instructions?.trim() ?? '',
-            addressLine: address.addressLine,
+            addressLine: _formatAddressLine(
+              line1: address.line1,
+              line2: address.line2,
+              city: address.city,
+              state: _normalizeUsState(address.state) ?? address.state,
+              postalCode: address.postalCode,
+            ),
             isDefault: address.isDefault,
           ),
     ];
@@ -1416,10 +1516,9 @@ class _AddressDialogState extends State<_AddressDialog> {
   late final TextEditingController _line1Controller;
   late final TextEditingController _line2Controller;
   late final TextEditingController _cityController;
-  late final TextEditingController _stateController;
   late final TextEditingController _postalCodeController;
-  late final TextEditingController _countryController;
   late final TextEditingController _instructionsController;
+  String? _selectedState;
   late bool _isDefault;
   String? _errorText;
 
@@ -1427,7 +1526,7 @@ class _AddressDialogState extends State<_AddressDialog> {
   bool get _hasRequiredAddressFields =>
       _line1Controller.text.trim().isNotEmpty &&
       _cityController.text.trim().isNotEmpty &&
-      _stateController.text.trim().isNotEmpty &&
+      _selectedState != null &&
       _postalCodeController.text.trim().isNotEmpty;
 
   @override
@@ -1440,12 +1539,9 @@ class _AddressDialogState extends State<_AddressDialog> {
     _line1Controller = TextEditingController(text: initialAddress?.line1 ?? '');
     _line2Controller = TextEditingController(text: initialAddress?.line2 ?? '');
     _cityController = TextEditingController(text: initialAddress?.city ?? '');
-    _stateController = TextEditingController(text: initialAddress?.state ?? '');
+    _selectedState = _normalizeUsState(initialAddress?.state);
     _postalCodeController = TextEditingController(
       text: initialAddress?.postalCode ?? '',
-    );
-    _countryController = TextEditingController(
-      text: initialAddress?.country ?? 'US',
     );
     _instructionsController = TextEditingController(
       text: initialAddress?.instructions ?? '',
@@ -1468,9 +1564,7 @@ class _AddressDialogState extends State<_AddressDialog> {
     _line1Controller.dispose();
     _line2Controller.dispose();
     _cityController.dispose();
-    _stateController.dispose();
     _postalCodeController.dispose();
-    _countryController.dispose();
     _instructionsController.dispose();
     super.dispose();
   }
@@ -1478,7 +1572,6 @@ class _AddressDialogState extends State<_AddressDialog> {
   List<TextEditingController> get _requiredFieldControllers => [
         _line1Controller,
         _cityController,
-        _stateController,
         _postalCodeController,
       ];
 
@@ -1514,11 +1607,9 @@ class _AddressDialogState extends State<_AddressDialog> {
         line1: _line1Controller.text.trim(),
         line2: _line2Controller.text.trim(),
         city: _cityController.text.trim(),
-        state: _stateController.text.trim(),
+        state: _selectedState!,
         postalCode: _postalCodeController.text.trim(),
-        country: _countryController.text.trim().isEmpty
-            ? 'US'
-            : _countryController.text.trim(),
+        country: _defaultAddressCountry,
         instructions: _instructionsController.text.trim(),
         isDefault: _isDefault,
       ),
@@ -1557,22 +1648,32 @@ class _AddressDialogState extends State<_AddressDialog> {
               decoration: const InputDecoration(labelText: 'City'),
             ),
             const SizedBox(height: 8),
-            TextField(
+            DropdownButtonFormField<String>(
               key: const Key('address-state-field'),
-              controller: _stateController,
+              initialValue: _selectedState,
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'State'),
+              items: [
+                for (final state in _usStateOptions)
+                  DropdownMenuItem<String>(
+                    value: state.abbreviation,
+                    child: Text(state.label),
+                  ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedState = value;
+                  if (_hasRequiredAddressFields) {
+                    _errorText = null;
+                  }
+                });
+              },
             ),
             const SizedBox(height: 8),
             TextField(
               key: const Key('address-postal-code-field'),
               controller: _postalCodeController,
               decoration: const InputDecoration(labelText: 'Postal code'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              key: const Key('address-country-field'),
-              controller: _countryController,
-              decoration: const InputDecoration(labelText: 'Country'),
             ),
             const SizedBox(height: 8),
             TextField(

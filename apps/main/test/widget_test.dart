@@ -56,6 +56,10 @@ void main() {
     expect(find.byKey(const Key('edit-address-addr-1')), findsOneWidget);
     expect(find.byKey(const Key('delete-address-addr-1')), findsOneWidget);
     expect(find.byKey(const Key('account-address-addr-2')), findsOneWidget);
+    expect(
+      find.text('200 Pine St, Suite 500, Charlotte, NC, 28203'),
+      findsOneWidget,
+    );
     expect(find.text('Downtown Market'), findsWidgets);
   });
 
@@ -124,7 +128,8 @@ void main() {
   testWidgets('Customer can edit an address and move the default badge', (
     WidgetTester tester,
   ) async {
-    await _pumpApp(tester, apiClient: _FakeApiClient());
+    final apiClient = _FakeApiClient();
+    await _pumpApp(tester, apiClient: apiClient);
 
     await _login(tester);
     await _openAccountTab(tester);
@@ -142,6 +147,8 @@ void main() {
       _textField(tester, 'address-line2-field').controller?.text,
       'Suite 500',
     );
+    expect(find.text('North Carolina (NC)'), findsOneWidget);
+    expect(find.byKey(const Key('address-country-field')), findsNothing);
 
     await tester.enterText(
       find.byKey(const Key('address-line1-field')),
@@ -165,11 +172,15 @@ void main() {
     );
 
     expect(find.text('Address updated.'), findsOneWidget);
+    expect(apiClient.lastAddressSaveUpdateBody?['state'], 'NC');
+    expect(apiClient.lastAddressSaveUpdateBody?['country'], 'US');
     expect(
         find.byKey(const Key('default-address-badge-addr-2')), findsOneWidget);
     expect(find.byKey(const Key('default-address-badge-addr-1')), findsNothing);
-    expect(find.textContaining('250 Pine St'), findsOneWidget);
-    expect(find.textContaining('Suite 700'), findsOneWidget);
+    expect(
+      find.text('250 Pine St, Suite 700, Charlotte, NC, 28203'),
+      findsOneWidget,
+    );
     expect(find.text('Instructions: Ring the loading dock'), findsOneWidget);
   });
 
@@ -189,6 +200,7 @@ void main() {
     final submitFinder = find.byKey(const Key('address-dialog-submit'));
     expect(find.text('Add address'), findsOneWidget);
     expect(find.text('Instructions (optional)'), findsOneWidget);
+    expect(find.byKey(const Key('address-country-field')), findsNothing);
     expect(tester.widget<FilledButton>(submitFinder).onPressed, isNull);
 
     await tester.enterText(
@@ -203,9 +215,10 @@ void main() {
       find.byKey(const Key('address-city-field')),
       'Charlotte',
     );
-    await tester.enterText(
-      find.byKey(const Key('address-state-field')),
-      'NC',
+    await _selectDropdownItem(
+      tester,
+      key: 'address-state-field',
+      label: 'North Carolina (NC)',
     );
     await tester.enterText(
       find.byKey(const Key('address-postal-code-field')),
@@ -218,9 +231,11 @@ void main() {
 
     expect(find.text('Address saved.'), findsOneWidget);
     expect(apiClient.lastAddressCreateBody?['instructions'], isNull);
+    expect(apiClient.lastAddressCreateBody?['state'], 'NC');
+    expect(apiClient.lastAddressCreateBody?['country'], 'US');
     expect(find.byKey(const Key('account-address-addr-3')), findsOneWidget);
     expect(find.text('Warehouse'), findsOneWidget);
-    expect(find.textContaining('300 Cedar St'), findsOneWidget);
+    expect(find.text('300 Cedar St, Charlotte, NC, 28204'), findsOneWidget);
   });
 
   testWidgets('Customer can delete a non-default address from the account tab',
@@ -383,6 +398,7 @@ class _FakeApiClient implements ApiClient {
   final List<_FakeAddressRecord> _addresses;
   late int _nextAddressNumber;
   Map<String, Object?>? lastAddressCreateBody;
+  Map<String, Object?>? lastAddressSaveUpdateBody;
   int _cartQuantity = 2;
 
   @override
@@ -526,6 +542,9 @@ class _FakeApiClient implements ApiClient {
   }
 
   Object _updateAddress(String addressId, Map<String, Object?> body) {
+    if (body.containsKey('line1')) {
+      lastAddressSaveUpdateBody = Map<String, Object?>.from(body);
+    }
     final address = _addresses.firstWhere((entry) => entry.id == addressId);
     address.applyPatch(body);
     return <String, Object?>{
@@ -606,6 +625,29 @@ Future<void> _tapWhenVisible(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _selectDropdownItem(
+  WidgetTester tester, {
+  required String key,
+  required String label,
+}) async {
+  final field = find.byKey(Key(key));
+  await tester.ensureVisible(field);
+  await tester.pumpAndSettle();
+  await tester.tap(field);
+  await tester.pumpAndSettle();
+  final option = find.text(label);
+  if (option.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      option,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
 }
 
