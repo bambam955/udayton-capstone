@@ -46,6 +46,42 @@ services:
       - key: BIZRUSH_API_BASE_URL
         value: https://bizrush-prod-api.onrender.com
 
+  - type: web
+    runtime: docker
+    name: bizrush-prod
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./apps/main/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - .dockerignore
+        - mise.toml
+        - apps/**
+    envVars:
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-prod-api.onrender.com
+
+  - type: web
+    runtime: docker
+    name: bizrush-prod-driver
+    plan: free
+    region: ohio
+    autoDeploy: true
+    dockerfilePath: ./apps/driver/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - .dockerignore
+        - mise.toml
+        - apps/**
+    envVars:
+      - key: BIZRUSH_API_BASE_URL
+        value: https://bizrush-prod-api.onrender.com
+
 databases:
   - name: bizrush-prod-db
     plan: free

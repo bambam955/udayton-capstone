@@ -1,4 +1,4 @@
 [tools]
 flutter = "3.38.10"
-just = "1.46"
+just = "1.50"
 node = "22"
