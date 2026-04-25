@@ -29,6 +29,7 @@ export default defineConfig({
                     items: [
                         { label: 'Home', slug: 'index' },
                         { label: 'Project Overview', slug: 'project-overview' },
+                        { label: 'System Design', slug: 'design' },
                         { label: 'Month 1', slug: 'month-1' },
                         { label: 'Month 2', slug: 'month-2' },
                         { label: 'Month 3', slug: 'month-3' },
