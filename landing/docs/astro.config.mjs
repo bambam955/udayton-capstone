@@ -33,6 +33,7 @@ export default defineConfig({
                         { label: 'Month 1', slug: 'month-1' },
                         { label: 'Month 2', slug: 'month-2' },
                         { label: 'Month 3', slug: 'month-3' },
+                        { label: 'Demo', slug: 'demo' },
                     ],
                 },
             ],
