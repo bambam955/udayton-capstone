@@ -1,0 +1,232 @@
+---
+title: System Design
+description: Architecture, technology choices, and design diagrams for the BizRush platform.
+---
+
+## Overview
+
+BizRush is designed as a pickup-to-delivery marketplace orchestration layer. The platform separates the customer shopping experience, the driver fulfillment experience, and the admin operations experience into distinct applications, while centralizing shared business logic in a backend API and PostgreSQL database.
+
+At a high level, the system does four things:
+
+1. Lets customers browse retailer inventory, create orders, and track progress.
+2. Lets drivers accept delivery work and complete last-mile delivery steps.
+3. Gives admins an operations surface for monitoring orders and handling interventions.
+4. Bridges BizRush workflows to retailer systems, which are currently simulated with Mockoon-based Walmart and Target APIs for the capstone MVP.
+
+## Architecture Summary
+
+The current repository is organized as a small multi-application platform:
+
+| Layer | Main implementation | Responsibility |
+| --- | --- | --- |
+| Customer client | `bizrush/apps/main` | Customer browsing, ordering, account, and order-tracking flows |
+| Driver client | `bizrush/apps/driver` | Delivery offers, pickup flow, route support, and proof-of-delivery workflow |
+| Shared mobile code | `bizrush/apps/shared` | Shared Dart API client, session storage, request models, and shared theme primitives |
+| Backend API | `bizrush/api` | Auth, resource APIs, mobile-specific routes, admin operations, and business orchestration |
+| Admin dashboard | `bizrush/admin-base` | Web-based order operations and support tooling |
+| Database | `bizrush/db` | PostgreSQL schema, migrations, and local seed data |
+| Retailer integration mocks | `bizrush/mocks` | Mock Walmart and Target APIs used to simulate external retailer systems |
+| Local orchestration | `bizrush/docker-compose.yml` and `bizrush/justfile` | Runs the API, admin app, database stack, and retailer mocks together in development |
+
+### System Context Diagram
+
+```text
++------------------+                         +------------------+                         +------------------+
+| Customer App     |                         | Driver App       |                         | Admin Dashboard  |
+| Flutter          |                         | Flutter          |                         | Next.js + React  |
+| apps/main        |                         | apps/driver      |                         | admin-base       |
++--------+---------+                         +---------+--------+                         +---------+--------+
+         \                                             |                                            /
+          \                                            |                                           /
+           \---------------------- HTTPS / JSON -------+------------------------------------------/
+                                                       |
+                                                       v
+                                        +--------------+---------------+
+                                        | BizRush API                  |
+                                        | Express + TypeScript         |
+                                        | orchestration + domain routes|
+                                        +--------------+---------------+
+                                                       |
+                             +-------------------------+-------------------------+
+                             |                                                   |
+                             v                                                   v
+                +------------+-------------+                      +--------------+--------------+
+                | PostgreSQL                |                      | Walmart / Target Mock APIs   |
+                | users, orders, payments,  |                      | external retailer systems    |
+                | deliveries, support data  |                      | for MVP integration testing  |
+                +---------------------------+                      +------------------------------+
+```
+
+This structure keeps retailer-specific behavior out of the client apps. Mobile and admin clients speak only to the BizRush API, and the API owns orchestration, persistence, and integration boundaries.
+
+## Key Architectural Decisions
+
+### Separate apps for each user role
+
+Customer and driver workflows are materially different, so the project uses two Flutter applications instead of a single role-switched client. That keeps each app simpler and allows driver-specific concerns, such as mapping and route simulation, to evolve without complicating the customer experience.
+
+### Shared mobile package for cross-cutting concerns
+
+`bizrush/apps/shared` contains common Dart code for API access, session handling, typed request and response models, and shared theming. This reduces duplicate infrastructure code while still allowing the customer and driver apps to own their own screens and role-specific flows.
+
+### Backend-centered orchestration
+
+The API is the system boundary for all first-party clients. It handles authentication, versioned routes under `/v1`, resource access, admin operations, and mobile-specific service flows. Retailer integrations are intentionally backend-only so secrets, adapter logic, and integration differences stay out of the mobile and web clients.
+
+### Database-first local development
+
+PostgreSQL is treated as the source of truth. Schema changes live in Flyway migrations under `bizrush/db/migrations`, and local sample data is loaded separately from migration history. This makes the local environment closer to a real deployment while keeping seeded demo data disposable.
+
+### Mock external systems during MVP
+
+The capstone MVP uses Mockoon-powered Walmart and Target APIs instead of live retailer integrations. That choice supports repeatable demos and testing while preserving the same architectural seam a real integration layer would use later.
+
+## Runtime Topology
+
+The local development environment intentionally mixes containerized backend services with locally run Flutter apps.
+
+```text
+Developer machine
+|
++-- Docker Compose
+|   |
+|   +-- db (PostgreSQL 16)
+|   +-- flyway (schema migrations)
+|   +-- db-seed (local-only sample data)
+|   +-- mocks (Walmart and Target Mockoon services)
+|   +-- api (Node.js 22 + Express + TypeScript)
+|   +-- admin (Next.js admin dashboard, optional profile)
+|
++-- Local host toolchains
+    |
+    +-- Flutter customer app (web or Android)
+    +-- Flutter driver app (web or Android)
+```
+
+This split is practical for the team:
+
+- Backend services are reproducible through Docker.
+- Flutter apps still use native local SDKs and emulators, which is the normal workflow for mobile development.
+- The `just` recipes provide a single entry point for setup, run, check, test, and build tasks across the repo.
+
+## Request and Data Flow
+
+### End-to-end order flow
+
+```text
+Customer App
+   |
+   | 1. browse products / submit order
+   v
+BizRush API
+   |
+   | 2. validate request + persist order state
+   v
+PostgreSQL
+   |
+   | 3. create or sync pickup order with retailer
+   v
+Retailer Mock API
+   |
+   | 4. return acceptance / status updates
+   v
+BizRush API
+   |
+   | 5. expose order status to customer, admin, and driver surfaces
+   +------------------------------+
+   |                              |
+   v                              v
+Admin Dashboard              Driver App
+```
+
+The business model is pickup-first. Store employees pick and stage the order inside the retailer system, and drivers are brought into the workflow only after the order is ready for pickup or ready to dispatch.
+
+### API surface
+
+The Express application in `bizrush/api` is composed as one deployable app with several domain-focused route groups:
+
+- `/health` for service health checks
+- `/v1/auth` for login and authentication flows
+- `/v1/mobile` for mobile-specific workflow endpoints
+- `/v1/admin` for admin operations
+- `/v1` resource routes for customers, drivers, retailers, orders, deliveries, and payments
+
+This design keeps the deployment model simple while still separating concerns inside the codebase by module.
+
+## Tech Stack
+
+### Application stack
+
+| Area | Technologies | Notes |
+| --- | --- | --- |
+| Customer app | Flutter, Dart | `bizrush/apps/main` |
+| Driver app | Flutter, Dart, Mapbox | `bizrush/apps/driver`; includes driver-specific mapping and navigation support |
+| Shared mobile foundation | Dart, `http`, `flutter_secure_storage` | Shared API and session primitives in `bizrush/apps/shared` |
+| Backend API | Node.js 22, TypeScript, Express | Main orchestration service |
+| API validation and types | Zod, TypeScript | Request and response contracts |
+| API data access | Kysely, `pg` | Typed SQL access to PostgreSQL |
+| Admin dashboard | Next.js, React, TypeScript, Tailwind CSS | `bizrush/admin-base` |
+| Database | PostgreSQL 16, Flyway | Durable state and schema management |
+| Retailer mocks | Mockoon, Node.js tooling | Walmart and Target simulation |
+| Tooling | Docker Compose, `just`, ESLint, Prettier, Vitest | Local orchestration and quality checks |
+
+### Why this stack fits the project
+
+- Flutter gives the team one mobile UI stack for both customer and driver applications.
+- A typed TypeScript API keeps backend contracts explicit and easier to test.
+- PostgreSQL and Flyway provide a predictable relational model for orders, users, deliveries, and payments.
+- Next.js is a good fit for the admin dashboard because it is a separate web surface with a different interaction model than the mobile apps.
+- Mockoon lets the team demo retailer integration behavior without depending on live third-party environments.
+
+## Codebase Design
+
+### Mobile structure
+
+The mobile side uses a hybrid approach:
+
+- shared infrastructure in `apps/shared`
+- customer-specific UI and configuration in `apps/main`
+- driver-specific UI and configuration in `apps/driver`
+
+That layout is a good compromise between reuse and role separation. Shared code owns transport and common primitives; each app owns its own product logic and presentation.
+
+### Backend structure
+
+The API is organized by domain modules rather than by HTTP verb or controller size. Current modules include auth, customers, drivers, retailers, orders, deliveries, payments, admins, and mobile workflows.
+
+That matters because the platform is really an orchestration system. Domain-oriented modules make it easier to keep order lifecycle logic, delivery logic, and admin operations cohesive as the project grows.
+
+### Persistence structure
+
+The database layer is versioned through migration files:
+
+- `V1__initial_schema.sql`
+- `V2__support_tickets_order_id_nullable.sql`
+- `V3__mobile_partner_locations.sql`
+- `V4__mobile_delivery_race_hardening.sql`
+- `V5__shared_driver_offers_and_status.sql`
+
+These migration names show the shape of the evolving system: the schema is supporting both admin/resource functionality and newer mobile delivery workflows.
+
+## Design Goals and Tradeoffs
+
+| Goal | Design choice | Tradeoff |
+| --- | --- | --- |
+| Keep mobile code maintainable | Two separate Flutter apps with one shared package | Some duplication is acceptable to preserve role clarity |
+| Protect integration details | Retailer systems are backend-only | The API layer becomes the main coordination bottleneck |
+| Support local demos | Mock retailer APIs and local seed data | MVP behavior is realistic, but not identical to production retailer systems |
+| Keep deployment simple | One main API service with modular routes | A single service can grow large if module boundaries are not maintained |
+| Make team workflows repeatable | Docker for backend, local SDKs for Flutter | Developers still need working native/mobile toolchains |
+
+## Relationship to the Formal Design Artifacts
+
+This page is the implementation-oriented summary of the system. The full capstone design package in the `bizrush/specs` directory goes deeper on:
+
+- data flow diagrams
+- sequence diagrams
+- activity diagrams
+- use case diagrams
+- ER diagrams
+
+Those artifacts describe the system formally; this page maps that design to the code and runtime structure that exist in the repository today.
